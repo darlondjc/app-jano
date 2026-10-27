@@ -10,35 +10,41 @@ export interface HistTx {
   isTransfer: boolean;
 }
 
+export interface CategoryAbove {
+  kind: 'categoria-acima';
+  categoryId: string;
+  spentCents: Cents;
+  avgCents: Cents;
+  pct: number;
+}
+export interface UnusualSpend {
+  kind: 'gasto-incomum';
+  description: string;
+  date: string;
+  amountCents: Cents;
+  times: number;
+}
+export interface Repriced {
+  kind: 'recorrencia-reajustada';
+  description: string;
+  fromCents: Cents;
+  toCents: Cents;
+  pct: number;
+}
+export interface NewSubscription {
+  kind: 'nova-assinatura';
+  description: string;
+  amountCents: Cents;
+  firstSeen: string;
+}
+export interface GoalStreak {
+  kind: 'sequencia-metas';
+  categoryId: string;
+  months: number;
+}
+
 export type Insight =
-  | {
-      kind: 'categoria-acima';
-      categoryId: string;
-      spentCents: Cents;
-      avgCents: Cents;
-      pct: number;
-    }
-  | {
-      kind: 'gasto-incomum';
-      description: string;
-      date: string;
-      amountCents: Cents;
-      times: number;
-    }
-  | {
-      kind: 'recorrencia-reajustada';
-      description: string;
-      fromCents: Cents;
-      toCents: Cents;
-      pct: number;
-    }
-  | {
-      kind: 'nova-assinatura';
-      description: string;
-      amountCents: Cents;
-      firstSeen: string;
-    }
-  | { kind: 'sequencia-metas'; categoryId: string; months: number };
+  CategoryAbove | UnusualSpend | Repriced | NewSubscription | GoalStreak;
 
 export const monthOf = (date: string): string => date.slice(0, 7);
 
@@ -82,12 +88,12 @@ export function categoriesAboveNormal(
   txs: HistTx[],
   month: string,
   opts: { ratio?: number; minDiffCents?: Cents; lookback?: number } = {},
-): Insight[] {
+): CategoryAbove[] {
   const { ratio = 1.2, minDiffCents = 5000, lookback = 3 } = opts;
   const byMonth = spentByMonthAndCategory(txs);
   const prev = previousMonths(month, lookback).filter((m) => byMonth.has(m));
   if (prev.length < 2) return [];
-  const out: Insight[] = [];
+  const out: CategoryAbove[] = [];
   for (const [categoryId, spentCents] of byMonth.get(month) ?? []) {
     if (categoryId === '') continue;
     const avgCents = Math.round(
@@ -117,7 +123,10 @@ export function categoriesAboveNormal(
  * Compra do mês muito acima do histórico da categoria: valor > média + 2,5 desvios e pelo
  * menos o dobro da média, com 5 ou mais compras anteriores na categoria.
  */
-export function unusualTransactions(txs: HistTx[], month: string): Insight[] {
+export function unusualTransactions(
+  txs: HistTx[],
+  month: string,
+): UnusualSpend[] {
   const history = new Map<string, number[]>();
   for (const t of spends(txs)) {
     if (monthOf(t.date) < month && t.categoryId) {
@@ -127,7 +136,7 @@ export function unusualTransactions(txs: HistTx[], month: string): Insight[] {
       ).push(-t.amountCents);
     }
   }
-  const out: Insight[] = [];
+  const out: UnusualSpend[] = [];
   for (const t of spends(txs)) {
     const h = t.categoryId ? history.get(t.categoryId) : undefined;
     if (monthOf(t.date) !== month || !h || h.length < 5) continue;
@@ -144,11 +153,7 @@ export function unusualTransactions(txs: HistTx[], month: string): Insight[] {
       });
     }
   }
-  return out.sort(
-    (a, b) =>
-      ('amountCents' in b ? b.amountCents : 0) -
-      ('amountCents' in a ? a.amountCents : 0),
-  );
+  return out.sort((a, b) => b.amountCents - a.amountCents);
 }
 
 export interface RecurringSeries {
@@ -204,7 +209,7 @@ export function detectRecurrences(txs: HistTx[]): RecurringSeries[] {
 }
 
 /** Recorrência cujo último valor subiu mais de 3% sobre o anterior. */
-export function repricedRecurrences(series: RecurringSeries[]): Insight[] {
+export function repricedRecurrences(series: RecurringSeries[]): Repriced[] {
   return series
     .filter(
       (s) => s.previousCents > 0 && s.amountCents > s.previousCents * 1.03,
@@ -223,7 +228,7 @@ export function newSubscriptions(
   txs: HistTx[],
   subscriptionCategoryId: string,
   today: string,
-): Insight[] {
+): NewSubscription[] {
   const first = new Map<string, HistTx>();
   for (const t of [...spends(txs)].sort((a, b) =>
     a.date.localeCompare(b.date),
@@ -256,10 +261,10 @@ export function goalStreaks(
   limits: { categoryId: string; limitCents: Cents }[],
   month: string,
   maxLookback = 12,
-): Insight[] {
+): GoalStreak[] {
   const byMonth = spentByMonthAndCategory(txs);
   const months = previousMonths(month, maxLookback);
-  const out: Insight[] = [];
+  const out: GoalStreak[] = [];
   for (const { categoryId, limitCents } of limits) {
     let streak = 0;
     for (const m of months) {
@@ -273,9 +278,7 @@ export function goalStreaks(
     if (streak >= 2)
       out.push({ kind: 'sequencia-metas', categoryId, months: streak });
   }
-  return out.sort(
-    (a, b) => ('months' in b ? b.months : 0) - ('months' in a ? a.months : 0),
-  );
+  return out.sort((a, b) => b.months - a.months);
 }
 
 /** Gasto projetado para o fim do mês pelo ritmo atual (linear). */
