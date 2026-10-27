@@ -86,3 +86,14 @@ export function daysLeftInMonth(
 ): number {
   return Math.max(new Date(year, month, 0).getDate() - day, 0);
 }
+
+/** As `n` metas mais perto (ou além) do limite, da mais apertada para a mais folgada. */
+export function tightestGoals(rows: BudgetRow[], n: number): BudgetRow[] {
+  const ratio = (r: BudgetRow) =>
+    r.limitCents > 0
+      ? r.spentCents / r.limitCents
+      : r.spentCents > 0
+        ? Infinity
+        : 0;
+  return [...rows].sort((a, b) => ratio(b) - ratio(a)).slice(0, n);
+}

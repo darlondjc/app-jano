@@ -81,3 +81,31 @@ describe('daysLeftInMonth', () => {
     expect(daysLeftInMonth(2026, 10, 27)).toBe(4));
   it('último dia → 0', () => expect(daysLeftInMonth(2026, 10, 31)).toBe(0));
 });
+
+import { tightestGoals } from './engine';
+
+describe('tightestGoals', () => {
+  const mk = (categoryId: string, limitCents: number, spentCents: number) => ({
+    categoryId,
+    limitCents,
+    spentCents,
+    status: 'ok' as const,
+  });
+  it('ordena pela fração gasta e corta em n', () => {
+    const rows = [
+      mk('saude', 30000, 9700),
+      mk('lazer', 35000, 43400),
+      mk('mercado', 90000, 82800),
+      mk('zero', 0, 0),
+    ];
+    expect(tightestGoals(rows, 2).map((r) => r.categoryId)).toEqual([
+      'lazer',
+      'mercado',
+    ]);
+  });
+  it('não altera a lista original', () => {
+    const rows = [mk('a', 100, 10), mk('b', 100, 90)];
+    tightestGoals(rows, 1);
+    expect(rows[0].categoryId).toBe('a');
+  });
+});
