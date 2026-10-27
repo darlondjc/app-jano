@@ -137,9 +137,15 @@ interface Previa {
   template: `
     <header>
       <div>
-        <a routerLink="/" class="j-cap">← Início</a>
+        <a janoButton variant="ghost" [small]="true" routerLink="/">‹ Início</a>
         <h1>Transações</h1>
-        <a routerLink="/categorias" class="j-cap">Gerenciar categorias</a>
+        <a
+          janoButton
+          variant="secondary"
+          [small]="true"
+          routerLink="/categorias"
+          >Gerenciar categorias</a
+        >
       </div>
       <label>
         <input
@@ -295,7 +301,7 @@ interface Previa {
                 <option value="" [selected]="!t.categoryId">
                   Sem categoria
                 </option>
-                @for (c of categorias(); track c.id) {
+                @for (c of categoriasOrdenadas(); track c.id) {
                   <option [value]="c.id" [selected]="c.id === t.categoryId">
                     {{ c.name }}
                   </option>
@@ -334,6 +340,11 @@ export class Transacoes {
   private arquivoKeyed: ReturnType<typeof addDedupeKeys> = [];
 
   protected readonly rotulo = computed(() => rotuloMes(this.month()));
+  protected readonly categoriasOrdenadas = computed(() =>
+    [...this.categorias()].sort((a, b) =>
+      a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }),
+    ),
+  );
   protected readonly grupos = computed(() => agruparPorDia(this.txs()));
   protected readonly gastos = computed(() => gastosDoMes(this.txs()));
 

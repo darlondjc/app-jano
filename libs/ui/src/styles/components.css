@@ -59,6 +59,11 @@
   background: var(--danger);
   color: var(--on-danger);
 }
+.j-btn--sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 14px;
+}
 .j-btn--lg {
   height: 48px;
 }
@@ -171,6 +176,12 @@
   color: var(--text);
   font-family: var(--font-sans);
   box-sizing: border-box;
+}
+jano-kpi-card {
+  display: block;
+}
+jano-kpi-card .j-kpi {
+  height: 100%;
 }
 .j-kpi {
   display: flex;

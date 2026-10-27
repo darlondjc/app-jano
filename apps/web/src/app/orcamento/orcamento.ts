@@ -89,7 +89,7 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
     }
   `,
   template: `
-    <a routerLink="/" class="j-cap">← Início</a>
+    <a janoButton variant="ghost" [small]="true" routerLink="/">‹ Início</a>
     <h1>Orçamento</h1>
     <div class="mes">
       <button

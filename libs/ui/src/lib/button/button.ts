@@ -19,8 +19,10 @@ export type JanoButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export class JanoButton {
   readonly variant = input<JanoButtonVariant>('primary');
   readonly large = input(false);
+  readonly small = input(false);
 
   protected readonly classes = computed(
-    () => `j-btn${this.large() ? ' j-btn--lg' : ''} j-btn--${this.variant()}`,
+    () =>
+      `j-btn${this.large() ? ' j-btn--lg' : ''}${this.small() ? ' j-btn--sm' : ''} j-btn--${this.variant()}`,
   );
 }

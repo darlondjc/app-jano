@@ -166,7 +166,7 @@ const NOVA: Form = {
   template: `
     <header>
       <div>
-        <a routerLink="/" class="j-cap">← Início</a>
+        <a janoButton variant="ghost" [small]="true" routerLink="/">‹ Início</a>
         <h1>Categorias</h1>
         <div class="j-sub">{{ categorias().length }} categorias</div>
       </div>
