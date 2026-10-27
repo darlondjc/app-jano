@@ -4,15 +4,15 @@ Planejamento financeiro pessoal: importa extratos (OFX/CSV), organiza transaçõ
 
 ## Estrutura
 
-| Pasta              | O que é                                                                                           |
-| ------------------ | ------------------------------------------------------------------------------------------------- |
-| `apps/web`         | Front-end Angular (SPA, zoneless, PWA mais adiante)                                               |
-| `apps/api`         | API NestJS                                                                                        |
-| `libs/ui`          | `@jano/ui`: componentes do design system + tokens                                                 |
+| Pasta              | O que é                                                                                                      |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `apps/web`         | Front-end Angular (SPA, zoneless, PWA mais adiante)                                                          |
+| `apps/api`         | API NestJS                                                                                                   |
+| `libs/ui`          | `@jano/ui`: componentes do design system + tokens                                                            |
 | `libs/engine`      | `@jano/engine`: regras de orçamento, avaliação e projeção (funções puras de orçamento, avaliação e projeção) |
-| `libs/contracts`   | `@jano/contracts`: schemas Zod compartilhados                                                     |
-| `libs/data-access` | `@jano/data-access`: cliente HTTP e stores do front                                               |
-| `tools/`           | Scripts (ex.: `build-tokens.mjs`)                                                                 |
+| `libs/contracts`   | `@jano/contracts`: schemas Zod compartilhados                                                                |
+| `libs/data-access` | `@jano/data-access`: cliente HTTP e stores do front                                                          |
+| `tools/`           | Scripts (ex.: `build-tokens.mjs`)                                                                            |
 
 Dinheiro sempre em **centavos inteiros**. Regras de dependência entre pastas são checadas pelo lint (tags do Nx).
 

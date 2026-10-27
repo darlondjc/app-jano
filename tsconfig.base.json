@@ -18,7 +18,8 @@
       "@jano/ui": ["./libs/ui/src/index.ts"],
       "@jano/data-access": ["./libs/data-access/src/index.ts"],
       "@jano/engine": ["./libs/engine/src/index.ts"],
-      "@jano/contracts": ["./libs/contracts/src/index.ts"]
+      "@jano/contracts": ["./libs/contracts/src/index.ts"],
+      "@jano/import-file": ["./libs/import-file/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

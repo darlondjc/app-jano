@@ -23,7 +23,12 @@ export default [
                 'type:data-access',
                 'type:engine',
                 'type:contracts',
+                'type:import',
               ],
+            },
+            {
+              sourceTag: 'type:import',
+              onlyDependOnLibsWithTags: ['type:import', 'type:contracts'],
             },
             {
               sourceTag: 'type:ui',
