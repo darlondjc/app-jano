@@ -14,6 +14,10 @@ export interface TransactionDoc {
   categoryIsManual: boolean;
   isTransfer: boolean;
   importId: string | null;
+  /** Final do cartão do titular (faturas com mais de um cartão). */
+  holder?: string;
+  /** Parcela "n de total". */
+  installment?: { n: number; total: number };
 }
 
 export interface AccountDoc {

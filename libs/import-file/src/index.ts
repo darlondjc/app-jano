@@ -5,3 +5,5 @@ export * from './lib/normalize';
 export * from './lib/dedupe';
 export * from './lib/plan';
 export * from './lib/categorize';
+export * from './lib/pdf-lines';
+export * from './lib/fatura-bb';

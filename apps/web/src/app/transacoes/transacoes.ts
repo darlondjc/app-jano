@@ -19,10 +19,14 @@ import { formatBRL } from '@jano/engine';
 import {
   DEFAULT_RULES,
   addDedupeKeys,
+  bankCategoryToName,
   decodeBytes,
+  isFaturaBB,
+  parseFaturaBB,
   parseOfx,
   planImport,
   suggestCategory,
+  type FaturaResult,
   type ImportPlan,
 } from '@jano/import-file';
 import { JanoBanner, JanoButton, JanoCategoryBadge } from '@jano/ui';
@@ -33,6 +37,7 @@ import {
   mesSeguinte,
   rotuloMes,
 } from './agrupar';
+import { linhasDoPdf } from './pdf';
 
 interface Previa {
   fileName: string;
@@ -40,6 +45,7 @@ interface Previa {
   plan: ImportPlan;
   erros: { index: number; reason: string }[];
   semSugestao: number;
+  fatura?: FaturaResult;
 }
 
 @Component({
@@ -138,11 +144,11 @@ interface Previa {
       <label>
         <input
           type="file"
-          accept=".ofx,.OFX"
+          accept=".ofx,.OFX,.pdf,.PDF"
           (change)="escolherArquivo($event)"
         />
         <span class="j-btn j-btn--primary" role="button" tabindex="0"
-          >Importar extrato</span
+          >Importar extrato ou fatura</span
         >
       </label>
     </header>
@@ -202,6 +208,21 @@ interface Previa {
             }
           </select>
         </label>
+        @if (p.fatura; as f) {
+          <div class="j-sub">
+            Fatura fechada em {{ dataBr(f.meta.closingDate) }} · vence em
+            {{ dataBr(f.meta.dueDate) }} · total
+            {{ f.meta.totalCents !== null ? money(f.meta.totalCents) : '—' }}
+          </div>
+          @for (w of f.warnings; track w) {
+            <jano-banner tone="warn">{{ w }}</jano-banner>
+          }
+          @if (!f.warnings.length) {
+            <jano-banner tone="good"
+              >As somas batem com os subtotais da fatura.</jano-banner
+            >
+          }
+        }
         <dl>
           <dt>Novas</dt>
           <dd class="j-num">
@@ -388,15 +409,35 @@ export class Transacoes {
     try {
       if (file.size > 10 * 1024 * 1024)
         throw new Error('O arquivo passa de 10 MB.');
-      const parsed = parseOfx(
-        decodeBytes(new Uint8Array(await file.arrayBuffer())),
-      );
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const ehPdf = /\.pdf$/i.test(file.name);
+      let fatura: FaturaResult | undefined;
+      let parsed: {
+        transactions: Parameters<typeof addDedupeKeys>[1];
+        errors: Previa['erros'];
+      };
+      if (ehPdf) {
+        const linhas = await linhasDoPdf(bytes);
+        if (!isFaturaBB(linhas)) {
+          throw new Error(
+            'Este PDF não parece uma fatura de cartão do Banco do Brasil.',
+          );
+        }
+        fatura = parseFaturaBB(linhas);
+        parsed = fatura;
+      } else {
+        parsed = parseOfx(decodeBytes(bytes));
+      }
       if (!parsed.transactions.length) {
         throw new Error(
-          'Não encontrei transações neste arquivo. Exporte o extrato em OFX no internet banking.',
+          'Não encontrei transações neste arquivo. Use o OFX do extrato ou o PDF da fatura.',
         );
       }
-      const accountId = this.previa()?.accountId ?? this.contas()[0]?.id ?? '';
+      const contas = this.contas();
+      const accountId = ehPdf
+        ? (contas.find((c) => c.type === 'cartao')?.id ?? contas[0]?.id ?? '')
+        : (this.previa()?.accountId ?? contas[0]?.id ?? '');
+      this.fatura = fatura;
       await this.montarPrevia(
         file.name,
         accountId,
@@ -408,6 +449,7 @@ export class Transacoes {
     }
   }
 
+  private fatura?: FaturaResult;
   private raw: Parameters<typeof addDedupeKeys>[1] = [];
   private errosArquivo: Previa['erros'] = [];
 
@@ -427,10 +469,15 @@ export class Transacoes {
       dates[dates.length - 1],
     );
     const plan = planImport(this.arquivoKeyed, existentes);
-    const semSugestao = plan.fresh.filter(
-      (t) => !suggestCategory(t.descriptionNorm, DEFAULT_RULES),
-    ).length;
-    this.previa.set({ fileName, accountId, plan, erros, semSugestao });
+    const semSugestao = plan.fresh.filter((t) => !this.nomeCategoria(t)).length;
+    this.previa.set({
+      fileName,
+      accountId,
+      plan,
+      erros,
+      semSugestao,
+      fatura: this.fatura,
+    });
   }
 
   protected async trocarConta(ev: Event): Promise<void> {
@@ -448,6 +495,22 @@ export class Transacoes {
     }
   }
 
+  private nomeCategoria(tx: {
+    descriptionNorm: string;
+    bankCategory?: string;
+    isTransfer?: boolean;
+  }): string | null {
+    if (tx.isTransfer) return null;
+    return (
+      suggestCategory(tx.descriptionNorm, DEFAULT_RULES) ??
+      bankCategoryToName(tx.bankCategory)
+    );
+  }
+
+  protected dataBr(iso: string | null): string {
+    return iso ? `${iso.slice(8)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : '—';
+  }
+
   protected cancelar(): void {
     this.previa.set(null);
   }
@@ -459,7 +522,7 @@ export class Transacoes {
     try {
       const catIds = new Set(this.categorias().map((c) => c.id));
       const rows = p.plan.fresh.map((tx) => {
-        const nome = suggestCategory(tx.descriptionNorm, DEFAULT_RULES);
+        const nome = this.nomeCategoria(tx);
         const id = nome ? slugify(nome) : null;
         return { tx, categoryId: id && catIds.has(id) ? id : null };
       });
