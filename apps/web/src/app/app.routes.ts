@@ -18,5 +18,11 @@ export const appRoutes: Route[] = [
     loadComponent: () =>
       import('./transacoes/transacoes').then((m) => m.Transacoes),
   },
+  {
+    path: 'orcamento',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./orcamento/orcamento').then((m) => m.Orcamento),
+  },
   { path: '**', redirectTo: '' },
 ];

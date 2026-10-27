@@ -5,3 +5,4 @@ export * from './lib/firebase/paths';
 export * from './lib/data/models';
 export * from './lib/data/transactions.repository';
 export * from './lib/data/catalog.repository';
+export * from './lib/data/budgets.repository';
