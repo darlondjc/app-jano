@@ -30,5 +30,10 @@ export const appRoutes: Route[] = [
     loadComponent: () =>
       import('./categorias/categorias').then((m) => m.Categorias),
   },
+  {
+    path: 'novidades',
+    canActivate: [authGuard],
+    loadComponent: () => import('./versao/novidades').then((m) => m.Novidades),
+  },
   { path: '**', redirectTo: '' },
 ];

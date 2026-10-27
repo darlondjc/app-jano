@@ -30,6 +30,8 @@ import {
   JanoGoalBar,
   JanoKpiCard,
 } from '@jano/ui';
+import { haNovidades } from '../versao/novidades';
+import { VERSAO_ATUAL } from '../versao/changelog';
 import { rotuloMes } from '../transacoes/agrupar';
 
 @Component({
@@ -100,6 +102,18 @@ import { rotuloMes } from '../transacoes/agrupar';
     .vazio {
       margin-top: 24px;
     }
+    .ponto {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-left: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+    .versao {
+      margin-top: 32px;
+      text-align: center;
+    }
     nav {
       display: flex;
       gap: 8px;
@@ -122,6 +136,12 @@ import { rotuloMes } from '../transacoes/agrupar';
       <a janoButton variant="secondary" routerLink="/transacoes">Transações</a>
       <a janoButton variant="secondary" routerLink="/orcamento">Orçamento</a>
       <a janoButton variant="secondary" routerLink="/categorias">Categorias</a>
+      <a janoButton variant="ghost" routerLink="/novidades"
+        >Novidades
+        @if (novidades) {
+          <span class="ponto" aria-label="há novidades"></span>
+        }
+      </a>
     </nav>
 
     @if (erro()) {
@@ -218,9 +238,13 @@ import { rotuloMes } from '../transacoes/agrupar';
         }
       </div>
     }
+
+    <p class="j-sub versao">Jano v{{ versao }}</p>
   `,
 })
 export class Inicio {
+  protected readonly novidades = haNovidades();
+  protected readonly versao = VERSAO_ATUAL;
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly txRepo = inject(TransactionsRepository);

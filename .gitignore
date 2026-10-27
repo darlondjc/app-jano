@@ -54,3 +54,6 @@ vitest.config.*.timestamp*
 
 # Dados pessoais nunca vão para o repositório (público)
 *.pdf
+
+# Gerado no deploy
+apps/web/public/version.json
