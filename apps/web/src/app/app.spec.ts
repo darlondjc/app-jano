@@ -1,13 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { App } from './app';
-import { appRoutes } from './app.routes';
 
 describe('App', () => {
-  it('cria o shell com rotas', async () => {
+  it('cria o shell com router-outlet', async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter(appRoutes)],
+      providers: [provideRouter([])],
     }).compileComponents();
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();

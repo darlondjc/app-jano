@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal,
+} from '@angular/core';
+import { Router } from '@angular/router';
+import { AuthService } from '@jano/data-access';
 import { JanoBanner, JanoButton } from '@jano/ui';
 
 @Component({
@@ -71,12 +78,21 @@ import { JanoBanner, JanoButton } from '@jano/ui';
   `,
 })
 export class Entrar {
+  private readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   protected readonly carregando = signal(false);
   protected readonly erro = signal(false);
 
-  protected entrar(): void {
-    // F0: o fluxo OIDC real chega com a API (GET /v1/auth/google/start).
+  protected async entrar(): Promise<void> {
+    this.erro.set(false);
     this.carregando.set(true);
-    window.location.href = '/v1/auth/google/start';
+    try {
+      await this.auth.signInWithGoogle();
+      await this.router.navigateByUrl('/');
+    } catch {
+      this.erro.set(true);
+    } finally {
+      this.carregando.set(false);
+    }
   }
 }

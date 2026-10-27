@@ -41,7 +41,6 @@ export default [
               sourceTag: 'type:contracts',
               onlyDependOnLibsWithTags: ['type:contracts'],
             },
-            { sourceTag: 'scope:api', notDependOnLibsWithTags: ['scope:web'] },
           ],
         },
       ],

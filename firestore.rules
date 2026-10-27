@@ -1,0 +1,31 @@
+rules_version = '2';
+
+// Acesso só para e-mails da lista de permitidos (documentos em /allowlist/{email},
+// criados à mão no console) e cada pessoa só enxerga o que está sob users/{uid}.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function allowed() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/allowlist/$(request.auth.token.email));
+    }
+
+    // Ninguém escreve na lista pelo app; ela só é editada pelo console.
+    match /allowlist/{email} {
+      allow get: if signedIn() && request.auth.token.email == email;
+      allow list, write: if false;
+    }
+
+    match /users/{uid}/{document=**} {
+      allow read, write: if allowed() && request.auth.uid == uid;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

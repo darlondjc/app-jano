@@ -1,9 +1,16 @@
 import { Route } from '@angular/router';
+import { authGuard } from './auth.guard';
 
 export const appRoutes: Route[] = [
   {
     path: 'entrar',
     loadComponent: () => import('./entrar/entrar').then((m) => m.Entrar),
   },
-  { path: '', pathMatch: 'full', redirectTo: 'entrar' },
+  {
+    path: '',
+    pathMatch: 'full',
+    canActivate: [authGuard],
+    loadComponent: () => import('./inicio/inicio').then((m) => m.Inicio),
+  },
+  { path: '**', redirectTo: '' },
 ];
