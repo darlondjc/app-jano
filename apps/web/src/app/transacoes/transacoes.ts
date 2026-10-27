@@ -56,7 +56,7 @@ interface Previa {
   styles: `
     :host {
       display: block;
-      max-width: 720px;
+      max-width: 1280px;
       margin: 0 auto;
       padding: 24px 16px 48px;
     }
@@ -97,6 +97,19 @@ interface Previa {
     .lista .j-tx:last-child {
       border-bottom: 0;
     }
+    .linha {
+      grid-template-columns: auto 1fr 220px 130px;
+    }
+    @media (max-width: 720px) {
+      .linha {
+        grid-template-columns: auto 1fr auto;
+      }
+      .linha select {
+        grid-column: 2 / -1;
+        grid-row: 2;
+        margin-top: 6px;
+      }
+    }
     select {
       height: 36px;
       border: 1px solid var(--border-strong);
@@ -105,7 +118,7 @@ interface Previa {
       color: var(--text);
       font: 400 14px/20px var(--font-sans);
       padding: 0 8px;
-      max-width: 150px;
+      width: 100%;
     }
     .previa {
       margin-top: 16px;
@@ -282,7 +295,7 @@ interface Previa {
         <div class="dia">{{ g.label }}</div>
         <div class="lista">
           @for (t of g.items; track t.id) {
-            <div class="j-tx" style="grid-template-columns: auto 1fr auto auto">
+            <div class="j-tx linha">
               <jano-category-badge
                 [icon]="cat(t.categoryId)?.icon ?? 'etiqueta'"
                 [colorToken]="cat(t.categoryId)?.color ?? 'cat-1'"

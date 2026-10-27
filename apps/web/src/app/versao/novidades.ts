@@ -26,7 +26,7 @@ const ROTULO: Record<TipoMudanca, string> = {
   styles: `
     :host {
       display: block;
-      max-width: 720px;
+      max-width: 960px;
       margin: 0 auto;
       padding: 24px 16px 48px;
     }
