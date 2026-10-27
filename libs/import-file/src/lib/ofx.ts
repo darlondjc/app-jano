@@ -14,16 +14,20 @@ export function parseOfx(text: string): ParseResult {
     const amount = parseAmountToCents(field(block, 'TRNAMT') ?? '');
     const name = field(block, 'NAME');
     const memo = field(block, 'MEMO');
-    if (!date)
-      return result.errors.push({
+    if (!date) {
+      result.errors.push({
         index,
         reason: 'Data inválida ou ausente (DTPOSTED).',
       });
-    if (amount === null)
-      return result.errors.push({
+      return;
+    }
+    if (amount === null) {
+      result.errors.push({
         index,
         reason: 'Valor inválido ou ausente (TRNAMT).',
       });
+      return;
+    }
     const description = (memo && memo !== name ? [name, memo] : [name])
       .filter(Boolean)
       .join(' ')

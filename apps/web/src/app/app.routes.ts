@@ -12,5 +12,11 @@ export const appRoutes: Route[] = [
     canActivate: [authGuard],
     loadComponent: () => import('./inicio/inicio').then((m) => m.Inicio),
   },
+  {
+    path: 'transacoes',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./transacoes/transacoes').then((m) => m.Transacoes),
+  },
   { path: '**', redirectTo: '' },
 ];

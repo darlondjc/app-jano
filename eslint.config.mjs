@@ -36,7 +36,11 @@ export default [
             },
             {
               sourceTag: 'type:data-access',
-              onlyDependOnLibsWithTags: ['type:data-access', 'type:contracts'],
+              onlyDependOnLibsWithTags: [
+                'type:data-access',
+                'type:contracts',
+                'type:import',
+              ],
             },
             {
               sourceTag: 'type:engine',

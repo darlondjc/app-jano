@@ -1,5 +1,4 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { initializeApp } from 'firebase/app';
 import {
   GoogleAuthProvider,
   getAuth,
@@ -8,13 +7,13 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
-import { FIREBASE_CONFIG } from './firebase.config';
+import { FirebaseService } from './firebase.service';
 
 export type AuthState = 'carregando' | 'deslogado' | 'logado';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly auth = getAuth(initializeApp(inject(FIREBASE_CONFIG)));
+  private readonly auth = inject(FirebaseService).auth;
   private readonly _user = signal<User | null>(null);
   private readonly _ready = signal(false);
 

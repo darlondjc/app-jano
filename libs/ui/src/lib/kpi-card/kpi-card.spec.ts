@@ -12,7 +12,6 @@ function text(valueCents: number): string {
 }
 
 describe('JanoKpiCard', () => {
-  it('separa reais e centavos', () =>
-    expect(text(483217)).toBe('R$ 4.832,17'));
+  it('separa reais e centavos', () => expect(text(483217)).toBe('R$ 4.832,17'));
   it('mostra sinal de menos', () => expect(text(-5)).toBe('−R$ 0,05'));
 });

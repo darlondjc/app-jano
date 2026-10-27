@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '@jano/data-access';
 import { JanoButton } from '@jano/ui';
 
 @Component({
   selector: 'jano-inicio',
-  imports: [JanoButton],
+  imports: [JanoButton, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
