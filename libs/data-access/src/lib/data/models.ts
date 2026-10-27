@@ -27,21 +27,78 @@ export interface CategoryDoc {
   name: string;
   /** Nome do token de cor, ex.: "cat-3". */
   color: string;
+  /** Chave do ícone (ver ICONS em @jano/ui). */
+  icon: string;
   type: 'despesa' | 'receita';
   position: number;
 }
 
-export const DEFAULT_CATEGORIES: Omit<CategoryDoc, 'id'>[] = [
-  { name: 'Moradia', color: 'cat-1', type: 'despesa', position: 0 },
-  { name: 'Mercado', color: 'cat-3', type: 'despesa', position: 1 },
-  { name: 'Restaurantes', color: 'cat-8', type: 'despesa', position: 2 },
-  { name: 'Transporte', color: 'cat-2', type: 'despesa', position: 3 },
-  { name: 'Saúde', color: 'cat-4', type: 'despesa', position: 4 },
-  { name: 'Lazer', color: 'cat-6', type: 'despesa', position: 5 },
-  { name: 'Assinaturas', color: 'cat-5', type: 'despesa', position: 6 },
-  { name: 'Educação', color: 'cat-7', type: 'despesa', position: 7 },
-  { name: 'Outros', color: 'cat-1', type: 'despesa', position: 8 },
-  { name: 'Receita', color: 'cat-1', type: 'receita', position: 9 },
+/** Cores disponíveis para categorias (tokens do design system). */
+export const CATEGORY_COLORS = [
+  'cat-1',
+  'cat-2',
+  'cat-3',
+  'cat-4',
+  'cat-5',
+  'cat-6',
+  'cat-7',
+  'cat-8',
+] as const;
+
+type DefaultCategory = Omit<CategoryDoc, 'id' | 'position'>;
+
+/** Categorias sugeridas. A primeira vez cria todas; depois cada pessoa apaga e edita as suas. */
+export const DEFAULT_CATEGORIES: DefaultCategory[] = [
+  { name: 'Moradia', color: 'cat-1', icon: 'casa', type: 'despesa' },
+  { name: 'Mercado', color: 'cat-3', icon: 'carrinho', type: 'despesa' },
+  { name: 'Restaurantes', color: 'cat-8', icon: 'talheres', type: 'despesa' },
+  { name: 'Transporte', color: 'cat-2', icon: 'carro', type: 'despesa' },
+  { name: 'Combustível', color: 'cat-2', icon: 'combustivel', type: 'despesa' },
+  { name: 'Saúde', color: 'cat-4', icon: 'saude', type: 'despesa' },
+  { name: 'Farmácia', color: 'cat-4', icon: 'farmacia', type: 'despesa' },
+  { name: 'Lazer', color: 'cat-6', icon: 'cinema', type: 'despesa' },
+  { name: 'Assinaturas', color: 'cat-5', icon: 'assinatura', type: 'despesa' },
+  { name: 'Educação', color: 'cat-7', icon: 'educacao', type: 'despesa' },
+  {
+    name: 'Celular e internet',
+    color: 'cat-2',
+    icon: 'internet',
+    type: 'despesa',
+  },
+  { name: 'Compras', color: 'cat-7', icon: 'compras', type: 'despesa' },
+  { name: 'Vestuário', color: 'cat-8', icon: 'roupa', type: 'despesa' },
+  {
+    name: 'Beleza e cuidados',
+    color: 'cat-8',
+    icon: 'beleza',
+    type: 'despesa',
+  },
+  { name: 'Academia', color: 'cat-7', icon: 'academia', type: 'despesa' },
+  { name: 'Viagens', color: 'cat-6', icon: 'viagem', type: 'despesa' },
+  { name: 'Pets', color: 'cat-3', icon: 'pet', type: 'despesa' },
+  { name: 'Filhos', color: 'cat-6', icon: 'crianca', type: 'despesa' },
+  {
+    name: 'Presentes e doações',
+    color: 'cat-4',
+    icon: 'presente',
+    type: 'despesa',
+  },
+  {
+    name: 'Casa e manutenção',
+    color: 'cat-1',
+    icon: 'manutencao',
+    type: 'despesa',
+  },
+  { name: 'Seguros', color: 'cat-2', icon: 'seguro', type: 'despesa' },
+  { name: 'Impostos e taxas', color: 'cat-5', icon: 'banco', type: 'despesa' },
+  { name: 'Outros', color: 'cat-1', icon: 'outros', type: 'despesa' },
+  { name: 'Receita', color: 'cat-1', icon: 'salario', type: 'receita' },
+  {
+    name: 'Rendimentos',
+    color: 'cat-1',
+    icon: 'investimento',
+    type: 'receita',
+  },
 ];
 
 export const DEFAULT_ACCOUNTS: Omit<AccountDoc, 'id'>[] = [

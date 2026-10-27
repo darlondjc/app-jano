@@ -23,12 +23,25 @@ import {
   monthTotals,
   tightestGoals,
 } from '@jano/engine';
-import { JanoBanner, JanoButton, JanoGoalBar, JanoKpiCard } from '@jano/ui';
+import {
+  JanoBanner,
+  JanoButton,
+  JanoCategoryBadge,
+  JanoGoalBar,
+  JanoKpiCard,
+} from '@jano/ui';
 import { rotuloMes } from '../transacoes/agrupar';
 
 @Component({
   selector: 'jano-inicio',
-  imports: [RouterLink, JanoButton, JanoBanner, JanoGoalBar, JanoKpiCard],
+  imports: [
+    RouterLink,
+    JanoButton,
+    JanoBanner,
+    JanoGoalBar,
+    JanoKpiCard,
+    JanoCategoryBadge,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -105,6 +118,7 @@ import { rotuloMes } from '../transacoes/agrupar';
     <nav aria-label="Seções">
       <a janoButton variant="secondary" routerLink="/transacoes">Transações</a>
       <a janoButton variant="secondary" routerLink="/orcamento">Orçamento</a>
+      <a janoButton variant="secondary" routerLink="/categorias">Categorias</a>
     </nav>
 
     @if (erro()) {
@@ -162,7 +176,12 @@ import { rotuloMes } from '../transacoes/agrupar';
       <h2>Últimas transações <a routerLink="/transacoes">Ver todas</a></h2>
       <div class="lista">
         @for (t of recentes(); track t.id) {
-          <div class="j-tx" style="grid-template-columns: 1fr auto">
+          <div class="j-tx" style="grid-template-columns: auto 1fr auto">
+            <jano-category-badge
+              [icon]="cat(t.categoryId)?.icon ?? 'etiqueta'"
+              [colorToken]="cat(t.categoryId)?.color ?? 'cat-1'"
+              [size]="32"
+            />
             <div>
               <div class="j-tx__name">{{ t.description }}</div>
               <div class="j-tx__sub">
@@ -227,6 +246,10 @@ export class Inicio {
 
   protected nome(): string {
     return this.auth.user()?.displayName?.split(' ')[0] ?? '';
+  }
+
+  protected cat(id: string | null): CategoryDoc | undefined {
+    return id ? this.categorias().find((c) => c.id === id) : undefined;
   }
 
   protected nomeCategoria(id: string | null): string {

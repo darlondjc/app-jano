@@ -6,3 +6,6 @@ export * from './lib/kpi-card/kpi-card';
 export * from './lib/chip/chip';
 export * from './lib/splash/splash';
 export * from './lib/logo/logo';
+export * from './lib/icon/icons';
+export * from './lib/icon/icon';
+export * from './lib/icon/category-badge';
