@@ -25,7 +25,7 @@ import {
   suggestCategory,
   type ImportPlan,
 } from '@jano/import-file';
-import { JanoBanner, JanoButton } from '@jano/ui';
+import { JanoBanner, JanoButton, JanoCategoryBadge } from '@jano/ui';
 import {
   agruparPorDia,
   gastosDoMes,
@@ -44,7 +44,7 @@ interface Previa {
 
 @Component({
   selector: 'jano-transacoes',
-  imports: [RouterLink, JanoButton, JanoBanner],
+  imports: [RouterLink, JanoButton, JanoBanner, JanoCategoryBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -133,6 +133,7 @@ interface Previa {
       <div>
         <a routerLink="/" class="j-cap">← Início</a>
         <h1>Transações</h1>
+        <a routerLink="/categorias" class="j-cap">Gerenciar categorias</a>
       </div>
       <label>
         <input
@@ -256,7 +257,12 @@ interface Previa {
         <div class="dia">{{ g.label }}</div>
         <div class="lista">
           @for (t of g.items; track t.id) {
-            <div class="j-tx" style="grid-template-columns: 1fr auto auto">
+            <div class="j-tx" style="grid-template-columns: auto 1fr auto auto">
+              <jano-category-badge
+                [icon]="cat(t.categoryId)?.icon ?? 'etiqueta'"
+                [colorToken]="cat(t.categoryId)?.color ?? 'cat-1'"
+                [size]="32"
+              />
               <div>
                 <div class="j-tx__name">{{ t.description }}</div>
                 <div class="j-tx__sub">{{ nomeConta(t.accountId) }}</div>
@@ -348,6 +354,10 @@ export class Transacoes {
   protected mudarMes(delta: 1 | -1): void {
     this.month.update((m) => (delta === 1 ? mesSeguinte(m) : mesAnterior(m)));
     void this.carregar();
+  }
+
+  protected cat(id: string | null): CategoryDoc | undefined {
+    return id ? this.categorias().find((c) => c.id === id) : undefined;
   }
 
   protected nomeConta(id: string): string {
