@@ -5,7 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import {
   AuthService,
   BudgetsRepository,
@@ -30,7 +30,7 @@ import {
   JanoGoalBar,
   JanoKpiCard,
 } from '@jano/ui';
-import { rotuloMes } from '../transacoes/agrupar';
+import { classeValor, rotuloMes } from '../transacoes/agrupar';
 
 @Component({
   selector: 'jano-inicio',
@@ -46,7 +46,7 @@ import { rotuloMes } from '../transacoes/agrupar';
   styles: `
     :host {
       display: block;
-      max-width: 960px;
+      max-width: 1280px;
       margin: 0 auto;
       padding: 24px 16px 48px;
     }
@@ -94,17 +94,8 @@ import { rotuloMes } from '../transacoes/agrupar';
     .lista .j-tx:last-child {
       border-bottom: 0;
     }
-    .entrada {
-      color: var(--positive);
-    }
     .vazio {
       margin-top: 24px;
-    }
-    nav {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
-      flex-wrap: wrap;
     }
   `,
   template: `
@@ -113,16 +104,7 @@ import { rotuloMes } from '../transacoes/agrupar';
         <h1>Olá, {{ nome() }}</h1>
         <div class="j-sub">{{ mes() }}</div>
       </div>
-      <button janoButton variant="ghost" type="button" (click)="sair()">
-        Sair
-      </button>
     </header>
-
-    <nav aria-label="Seções">
-      <a janoButton variant="secondary" routerLink="/transacoes">Transações</a>
-      <a janoButton variant="secondary" routerLink="/orcamento">Orçamento</a>
-      <a janoButton variant="secondary" routerLink="/categorias">Categorias</a>
-    </nav>
 
     @if (erro()) {
       <jano-banner tone="danger" title="Não consegui carregar seus dados.">{{
@@ -145,13 +127,21 @@ import { rotuloMes } from '../transacoes/agrupar';
       </div>
     } @else {
       <section class="kpis" aria-label="Resumo do mês">
-        <jano-kpi-card label="Sobra do mês" [valueCents]="totais().net">
+        <jano-kpi-card
+          label="Sobra do mês"
+          [valueCents]="totais().net"
+          tone="auto"
+        >
           <div class="j-sub">receitas menos gastos até agora</div>
         </jano-kpi-card>
-        <jano-kpi-card label="Gastos" [valueCents]="totais().spent">
+        <jano-kpi-card label="Gastos" [valueCents]="totais().spent" tone="out">
           <div class="j-sub">tudo que saiu no mês, sem transferências</div>
         </jano-kpi-card>
-        <jano-kpi-card label="Receitas" [valueCents]="totais().income">
+        <jano-kpi-card
+          label="Receitas"
+          [valueCents]="totais().income"
+          tone="in"
+        >
           <div class="j-sub">tudo que entrou no mês, sem transferências</div>
         </jano-kpi-card>
       </section>
@@ -207,11 +197,7 @@ import { rotuloMes } from '../transacoes/agrupar';
                 {{ dia(t.date) }} · {{ nomeCategoria(t.categoryId) }}
               </div>
             </div>
-            <div
-              [class]="
-                'j-tx__amount j-num' + (t.amountCents > 0 ? ' entrada' : '')
-              "
-            >
+            <div [class]="classeValor(t)">
               {{ t.amountCents > 0 ? '+' : '' }}{{ money(t.amountCents) }}
             </div>
           </div>
@@ -222,12 +208,12 @@ import { rotuloMes } from '../transacoes/agrupar';
 })
 export class Inicio {
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly txRepo = inject(TransactionsRepository);
   private readonly budgetRepo = inject(BudgetsRepository);
   private readonly catalog = inject(CatalogRepository);
 
   protected readonly money = formatBRL;
+  protected readonly classeValor = classeValor;
   private readonly hoje = new Date();
   private readonly month = this.hoje.toISOString().slice(0, 7);
   protected readonly mes = computed(() => rotuloMes(this.month));
@@ -301,10 +287,5 @@ export class Inicio {
     } finally {
       this.carregando.set(false);
     }
-  }
-
-  protected async sair(): Promise<void> {
-    await this.auth.signOut();
-    await this.router.navigateByUrl('/entrar');
   }
 }

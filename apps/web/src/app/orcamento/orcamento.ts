@@ -5,7 +5,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import {
   AuthService,
   BudgetsRepository,
@@ -27,12 +26,12 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
 
 @Component({
   selector: 'jano-orcamento',
-  imports: [RouterLink, JanoButton, JanoBanner, JanoGoalBar, JanoKpiCard],
+  imports: [JanoButton, JanoBanner, JanoGoalBar, JanoKpiCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
       display: block;
-      max-width: 720px;
+      max-width: 1280px;
       margin: 0 auto;
       padding: 24px 16px 48px;
     }
@@ -89,7 +88,6 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
     }
   `,
   template: `
-    <a janoButton variant="ghost" [small]="true" routerLink="/">‹ Início</a>
     <h1>Orçamento</h1>
     <div class="mes">
       <button
@@ -119,7 +117,11 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
       }}</jano-banner>
     }
 
-    <jano-kpi-card label="Gasto do mês" [valueCents]="totais().spent">
+    <jano-kpi-card
+      label="Gasto do mês"
+      [valueCents]="totais().spent"
+      tone="out"
+    >
       <div class="j-sub">
         de {{ money(limiteTotal()) }} em metas · receitas
         {{ money(totais().income) }}

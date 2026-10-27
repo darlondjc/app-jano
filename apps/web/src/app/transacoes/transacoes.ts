@@ -5,7 +5,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import {
   AuthService,
   CatalogRepository,
@@ -32,6 +31,7 @@ import {
 import { JanoBanner, JanoButton, JanoCategoryBadge } from '@jano/ui';
 import {
   agruparPorDia,
+  classeValor,
   gastosDoMes,
   mesAnterior,
   mesSeguinte,
@@ -50,12 +50,12 @@ interface Previa {
 
 @Component({
   selector: 'jano-transacoes',
-  imports: [RouterLink, JanoButton, JanoBanner, JanoCategoryBadge],
+  imports: [JanoButton, JanoBanner, JanoCategoryBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
       display: block;
-      max-width: 720px;
+      max-width: 1280px;
       margin: 0 auto;
       padding: 24px 16px 48px;
     }
@@ -96,8 +96,18 @@ interface Previa {
     .lista .j-tx:last-child {
       border-bottom: 0;
     }
-    .entrada {
-      color: var(--positive);
+    .linha {
+      grid-template-columns: auto 1fr 220px 130px;
+    }
+    @media (max-width: 720px) {
+      .linha {
+        grid-template-columns: auto 1fr auto;
+      }
+      .linha select {
+        grid-column: 2 / -1;
+        grid-row: 2;
+        margin-top: 6px;
+      }
     }
     select {
       height: 36px;
@@ -107,7 +117,7 @@ interface Previa {
       color: var(--text);
       font: 400 14px/20px var(--font-sans);
       padding: 0 8px;
-      max-width: 150px;
+      width: 100%;
     }
     .previa {
       margin-top: 16px;
@@ -137,15 +147,7 @@ interface Previa {
   template: `
     <header>
       <div>
-        <a janoButton variant="ghost" [small]="true" routerLink="/">‹ Início</a>
         <h1>Transações</h1>
-        <a
-          janoButton
-          variant="secondary"
-          [small]="true"
-          routerLink="/categorias"
-          >Gerenciar categorias</a
-        >
       </div>
       <label>
         <input
@@ -284,7 +286,7 @@ interface Previa {
         <div class="dia">{{ g.label }}</div>
         <div class="lista">
           @for (t of g.items; track t.id) {
-            <div class="j-tx" style="grid-template-columns: auto 1fr auto auto">
+            <div class="j-tx linha">
               <jano-category-badge
                 [icon]="cat(t.categoryId)?.icon ?? 'etiqueta'"
                 [colorToken]="cat(t.categoryId)?.color ?? 'cat-1'"
@@ -307,12 +309,7 @@ interface Previa {
                   </option>
                 }
               </select>
-              <div
-                [class]="
-                  'j-tx__amount j-num' + (t.amountCents > 0 ? ' entrada' : '')
-                "
-                style="margin-left:12px"
-              >
+              <div [class]="classeValor(t)" style="margin-left:12px">
                 {{ t.amountCents > 0 ? '+' : '' }}{{ money(t.amountCents) }}
               </div>
             </div>
@@ -328,6 +325,7 @@ export class Transacoes {
   private readonly catalog = inject(CatalogRepository);
 
   protected readonly money = formatBRL;
+  protected readonly classeValor = classeValor;
   protected readonly month = signal(new Date().toISOString().slice(0, 7));
   protected readonly txs = signal<TransactionDoc[]>([]);
   protected readonly contas = signal<AccountDoc[]>([]);

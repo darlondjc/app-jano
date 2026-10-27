@@ -8,27 +8,35 @@ export const appRoutes: Route[] = [
   },
   {
     path: '',
-    pathMatch: 'full',
     canActivate: [authGuard],
-    loadComponent: () => import('./inicio/inicio').then((m) => m.Inicio),
-  },
-  {
-    path: 'transacoes',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./transacoes/transacoes').then((m) => m.Transacoes),
-  },
-  {
-    path: 'orcamento',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./orcamento/orcamento').then((m) => m.Orcamento),
-  },
-  {
-    path: 'categorias',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./categorias/categorias').then((m) => m.Categorias),
+    loadComponent: () => import('./shell/shell').then((m) => m.Shell),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () => import('./inicio/inicio').then((m) => m.Inicio),
+      },
+      {
+        path: 'transacoes',
+        loadComponent: () =>
+          import('./transacoes/transacoes').then((m) => m.Transacoes),
+      },
+      {
+        path: 'orcamento',
+        loadComponent: () =>
+          import('./orcamento/orcamento').then((m) => m.Orcamento),
+      },
+      {
+        path: 'categorias',
+        loadComponent: () =>
+          import('./categorias/categorias').then((m) => m.Categorias),
+      },
+      {
+        path: 'novidades',
+        loadComponent: () =>
+          import('./versao/novidades').then((m) => m.Novidades),
+      },
+    ],
   },
   { path: '**', redirectTo: '' },
 ];

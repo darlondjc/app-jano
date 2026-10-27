@@ -74,3 +74,12 @@ export function rotuloMes(month: string): string {
   const nome = MONTHS[m - 1];
   return `${nome[0].toUpperCase()}${nome.slice(1)} ${y}`;
 }
+
+/** Classe de cor do valor: verde entrada, vermelho saída, cinza transferência. */
+export function classeValor(t: {
+  amountCents: number;
+  isTransfer: boolean;
+}): string {
+  const tom = t.isTransfer ? 'neutral' : t.amountCents > 0 ? 'in' : 'out';
+  return `j-tx__amount j-num j-tx__amount--${tom}`;
+}

@@ -24,6 +24,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: node tools/build-version.mjs
       - run: npx nx build web --base-href=/app-jano/
       # GitHub Pages não conhece rotas do SPA: 404.html serve o mesmo app.
       - run: cp dist/apps/web/browser/index.html dist/apps/web/browser/404.html
