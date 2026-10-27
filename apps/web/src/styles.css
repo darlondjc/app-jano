@@ -1,0 +1,18 @@
+@import '../../../libs/ui/src/styles/tokens.css';
+@import '../../../libs/ui/src/styles/components.css';
+
+html {
+  color-scheme: light dark;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}

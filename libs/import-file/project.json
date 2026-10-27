@@ -1,0 +1,9 @@
+{
+  "name": "import-file",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/import-file/src",
+  "projectType": "library",
+  "tags": ["type:import", "scope:shared"],
+  "// targets": "to see all targets run: nx show project import-file --web",
+  "targets": {}
+}

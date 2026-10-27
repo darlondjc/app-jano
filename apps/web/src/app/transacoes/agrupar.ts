@@ -1,0 +1,76 @@
+import type { TransactionDoc } from '@jano/data-access';
+
+export interface DayGroup {
+  date: string;
+  label: string;
+  items: TransactionDoc[];
+}
+
+const WEEKDAYS = [
+  'Domingo',
+  'Segunda',
+  'Terça',
+  'Quarta',
+  'Quinta',
+  'Sexta',
+  'Sábado',
+];
+const MONTHS = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+];
+
+/** "2026-10-22" → "Quinta, 22 de outubro" (sem depender de fuso). */
+export function dayLabel(date: string): string {
+  const [y, m, d] = date.split('-').map(Number);
+  const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return `${WEEKDAYS[weekday]}, ${d} de ${MONTHS[m - 1]}`;
+}
+
+/** Agrupa por dia, do mais recente ao mais antigo, mantendo a ordem dentro do dia. */
+export function agruparPorDia(txs: TransactionDoc[]): DayGroup[] {
+  const map = new Map<string, TransactionDoc[]>();
+  for (const t of [...txs].sort((a, b) => b.date.localeCompare(a.date))) {
+    (map.get(t.date) ?? map.set(t.date, []).get(t.date)!).push(t);
+  }
+  return [...map].map(([date, items]) => ({
+    date,
+    label: dayLabel(date),
+    items,
+  }));
+}
+
+/** Soma dos gastos do mês: só saídas, sem transferências entre contas. */
+export function gastosDoMes(txs: TransactionDoc[]): number {
+  return txs.reduce(
+    (sum, t) =>
+      t.amountCents < 0 && !t.isTransfer ? sum - t.amountCents : sum,
+    0,
+  );
+}
+
+export function mesAnterior(month: string): string {
+  const [y, m] = month.split('-').map(Number);
+  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+}
+
+export function mesSeguinte(month: string): string {
+  const [y, m] = month.split('-').map(Number);
+  return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+}
+
+export function rotuloMes(month: string): string {
+  const [y, m] = month.split('-').map(Number);
+  const nome = MONTHS[m - 1];
+  return `${nome[0].toUpperCase()}${nome.slice(1)} ${y}`;
+}
