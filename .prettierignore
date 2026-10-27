@@ -5,3 +5,7 @@
 /.nx/workspace-data
 .nx/self-healing
 .angular
+
+# Gerados por tools/build-tokens.mjs
+libs/ui/src/styles/tokens.css
+libs/ui/src/styles/tokens.ts
