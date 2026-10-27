@@ -328,6 +328,18 @@ jano-kpi-card .j-kpi {
 .j-tx__amount--in {
   color: var(--positive);
 }
+.j-tx__amount--out {
+  color: var(--danger);
+}
+.j-tx__amount--neutral {
+  color: var(--text-2);
+}
+.j-kpi__value--in {
+  color: var(--positive);
+}
+.j-kpi__value--out {
+  color: var(--danger);
+}
 .j-day {
   font: 600 12px/16px var(--font-sans);
   letter-spacing: 0.06em;

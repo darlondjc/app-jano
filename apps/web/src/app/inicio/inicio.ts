@@ -32,7 +32,7 @@ import {
 } from '@jano/ui';
 import { haNovidades } from '../versao/novidades';
 import { VERSAO_ATUAL } from '../versao/changelog';
-import { rotuloMes } from '../transacoes/agrupar';
+import { classeValor, rotuloMes } from '../transacoes/agrupar';
 
 @Component({
   selector: 'jano-inicio',
@@ -95,9 +95,6 @@ import { rotuloMes } from '../transacoes/agrupar';
     }
     .lista .j-tx:last-child {
       border-bottom: 0;
-    }
-    .entrada {
-      color: var(--positive);
     }
     .vazio {
       margin-top: 24px;
@@ -165,13 +162,21 @@ import { rotuloMes } from '../transacoes/agrupar';
       </div>
     } @else {
       <section class="kpis" aria-label="Resumo do mês">
-        <jano-kpi-card label="Sobra do mês" [valueCents]="totais().net">
+        <jano-kpi-card
+          label="Sobra do mês"
+          [valueCents]="totais().net"
+          tone="auto"
+        >
           <div class="j-sub">receitas menos gastos até agora</div>
         </jano-kpi-card>
-        <jano-kpi-card label="Gastos" [valueCents]="totais().spent">
+        <jano-kpi-card label="Gastos" [valueCents]="totais().spent" tone="out">
           <div class="j-sub">tudo que saiu no mês, sem transferências</div>
         </jano-kpi-card>
-        <jano-kpi-card label="Receitas" [valueCents]="totais().income">
+        <jano-kpi-card
+          label="Receitas"
+          [valueCents]="totais().income"
+          tone="in"
+        >
           <div class="j-sub">tudo que entrou no mês, sem transferências</div>
         </jano-kpi-card>
       </section>
@@ -227,11 +232,7 @@ import { rotuloMes } from '../transacoes/agrupar';
                 {{ dia(t.date) }} · {{ nomeCategoria(t.categoryId) }}
               </div>
             </div>
-            <div
-              [class]="
-                'j-tx__amount j-num' + (t.amountCents > 0 ? ' entrada' : '')
-              "
-            >
+            <div [class]="classeValor(t)">
               {{ t.amountCents > 0 ? '+' : '' }}{{ money(t.amountCents) }}
             </div>
           </div>
@@ -252,6 +253,7 @@ export class Inicio {
   private readonly catalog = inject(CatalogRepository);
 
   protected readonly money = formatBRL;
+  protected readonly classeValor = classeValor;
   private readonly hoje = new Date();
   private readonly month = this.hoje.toISOString().slice(0, 7);
   protected readonly mes = computed(() => rotuloMes(this.month));

@@ -119,7 +119,11 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
       }}</jano-banner>
     }
 
-    <jano-kpi-card label="Gasto do mês" [valueCents]="totais().spent">
+    <jano-kpi-card
+      label="Gasto do mês"
+      [valueCents]="totais().spent"
+      tone="out"
+    >
       <div class="j-sub">
         de {{ money(limiteTotal()) }} em metas · receitas
         {{ money(totais().income) }}

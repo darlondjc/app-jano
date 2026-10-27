@@ -14,7 +14,9 @@ import {
       <div class="j-kpi__label">{{ label() }}</div>
       <div
         [class]="
-          'j-kpi__value j-num' + (balance() ? ' j-kpi__value--balance' : '')
+          'j-kpi__value j-num' +
+          (balance() ? ' j-kpi__value--balance' : '') +
+          toneClass()
         "
       >
         {{ sign() }}R$ {{ reais()
@@ -29,6 +31,13 @@ export class JanoKpiCard {
   readonly valueCents = input.required<number>();
   /** Destaque maior, para o saldo. */
   readonly balance = input(false);
+  /** Cor do valor: entrada (verde), saída (vermelho), automático pelo sinal ou nenhuma. */
+  readonly tone = input<'in' | 'out' | 'auto' | null>(null);
+  protected readonly toneClass = computed(() => {
+    const t = this.tone();
+    const kind = t === 'auto' ? (this.valueCents() < 0 ? 'out' : 'in') : t;
+    return kind ? ` j-kpi__value--${kind}` : '';
+  });
 
   private readonly abs = computed(() => Math.abs(this.valueCents()));
   protected readonly sign = computed(() => (this.valueCents() < 0 ? '−' : ''));

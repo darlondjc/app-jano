@@ -25,6 +25,11 @@ export const CHANGELOG: Versao[] = [
       },
       {
         tipo: 'melhoria',
+        texto:
+          'Entradas em verde e saídas em vermelho nas transações e nos resumos; transferências em cinza.',
+      },
+      {
+        tipo: 'melhoria',
         texto: 'Categorias em ordem alfabética na tela de transações.',
       },
       {

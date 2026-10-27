@@ -32,6 +32,7 @@ import {
 import { JanoBanner, JanoButton, JanoCategoryBadge } from '@jano/ui';
 import {
   agruparPorDia,
+  classeValor,
   gastosDoMes,
   mesAnterior,
   mesSeguinte,
@@ -95,9 +96,6 @@ interface Previa {
     }
     .lista .j-tx:last-child {
       border-bottom: 0;
-    }
-    .entrada {
-      color: var(--positive);
     }
     select {
       height: 36px;
@@ -307,12 +305,7 @@ interface Previa {
                   </option>
                 }
               </select>
-              <div
-                [class]="
-                  'j-tx__amount j-num' + (t.amountCents > 0 ? ' entrada' : '')
-                "
-                style="margin-left:12px"
-              >
+              <div [class]="classeValor(t)" style="margin-left:12px">
                 {{ t.amountCents > 0 ? '+' : '' }}{{ money(t.amountCents) }}
               </div>
             </div>
@@ -328,6 +321,7 @@ export class Transacoes {
   private readonly catalog = inject(CatalogRepository);
 
   protected readonly money = formatBRL;
+  protected readonly classeValor = classeValor;
   protected readonly month = signal(new Date().toISOString().slice(0, 7));
   protected readonly txs = signal<TransactionDoc[]>([]);
   protected readonly contas = signal<AccountDoc[]>([]);
