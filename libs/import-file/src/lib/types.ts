@@ -7,6 +7,14 @@ export interface RawTransaction {
   description: string;
   /** FITID do OFX, quando existe. */
   externalId?: string;
+  /** Final do cartão do titular (faturas com mais de um cartão). */
+  holder?: string;
+  /** Parcela "n de total", quando a linha é uma parcela de compra parcelada. */
+  installment?: { n: number; total: number };
+  /** Grupo que o próprio banco usou na fatura ("Restaurantes", "Transporte"...). */
+  bankCategory?: string;
+  /** Pagamento da fatura é transferência entre contas próprias, não gasto. */
+  isTransfer?: boolean;
 }
 
 export interface ParseResult {

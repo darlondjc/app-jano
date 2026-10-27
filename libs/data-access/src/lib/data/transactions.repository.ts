@@ -72,8 +72,10 @@ export class TransactionsRepository {
           dedupeKey: tx.dedupeKey,
           categoryId,
           categoryIsManual: false,
-          isTransfer: false,
+          isTransfer: tx.isTransfer ?? false,
           importId,
+          ...(tx.holder ? { holder: tx.holder } : {}),
+          ...(tx.installment ? { installment: tx.installment } : {}),
         };
         batch.set(doc(this.db, paths.transactions(uid), id), data);
       }
