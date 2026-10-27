@@ -68,13 +68,16 @@ import { rotuloMes } from '../transacoes/agrupar';
       justify-content: space-between;
       align-items: baseline;
     }
-    h2 a {
-      font: 500 14px/20px var(--font-sans);
-      color: var(--primary-text);
+    .vazio-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
     }
     .kpis {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 12px;
       margin-top: 16px;
     }
@@ -142,18 +145,23 @@ import { rotuloMes } from '../transacoes/agrupar';
       </div>
     } @else {
       <section class="kpis" aria-label="Resumo do mês">
-        <jano-kpi-card
-          label="Sobra do mês"
-          [valueCents]="totais().net"
-          [balance]="true"
-        >
+        <jano-kpi-card label="Sobra do mês" [valueCents]="totais().net">
           <div class="j-sub">receitas menos gastos até agora</div>
         </jano-kpi-card>
-        <jano-kpi-card label="Gastos" [valueCents]="totais().spent" />
-        <jano-kpi-card label="Receitas" [valueCents]="totais().income" />
+        <jano-kpi-card label="Gastos" [valueCents]="totais().spent">
+          <div class="j-sub">tudo que saiu no mês, sem transferências</div>
+        </jano-kpi-card>
+        <jano-kpi-card label="Receitas" [valueCents]="totais().income">
+          <div class="j-sub">tudo que entrou no mês, sem transferências</div>
+        </jano-kpi-card>
       </section>
 
-      <h2>Metas mais apertadas <a routerLink="/orcamento">Ver todas</a></h2>
+      <h2>
+        Metas mais apertadas
+        <a janoButton variant="ghost" [small]="true" routerLink="/orcamento"
+          >Ver todas ›</a
+        >
+      </h2>
       @if (apertadas().length) {
         <div class="metas">
           @for (m of apertadas(); track m.categoryId) {
@@ -167,13 +175,24 @@ import { rotuloMes } from '../transacoes/agrupar';
           }
         </div>
       } @else {
-        <p class="j-sub">
-          Você ainda não definiu metas.
-          <a routerLink="/orcamento">Criar a primeira</a>.
-        </p>
+        <div class="j-card vazio-meta">
+          <span class="j-sub">Você ainda não definiu metas.</span>
+          <a
+            janoButton
+            variant="secondary"
+            [small]="true"
+            routerLink="/orcamento"
+            >Criar a primeira meta</a
+          >
+        </div>
       }
 
-      <h2>Últimas transações <a routerLink="/transacoes">Ver todas</a></h2>
+      <h2>
+        Últimas transações
+        <a janoButton variant="ghost" [small]="true" routerLink="/transacoes"
+          >Ver todas ›</a
+        >
+      </h2>
       <div class="lista">
         @for (t of recentes(); track t.id) {
           <div class="j-tx" style="grid-template-columns: auto 1fr auto">
