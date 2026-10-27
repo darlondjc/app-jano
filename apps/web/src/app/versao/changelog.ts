@@ -17,6 +17,11 @@ export const CHANGELOG: Versao[] = [
     version: '0.3.0',
     date: '2026-10-27',
     items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Menu lateral no computador e barra de abas no celular, em todas as telas.',
+      },
       { tipo: 'novo', texto: 'Tela de novidades com o histórico de versões.' },
       {
         tipo: 'novo',

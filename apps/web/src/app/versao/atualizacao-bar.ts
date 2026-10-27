@@ -28,6 +28,11 @@ import { AtualizacaoService } from './atualizacao.service';
       font: 400 14px/20px var(--font-sans);
       color: var(--text);
     }
+    @media (max-width: 899px) {
+      .barra {
+        bottom: 88px;
+      }
+    }
   `,
   template: `
     @if (svc.disponivel(); as v) {

@@ -5,7 +5,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import {
   AuthService,
   BudgetsRepository,
@@ -27,7 +26,7 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
 
 @Component({
   selector: 'jano-orcamento',
-  imports: [RouterLink, JanoButton, JanoBanner, JanoGoalBar, JanoKpiCard],
+  imports: [JanoButton, JanoBanner, JanoGoalBar, JanoKpiCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -89,7 +88,6 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
     }
   `,
   template: `
-    <a janoButton variant="ghost" [small]="true" routerLink="/">‹ Início</a>
     <h1>Orçamento</h1>
     <div class="mes">
       <button

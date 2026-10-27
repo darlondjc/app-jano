@@ -1,6 +1,4 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
-import { JanoButton } from '@jano/ui';
 import { CHANGELOG, VERSAO_ATUAL, type TipoMudanca } from './changelog';
 
 const ULTIMA_VISTA = 'jano.novidades.vista';
@@ -21,7 +19,6 @@ const ROTULO: Record<TipoMudanca, string> = {
 
 @Component({
   selector: 'jano-novidades',
-  imports: [RouterLink, JanoButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -72,7 +69,6 @@ const ROTULO: Record<TipoMudanca, string> = {
     }
   `,
   template: `
-    <a janoButton variant="ghost" [small]="true" routerLink="/">‹ Início</a>
     <h1>Novidades</h1>
     <div class="j-sub">Você está na versão {{ atual }}.</div>
     @for (v of versoes; track v.version) {

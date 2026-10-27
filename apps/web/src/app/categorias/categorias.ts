@@ -5,7 +5,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import {
   AuthService,
   CATEGORY_COLORS,
@@ -39,7 +38,7 @@ const NOVA: Form = {
 
 @Component({
   selector: 'jano-categorias',
-  imports: [RouterLink, JanoButton, JanoBanner, JanoCategoryBadge, JanoIcon],
+  imports: [JanoButton, JanoBanner, JanoCategoryBadge, JanoIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -166,7 +165,6 @@ const NOVA: Form = {
   template: `
     <header>
       <div>
-        <a janoButton variant="ghost" [small]="true" routerLink="/">‹ Início</a>
         <h1>Categorias</h1>
         <div class="j-sub">{{ categorias().length }} categorias</div>
       </div>

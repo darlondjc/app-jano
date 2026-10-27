@@ -5,7 +5,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import {
   AuthService,
   CatalogRepository,
@@ -51,7 +50,7 @@ interface Previa {
 
 @Component({
   selector: 'jano-transacoes',
-  imports: [RouterLink, JanoButton, JanoBanner, JanoCategoryBadge],
+  imports: [JanoButton, JanoBanner, JanoCategoryBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -148,15 +147,7 @@ interface Previa {
   template: `
     <header>
       <div>
-        <a janoButton variant="ghost" [small]="true" routerLink="/">‹ Início</a>
         <h1>Transações</h1>
-        <a
-          janoButton
-          variant="secondary"
-          [small]="true"
-          routerLink="/categorias"
-          >Gerenciar categorias</a
-        >
       </div>
       <label>
         <input

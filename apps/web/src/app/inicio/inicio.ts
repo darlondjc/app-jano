@@ -5,7 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import {
   AuthService,
   BudgetsRepository,
@@ -30,8 +30,6 @@ import {
   JanoGoalBar,
   JanoKpiCard,
 } from '@jano/ui';
-import { haNovidades } from '../versao/novidades';
-import { VERSAO_ATUAL } from '../versao/changelog';
 import { classeValor, rotuloMes } from '../transacoes/agrupar';
 
 @Component({
@@ -99,24 +97,6 @@ import { classeValor, rotuloMes } from '../transacoes/agrupar';
     .vazio {
       margin-top: 24px;
     }
-    .ponto {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      margin-left: 6px;
-      border-radius: 50%;
-      background: var(--primary);
-    }
-    .versao {
-      margin-top: 32px;
-      text-align: center;
-    }
-    nav {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
-      flex-wrap: wrap;
-    }
   `,
   template: `
     <header>
@@ -124,22 +104,7 @@ import { classeValor, rotuloMes } from '../transacoes/agrupar';
         <h1>Olá, {{ nome() }}</h1>
         <div class="j-sub">{{ mes() }}</div>
       </div>
-      <button janoButton variant="ghost" type="button" (click)="sair()">
-        Sair
-      </button>
     </header>
-
-    <nav aria-label="Seções">
-      <a janoButton variant="secondary" routerLink="/transacoes">Transações</a>
-      <a janoButton variant="secondary" routerLink="/orcamento">Orçamento</a>
-      <a janoButton variant="secondary" routerLink="/categorias">Categorias</a>
-      <a janoButton variant="ghost" routerLink="/novidades"
-        >Novidades
-        @if (novidades) {
-          <span class="ponto" aria-label="há novidades"></span>
-        }
-      </a>
-    </nav>
 
     @if (erro()) {
       <jano-banner tone="danger" title="Não consegui carregar seus dados.">{{
@@ -239,15 +204,10 @@ import { classeValor, rotuloMes } from '../transacoes/agrupar';
         }
       </div>
     }
-
-    <p class="j-sub versao">Jano v{{ versao }}</p>
   `,
 })
 export class Inicio {
-  protected readonly novidades = haNovidades();
-  protected readonly versao = VERSAO_ATUAL;
   private readonly auth = inject(AuthService);
-  private readonly router = inject(Router);
   private readonly txRepo = inject(TransactionsRepository);
   private readonly budgetRepo = inject(BudgetsRepository);
   private readonly catalog = inject(CatalogRepository);
@@ -327,10 +287,5 @@ export class Inicio {
     } finally {
       this.carregando.set(false);
     }
-  }
-
-  protected async sair(): Promise<void> {
-    await this.auth.signOut();
-    await this.router.navigateByUrl('/entrar');
   }
 }
