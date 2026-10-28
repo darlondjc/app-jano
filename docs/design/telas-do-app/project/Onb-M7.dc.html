@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Importação parcial mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="j-page" style="width: 390px; height: 844px; display: flex; flex-direction: column;">
+  <header style="padding: 16px 16px 8px;">
+    <div style="display: flex; gap: 6px;" role="img" aria-label="Passo 3 de 5"><i style="flex: 1; height: 4px; border-radius: 99px; background: var(--primary);"></i><i style="flex: 1; height: 4px; border-radius: 99px; background: var(--primary);"></i><i style="flex: 1; height: 4px; border-radius: 99px; background: var(--primary);"></i><i style="flex: 1; height: 4px; border-radius: 99px; background: var(--border-strong);"></i><i style="flex: 1; height: 4px; border-radius: 99px; background: var(--border-strong);"></i></div>
+    <div class="j-cap" style="margin-top: 8px;">Passo 3 de 5</div>
+  </header>
+  <main style="flex: 1; padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 16px;">
+    <h1 class="j-h1">Importação parcial</h1>
+    <div class="j-banner j-banner--warn" role="status">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px;"><path d="M12 3L22 20H2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10V14M12 17V17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <div><span class="j-banner__title">Vamos importar 198 de 212 transações.</span> 14 linhas do arquivo têm problemas e ficaram de fora.</div>
+    </div>
+    <section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" aria-label="Resumo">
+      <div class="j-card" style="padding: 12px;"><div class="j-cap">Importadas</div><div style="font: 600 20px/28px Inter, sans-serif; margin-top: 4px; color: var(--positive);" class="j-num">198</div></div>
+      <div class="j-card" style="padding: 12px;"><div class="j-cap">Com aviso</div><div style="font: 600 20px/28px Inter, sans-serif; margin-top: 4px; color: var(--warning-text);" class="j-num">14</div></div>
+      <div class="j-card" style="padding: 12px;"><div class="j-cap">Duplicadas</div><div style="font: 600 20px/28px Inter, sans-serif; margin-top: 4px;" class="j-num">14</div></div>
+    </section>
+    <section aria-label="Avisos" style="display: flex; flex-direction: column; gap: 8px;">
+      <h2 class="j-h2">Avisos</h2>
+      <div class="j-insight"><div class="j-insight__icon" style="background: var(--warning-soft); color: var(--warning-text);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L22 20H2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10V14M12 17V17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><div><div class="j-insight__title">9 linhas sem data válida</div><div class="j-insight__text">Linhas 41 a 49 do arquivo.</div></div></div>
+      <div class="j-insight"><div class="j-insight__icon" style="background: var(--warning-soft); color: var(--warning-text);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L22 20H2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10V14M12 17V17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><div><div class="j-insight__title">5 valores em formato desconhecido</div><div class="j-insight__text">Exemplo: “1.2OO,00”. Confira se o arquivo foi editado.</div></div></div>
+    </section>
+  </main>
+  <footer style="padding: 16px 16px 32px; display: flex; flex-direction: column; gap: 8px;">
+    <button class="j-btn j-btn--primary j-btn--lg" type="button">Continuar com 198</button>
+    <button class="j-btn j-btn--secondary j-btn--lg" type="button">Escolher outro arquivo</button>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

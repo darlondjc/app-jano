@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Criar meta desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+.sw{width:44px;height:26px;border-radius:999px;background:var(--primary);position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:var(--on-primary)}
+.sw--off{background:var(--border-strong)}
+.sw--off::after{right:auto;left:3px}
+</style>
+</helmet>
+<div class="j-page" style="position: relative; min-height: 760px; display: flex; flex-wrap: wrap;">
+  <div style="flex: 999 1 560px; padding: 32px; min-width: 0;">
+    <h1 class="j-h1">Orçamento</h1>
+    <div class="j-sub" style="margin-bottom: 24px;">Outubro 2026</div>
+    <div class="j-card" style="display: flex; flex-direction: column; gap: 24px;">
+      <div class="j-goal j-goal--ok"><div class="j-goal__head"><span>Moradia</span><span>R$ 900 <span class="j-sub">de R$ 1.200</span></span></div><div class="j-goal__track"><div class="j-goal__fill" style="width: 75%;"></div><div class="j-goal__pace" style="left: 87%;"></div></div></div>
+      <div class="j-goal j-goal--warn"><div class="j-goal__head"><span>Mercado</span><span>R$ 828 <span class="j-sub">de R$ 900</span></span></div><div class="j-goal__track"><div class="j-goal__fill" style="width: 92%;"></div><div class="j-goal__pace" style="left: 87%;"></div></div></div>
+      <div class="j-goal j-goal--over" style="outline: 2px solid var(--primary); outline-offset: 8px; border-radius: 8px;"><div class="j-goal__head"><span>Lazer</span><span>R$ 434 <span class="j-sub">de R$ 350</span></span></div><div class="j-goal__track"><div class="j-goal__fill" style="width: 100%;"></div><div class="j-goal__pace" style="left: 87%;"></div></div></div>
+    </div>
+  </div>
+  <aside class="j-panel" role="dialog" aria-label="Editar meta" style="flex: 0 0 420px; display: flex; flex-direction: column; gap: 20px; min-height: 760px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <h2 class="j-sheet__title" style="margin: 0;">Editar meta de Lazer</h2>
+      <button class="j-iconbtn" type="button" aria-label="Fechar painel" style="border-color: transparent; background: transparent;"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+    </div>
+    <div class="j-field">
+      <span class="j-field__label">Categoria</span>
+      <span class="j-input"><i class="j-dotc" style="background: var(--cat-6); margin-right: 8px;"></i><input value="Lazer" aria-label="Categoria"></span>
+    </div>
+    <label class="j-field">
+      <span class="j-field__label">Limite mensal</span>
+      <span class="j-input"><span class="j-input__prefix">R$</span><input value="350,00"></span>
+      <span class="j-field__hint">Sugestão: R$ 352,00, a média dos últimos 3 meses (R$ 340, R$ 390, R$ 326).</span>
+    </label>
+    <button class="j-chip" type="button" style="align-self: flex-start;">Usar sugestão de R$ 352,00</button>
+    <div class="j-card" style="padding: 16px; background: var(--surface-2); border: 0;">
+      <div class="j-cap" style="margin-bottom: 4px;">COM ESSE LIMITE, NOS ÚLTIMOS 3 MESES</div>
+      <div class="j-sub">Você teria cumprido 2 de 3 meses. Em outubro o gasto está em R$ 434,00.</div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px;">
+      <div><div class="j-field__label">Levar a sobra para o mês seguinte</div><div class="j-field__hint">O que não for gasto soma ao limite de novembro.</div></div>
+      <span class="sw sw--off" role="img" aria-label="Desligado"></span>
+    </div>
+    <div>
+      <div class="j-field__label" style="margin-bottom: 8px;">Aplicar a</div>
+      <div style="display: flex; gap: 8px;">
+        <button class="j-chip" type="button" aria-pressed="true">Todos os meses</button>
+        <button class="j-chip" type="button" aria-pressed="false">Só outubro de 2026</button>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: auto;">
+      <button class="j-btn j-btn--primary" type="button" style="flex: 1;">Salvar meta</button>
+      <button class="j-btn j-btn--secondary" type="button">Cancelar</button>
+    </div>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

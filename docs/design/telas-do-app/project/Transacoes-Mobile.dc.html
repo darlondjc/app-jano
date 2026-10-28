@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Transações mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="j-page" style="width: 390px; height: 1900px; display: flex; flex-direction: column;">
+  <header style="padding: 16px 16px 8px; display: flex; align-items: center; justify-content: space-between;">
+    <h1 class="j-h1">Transações</h1>
+    <button class="j-chip" type="button">Outubro 2026
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9L12 15L18 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </header>
+  <div style="padding: 0 16px; display: flex; flex-direction: column; gap: 12px;">
+    <label class="j-input" style="height: 44px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="margin-right: 8px; color: var(--text-2);"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input placeholder="Buscar por nome, valor ou categoria" aria-label="Buscar transações">
+    </label>
+    <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;">
+      <button class="j-chip" type="button" aria-pressed="true">Todas</button>
+      <button class="j-chip" type="button" aria-pressed="false">Gastos</button>
+      <button class="j-chip" type="button" aria-pressed="false">Receitas</button>
+      <button class="j-chip" type="button" aria-pressed="false">Sem categoria · 1</button>
+      <button class="j-chip" type="button" aria-pressed="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6H20M7 12H17M10 18H14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Filtros</button>
+    </div>
+    <div class="j-sub">20 mais recentes de 212 transações · gastos de R$ 3.114,60 <span class="j-cap">(transferências ficam de fora)</span></div>
+  </div>
+
+  <main style="flex: 1; margin-top: 8px;">
+    <sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+      <div class="j-day">{{g.label}}</div>
+      <sc-for list="{{g.items}}" as="t" hint-placeholder-count="2">
+        <sc-if value="{{t.swiped}}" hint-placeholder-val="{{ false }}">
+          <div style="position: relative; overflow: hidden; border-bottom: 1px solid var(--border);">
+            <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 104px; background: var(--primary); color: var(--on-primary); display: flex; align-items: center; justify-content: center; font: 600 14px/20px Inter, sans-serif; gap: 6px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12V4H12L20 12L12 20Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor"/></svg>
+              Categorizar
+            </div>
+            <div class="j-tx" style="transform: translateX(-104px); border-bottom: 0;">
+              <div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: {{t.color}};"></i></div>
+              <div><div class="j-tx__name">{{t.name}}</div><div class="j-tx__sub">{{t.sub}}</div></div>
+              <div class="j-tx__amount">{{t.amount}}</div>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{t.normal}}" hint-placeholder-val="{{ true }}">
+          <div class="j-tx">
+            <div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: {{t.color}};"></i></div>
+            <div><div class="j-tx__name">{{t.name}}</div><div class="j-tx__sub">{{t.sub}}</div></div>
+            <div class="{{t.cls}}">{{t.amount}}</div>
+          </div>
+        </sc-if>
+      </sc-for>
+    </sc-for>
+  </main>
+
+  <nav class="j-nav j-nav--bottom" aria-label="Principal">
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11L12 4L20 11V20H14V14H10V20H4Z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg></span>Início</a>
+    <a class="j-nav__item" href="#" aria-current="page"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7H20M4 12H20M4 17H14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></span>Transações</a>
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M12 4V12H20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg></span>Orçamento</a>
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18L9 12L13 15L20 6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Projeções</a>
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18" cy="12" r="1.6" fill="currentColor"/></svg></span>Mais</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const C = { Mercado: 'var(--cat-3)', Restaurantes: 'var(--cat-8)', Transporte: 'var(--cat-2)', Receita: 'var(--positive)', Transferência: 'var(--text-2)', Lazer: 'var(--cat-6)', Assinaturas: 'var(--cat-5)', Saúde: 'var(--cat-4)', Moradia: 'var(--cat-1)', Educação: 'var(--cat-7)', 'Sem categoria': 'var(--border-strong)', Outros: 'var(--text-2)' };
+    const raw = [
+      ['Terça, 27 de outubro', [['Pão de Açúcar', 'Mercado', 'Conta', '−R$ 186,42'], ['Uber', 'Transporte', 'Cartão', '−R$ 23,70', 'swiped']]],
+      ['Segunda, 26 de outubro', [['iFood', 'Restaurantes', 'Cartão', '−R$ 58,90'], ['Pix recebido · João', 'Receita', 'Conta', '+R$ 150,00', 'in']]],
+      ['Domingo, 25 de outubro', [['Transferência para Poupança', 'Transferência', 'Conta', '−R$ 500,00', 'transfer'], ['Cinemark', 'Lazer', 'Cartão', '−R$ 64,00']]],
+      ['Sábado, 24 de outubro', [['Netflix', 'Assinaturas', 'Cartão', '−R$ 44,90'], ['Padaria Bella', 'Restaurantes', 'Conta', '−R$ 18,50']]],
+      ['Sexta, 23 de outubro', [['Farmácia Pague Menos', 'Saúde', 'Cartão', '−R$ 67,35'], ['Posto Ipiranga', 'Transporte', 'Cartão', '−R$ 209,30']]],
+      ['Quinta, 22 de outubro', [['Enel', 'Moradia', 'Conta', '−R$ 238,76'], ['Atacadão', 'Mercado', 'Cartão', '−R$ 480,00']]],
+      ['Quarta, 21 de outubro', [['Max', 'Assinaturas', 'Cartão', '−R$ 39,90'], ['Pix · Mercadinho Souza', 'Sem categoria', 'Conta', '−R$ 42,00']]],
+      ['Terça, 20 de outubro', [['Spotify', 'Assinaturas', 'Cartão', '−R$ 21,90'], ['Drogasil', 'Saúde', 'Cartão', '−R$ 29,65']]],
+      ['Segunda, 5 de outubro', [['Salário', 'Receita', 'Conta', '+R$ 6.350,00', 'in'], ['Aluguel (sua parte)', 'Moradia', 'Conta', '−R$ 661,24'], ['Escola de idiomas', 'Educação', 'Cartão', '−R$ 96,00']]]
+    ];
+    const groups = raw.map(([label, items]) => ({
+      label: label.toUpperCase(),
+      items: items.map(([name, cat, acc, amount, flag]) => ({
+        name, amount,
+        sub: cat === 'Transferência' ? 'Transferência · ' + acc + ' · fora do total' : cat + ' · ' + acc,
+        color: C[cat],
+        cls: 'j-tx__amount' + (flag === 'in' ? ' j-tx__amount--in' : ''),
+        swiped: flag === 'swiped',
+        normal: flag !== 'swiped'
+      }))
+    }));
+    return { groups };
+  }
+}
+</script>
+</body>
+</html>

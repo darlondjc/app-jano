@@ -1,0 +1,31 @@
+<!-- @dsCard group="Dados" height=250 subtitle="No ritmo, atenção e estourada" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0;padding:16px;background:var(--bg);font-family:var(--font-sans);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+</style>
+</head>
+<body>
+<div class="j-card j-goal j-goal--ok">
+<div class="j-goal__head"><span>Transporte</span><span class="j-goal__pct j-num">70%</span></div>
+<div class="j-goal__track" role="progressbar" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100" aria-label="Transporte"><div class="j-goal__fill" style="width:70%"></div><div class="j-goal__pace" style="left:87%"></div></div>
+<div class="j-goal__meta"><span>R$ 280,00 de R$ 400,00</span><span>Ritmo ideal: 87%</span></div>
+<div class="j-goal__state"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 12.5L11 15.5L16 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>No ritmo. Sobram R$ 120,00.</div>
+</div>
+<div class="j-card j-goal j-goal--warn">
+<div class="j-goal__head"><span>Mercado</span><span class="j-goal__pct j-num">92%</span></div>
+<div class="j-goal__track" role="progressbar" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100" aria-label="Mercado"><div class="j-goal__fill" style="width:92%"></div><div class="j-goal__pace" style="left:87%"></div></div>
+<div class="j-goal__meta"><span>R$ 828,00 de R$ 900,00</span><span>Ritmo ideal: 87%</span></div>
+<div class="j-goal__state"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L22 20H2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10V14M12 17V17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Atenção: restam 4 dias e R$ 72,00.</div>
+</div>
+<div class="j-card j-goal j-goal--over">
+<div class="j-goal__head"><span>Lazer</span><span class="j-goal__pct j-num">124%</span></div>
+<div class="j-goal__track" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" aria-label="Lazer, 124% da meta"><div class="j-goal__fill" style="width:100%"></div><div class="j-goal__pace" style="left:87%"></div></div>
+<div class="j-goal__meta"><span>R$ 434,00 de R$ 350,00</span><span>Ritmo ideal: 87%</span></div>
+<div class="j-goal__state"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 9L15 15M15 9L9 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Passou R$ 84,00 da meta.</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Transações filtros</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="j-page" style="position: relative; width: 390px; height: 844px; overflow: hidden;">
+  <div style="padding: 16px;">
+    <h1 class="j-h1">Transações</h1>
+    <div style="margin-top: 12px;" class="j-day">TERÇA, 27 DE OUTUBRO</div>
+    <div class="j-tx"><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-3);"></i></div><div><div class="j-tx__name">Pão de Açúcar</div><div class="j-tx__sub">Mercado · Conta</div></div><div class="j-tx__amount">−R$ 186,42</div></div>
+    <div class="j-tx"><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-2);"></i></div><div><div class="j-tx__name">Uber</div><div class="j-tx__sub">Transporte · Cartão</div></div><div class="j-tx__amount">−R$ 23,70</div></div>
+    <div class="j-tx"><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-8);"></i></div><div><div class="j-tx__name">iFood</div><div class="j-tx__sub">Restaurantes · Cartão</div></div><div class="j-tx__amount">−R$ 58,90</div></div>
+  </div>
+  <div style="position: absolute; inset: 0; background: var(--overlay);"></div>
+  <div class="j-sheet" role="dialog" aria-label="Filtros" style="position: absolute; left: 0; right: 0; bottom: 0; max-height: 760px; display: flex; flex-direction: column; gap: 16px;">
+    <div class="j-sheet__handle" style="margin-bottom: 0;"></div>
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <h2 class="j-sheet__title" style="margin: 0;">Filtros</h2>
+      <button class="j-btn j-btn--ghost" type="button">Limpar</button>
+    </div>
+    <div>
+      <div class="j-field__label" style="margin-bottom: 8px;">Período</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="j-chip" type="button" aria-pressed="true">Este mês</button>
+        <button class="j-chip" type="button" aria-pressed="false">Mês passado</button>
+        <button class="j-chip" type="button" aria-pressed="false">Últimos 3 meses</button>
+        <button class="j-chip" type="button" aria-pressed="false">Personalizado</button>
+      </div>
+    </div>
+    <div>
+      <div class="j-field__label" style="margin-bottom: 8px;">Tipo</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="j-chip" type="button" aria-pressed="true">Gastos</button>
+        <button class="j-chip" type="button" aria-pressed="false">Receitas</button>
+        <button class="j-chip" type="button" aria-pressed="false">Transferências</button>
+      </div>
+    </div>
+    <div>
+      <div class="j-field__label" style="margin-bottom: 8px;">Categorias</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="j-chip" type="button" aria-pressed="true">Mercado</button>
+        <button class="j-chip" type="button" aria-pressed="true">Restaurantes</button>
+        <button class="j-chip" type="button" aria-pressed="false">Transporte</button>
+        <button class="j-chip" type="button" aria-pressed="false">Moradia</button>
+        <button class="j-chip" type="button" aria-pressed="false">Saúde</button>
+        <button class="j-chip" type="button" aria-pressed="false">Lazer</button>
+        <button class="j-chip" type="button" aria-pressed="false">Assinaturas</button>
+        <button class="j-chip" type="button" aria-pressed="false">Sem categoria</button>
+      </div>
+    </div>
+    <div>
+      <div class="j-field__label" style="margin-bottom: 8px;">Conta</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="j-chip" type="button" aria-pressed="true">Todas</button>
+        <button class="j-chip" type="button" aria-pressed="false">Conta corrente</button>
+        <button class="j-chip" type="button" aria-pressed="false">Cartão</button>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+      <label class="j-field"><span class="j-field__label">Valor mínimo</span><span class="j-input"><span class="j-input__prefix">R$</span><input placeholder="0,00"></span></label>
+      <label class="j-field"><span class="j-field__label">Valor máximo</span><span class="j-input"><span class="j-input__prefix">R$</span><input placeholder="sem limite"></span></label>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button class="j-btn j-btn--primary j-btn--lg" type="button" style="flex: 1;">Ver 9 resultados</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Onboarding desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="j-page" style="min-height: 860px; display: flex; flex-wrap: wrap; align-items: stretch;">
+  <aside style="flex: 0 0 360px; background: var(--surface); border-right: 1px solid var(--border); padding: 40px 32px; display: flex; flex-direction: column; gap: 40px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <svg width="22" height="35" viewBox="12 0 40 64" aria-hidden="true"><circle cx="32" cy="15" r="9" fill="none" stroke="#0e7c6b" stroke-width="5"/><path d="M32 24 V58 M32 42 H19 M32 52 H25 M32 42 H45 M32 52 H39" fill="none" stroke="#0e7c6b" stroke-width="5" stroke-linecap="round"/></svg>
+      <span style="font: 600 24px/1 Inter, sans-serif; letter-spacing: -0.02em;">jano</span>
+    </div>
+    <ol aria-label="Etapas" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+      <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+        <li aria-current="{{s.current}}" style="display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: center; padding: 8px 12px; border-radius: var(--radius-sm); background: {{s.bg}}; color: {{s.color}}; font: 500 14px/20px Inter, sans-serif;">
+          <span style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font: 600 14px/20px Inter, sans-serif; background: {{s.dotBg}}; color: {{s.dotColor}};">{{s.mark}}</span>
+          <span>{{s.label}}</span>
+        </li>
+      </sc-for>
+    </ol>
+    <div class="j-cap" style="margin-top: auto;">O Jano só lê dados. Nunca move dinheiro e nunca pede a senha do banco.</div>
+  </aside>
+
+  <main style="flex: 999 1 560px; min-width: 0; padding: 64px 48px; display: flex; justify-content: center;">
+    <div style="width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 24px;">
+
+      <sc-if value="{{s1}}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+          <div class="j-cap">PASSO 1 DE 5</div>
+          <h1 style="margin: 0; font: 600 40px/48px Inter, sans-serif; letter-spacing: -0.02em;">Veja o que passou. Planeje o que vem.</h1>
+          <p class="j-sub" style="margin: 0; font-size: 18px; line-height: 28px;">O Jano organiza seus gastos, acompanha suas metas e mostra como o mês deve fechar.</p>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+            <div class="j-card"><div style="font: 600 16px/24px Inter, sans-serif;">Só lê os dados</div><div class="j-sub" style="margin-top: 4px;">Você envia o extrato e o Jano apenas lê.</div></div>
+            <div class="j-card"><div style="font: 600 16px/24px Inter, sans-serif;">Nunca move dinheiro</div><div class="j-sub" style="margin-top: 4px;">Sem pagamentos, transferências ou Pix.</div></div>
+            <div class="j-card"><div style="font: 600 16px/24px Inter, sans-serif;">Nunca pede a senha</div><div class="j-sub" style="margin-top: 4px;">Você exporta o arquivo no seu banco e envia aqui.</div></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{s2}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+          <div class="j-cap">PASSO 2 DE 5</div>
+          <h1 class="j-h1" style="font-size: 32px; line-height: 40px;">Baixe o extrato do seu banco</h1>
+          <p class="j-sub" style="margin: 0; font-size: 16px; line-height: 24px;">Leva cerca de um minuto. Faça isso uma vez por mês e o Jano mantém tudo em dia.</p>
+          <ol style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+            <li class="j-card"><div class="j-cap">1</div><div style="font: 600 14px/20px Inter, sans-serif;">Entre no internet banking</div><div class="j-sub">Pelo site ou app oficial do seu banco.</div></li>
+            <li class="j-card"><div class="j-cap">2</div><div style="font: 600 14px/20px Inter, sans-serif;">Abra Extrato e escolha o período</div><div class="j-sub">O ideal é pegar os últimos 12 meses.</div></li>
+            <li class="j-card"><div class="j-cap">3</div><div style="font: 600 14px/20px Inter, sans-serif;">Baixe em OFX (ou CSV)</div><div class="j-sub">OFX traz datas e valores já organizados.</div></li>
+            <li class="j-card"><div class="j-cap">4</div><div style="font: 600 14px/20px Inter, sans-serif;">Volte e envie o arquivo</div><div class="j-sub">No próximo passo, arraste e solte aqui.</div></li>
+          </ol>
+          <div class="j-card" style="padding: 12px 16px; display: flex; align-items: center; gap: 12px; background: var(--surface-2); border: 0;">
+            <div style="flex: 1;"><div style="font: 500 14px/20px Inter, sans-serif;">Sincronização automática</div><div class="j-cap">Sem precisar baixar arquivos.</div></div>
+            <span class="j-tag">Em breve</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{s3}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="j-cap">PASSO 3 DE 5</div>
+          <h1 class="j-h1" style="font-size: 32px; line-height: 40px;">Confira antes de importar</h1>
+          <div style="border: 2px dashed var(--border-strong); border-radius: var(--radius-lg); padding: 20px 24px; display: flex; align-items: center; gap: 16px; background: var(--surface);">
+            <svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--primary); flex: none;"><path d="M6 3H14L19 8V21H6Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 3V8H19" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+            <div style="flex: 1;"><div style="font: 600 14px/20px Inter, sans-serif;">extrato-out-2026.ofx</div><div class="j-cap">184 KB · lido com sucesso</div></div>
+            <button class="j-btn j-btn--secondary" type="button">Trocar arquivo</button>
+          </div>
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 16px;">
+            <div class="j-card j-kpi"><span class="j-kpi__label">Período detectado</span><div style="font: 600 18px/28px Inter, sans-serif;">1 out 2025 a 27 out 2026</div></div>
+            <div class="j-card j-kpi"><span class="j-kpi__label">Novas</span><div class="j-kpi__value" style="color: var(--positive);">212</div></div>
+            <div class="j-card j-kpi"><span class="j-kpi__label">Duplicadas, ignoradas</span><div class="j-kpi__value">14</div></div>
+          </div>
+          <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--surface);">
+            <div class="j-tx" style="grid-template-columns: 80px 1fr auto;"><span class="j-cap">27 out</span><div class="j-tx__name">Pão de Açúcar</div><div class="j-tx__amount">−R$ 186,42</div></div>
+            <div class="j-tx" style="grid-template-columns: 80px 1fr auto;"><span class="j-cap">27 out</span><div class="j-tx__name">Uber</div><div class="j-tx__amount">−R$ 23,70</div></div>
+            <div class="j-tx" style="grid-template-columns: 80px 1fr auto;"><span class="j-cap">26 out</span><div class="j-tx__name">iFood</div><div class="j-tx__amount">−R$ 58,90</div></div>
+            <div class="j-tx" style="grid-template-columns: 80px 1fr auto; border-bottom: 0;"><span class="j-cap">26 out</span><div class="j-tx__name">Pix recebido · João</div><div class="j-tx__amount j-tx__amount--in">+R$ 150,00</div></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{s4}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="j-cap">PASSO 4 DE 5</div>
+          <h1 class="j-h1" style="font-size: 32px; line-height: 40px;">Revise as categorias</h1>
+          <p class="j-sub" style="margin: 0; font-size: 16px; line-height: 24px;">Sugerimos categorias para 198 de 212 transações. Veja as que têm menos certeza.</p>
+          <div class="j-banner j-banner--info"><div>14 transações ficaram sem sugestão. Você categoriza depois, na lista.</div></div>
+          <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--surface);">
+            <div class="j-tx" style="grid-template-columns: 1fr 120px auto;"><div class="j-tx__name">Atacadão</div><div class="j-tx__amount">−R$ 480,00</div><button class="j-chip" type="button" style="margin-left: 16px;"><i class="j-dotc" style="background: var(--cat-3);"></i>Mercado ▾</button></div>
+            <div class="j-tx" style="grid-template-columns: 1fr 120px auto;"><div class="j-tx__name">Pix · Mercadinho Souza</div><div class="j-tx__amount">−R$ 42,00</div><button class="j-chip" type="button" style="margin-left: 16px;"><i class="j-dotc" style="background: var(--cat-3);"></i>Mercado ▾</button></div>
+            <div class="j-tx" style="grid-template-columns: 1fr 120px auto;"><div class="j-tx__name">Posto Ipiranga</div><div class="j-tx__amount">−R$ 209,30</div><button class="j-chip" type="button" style="margin-left: 16px;"><i class="j-dotc" style="background: var(--cat-2);"></i>Transporte ▾</button></div>
+            <div class="j-tx" style="grid-template-columns: 1fr 120px auto;"><div class="j-tx__name">Cinemark</div><div class="j-tx__amount">−R$ 64,00</div><button class="j-chip" type="button" style="margin-left: 16px;"><i class="j-dotc" style="background: var(--cat-6);"></i>Lazer ▾</button></div>
+            <div class="j-tx" style="grid-template-columns: 1fr 120px auto; border-bottom: 0;"><div class="j-tx__name">Drogasil</div><div class="j-tx__amount">−R$ 29,65</div><button class="j-chip" type="button" style="margin-left: 16px;"><i class="j-dotc" style="background: var(--cat-4);"></i>Saúde ▾</button></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{s5}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="j-cap">PASSO 5 DE 5</div>
+          <h1 class="j-h1" style="font-size: 32px; line-height: 40px;">Defina suas primeiras metas</h1>
+          <p class="j-sub" style="margin: 0; font-size: 16px; line-height: 24px;">Partimos da média dos seus últimos 3 meses. Ajuste como quiser.</p>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+            <label class="j-field"><span class="j-field__label" style="display: inline-flex; align-items: center; gap: 8px;"><i class="j-dotc" style="background: var(--cat-1);"></i>Moradia</span><span class="j-input"><span class="j-input__prefix">R$</span><input value="1.200,00"></span></label>
+            <label class="j-field"><span class="j-field__label" style="display: inline-flex; align-items: center; gap: 8px;"><i class="j-dotc" style="background: var(--cat-3);"></i>Mercado</span><span class="j-input"><span class="j-input__prefix">R$</span><input value="900,00"></span></label>
+            <label class="j-field"><span class="j-field__label" style="display: inline-flex; align-items: center; gap: 8px;"><i class="j-dotc" style="background: var(--cat-8);"></i>Restaurantes</span><span class="j-input"><span class="j-input__prefix">R$</span><input value="500,00"></span></label>
+            <label class="j-field"><span class="j-field__label" style="display: inline-flex; align-items: center; gap: 8px;"><i class="j-dotc" style="background: var(--cat-2);"></i>Transporte</span><span class="j-input"><span class="j-input__prefix">R$</span><input value="400,00"></span></label>
+          </div>
+          <div class="j-card" style="padding: 16px; display: flex; align-items: center; justify-content: space-between; background: var(--surface-2); border: 0;"><span class="j-sub">Meta total do mês</span><b style="font: 600 24px/32px Inter, sans-serif;" class="j-num">R$ 4.200,00</b></div>
+        </div>
+      </sc-if>
+
+      <div style="display: flex; gap: 12px; align-items: center; margin-top: 8px;">
+        <button class="j-btn j-btn--ghost" type="button" onClick="{{back}}">Voltar</button>
+        <span style="flex: 1;"></span>
+        <button class="j-btn j-btn--primary j-btn--lg" type="button" onClick="{{next}}">{{nextLabel}}</button>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"step":{"editor":"int","default":1,"min":1,"max":5},"$preview":{"width":1440,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const st = this.state || {};
+    const step = st.step || this.props.step || 1;
+    const labels = ['Boas-vindas', 'Como importar', 'Enviar arquivo', 'Revisar categorias', 'Primeiras metas'];
+    const steps = labels.map((label, i) => {
+      const n = i + 1, cur = n === step, done = n < step;
+      return {
+        label, current: cur ? 'step' : 'false',
+        mark: done ? '✓' : String(n),
+        bg: cur ? 'var(--primary-soft)' : 'transparent',
+        color: cur ? 'var(--primary-text)' : 'var(--text-2)',
+        dotBg: cur || done ? 'var(--primary)' : 'var(--surface-2)',
+        dotColor: cur || done ? 'var(--on-primary)' : 'var(--text-2)'
+      };
+    });
+    const nexts = ['Começar', 'Já tenho o arquivo', 'Importar 212 transações', 'Confirmar categorias', 'Concluir e ver meu mês'];
+    return {
+      steps, s1: step === 1, s2: step === 2, s3: step === 3, s4: step === 4, s5: step === 5,
+      nextLabel: nexts[step - 1],
+      back: () => this.setState({ step: Math.max(1, step - 1) }),
+      next: () => this.setState({ step: Math.min(5, step + 1) })
+    };
+  }
+}
+</script>
+</body>
+</html>

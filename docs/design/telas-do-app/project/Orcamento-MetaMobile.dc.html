@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Criar meta mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+.sw{width:44px;height:26px;border-radius:999px;background:var(--primary);position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:var(--on-primary)}
+.sw--off{background:var(--border-strong)}
+.sw--off::after{right:auto;left:3px}
+</style>
+</helmet>
+<div class="j-page" style="position: relative; width: 390px; height: 844px; overflow: hidden;">
+  <div style="padding: 16px;">
+    <h1 class="j-h1">Orçamento</h1>
+    <div class="j-card" style="margin-top: 16px;"><div class="j-goal j-goal--over"><div class="j-goal__head"><span>Lazer</span><span>R$ 434 <span class="j-sub">de R$ 350</span></span></div><div class="j-goal__track"><div class="j-goal__fill" style="width: 100%;"></div></div></div></div>
+  </div>
+  <div style="position: absolute; inset: 0; background: var(--overlay);"></div>
+  <div class="j-sheet" role="dialog" aria-label="Editar meta" style="position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 16px;">
+    <div class="j-sheet__handle" style="margin-bottom: 0;"></div>
+    <h2 class="j-sheet__title" style="margin: 0;">Editar meta de Lazer</h2>
+    <div class="j-field">
+      <span class="j-field__label">Categoria</span>
+      <span class="j-input"><i class="j-dotc" style="background: var(--cat-6); margin-right: 8px;"></i><input value="Lazer" aria-label="Categoria"></span>
+    </div>
+    <label class="j-field">
+      <span class="j-field__label">Limite mensal</span>
+      <span class="j-input"><span class="j-input__prefix">R$</span><input value="350,00"></span>
+      <span class="j-field__hint">Sugestão: R$ 352,00, a média dos últimos 3 meses.</span>
+    </label>
+    <button class="j-chip" type="button" style="align-self: flex-start; height: 44px;">Usar sugestão de R$ 352,00</button>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px;">
+      <div><div class="j-field__label">Levar a sobra para o mês seguinte</div><div class="j-field__hint">O que não for gasto soma ao limite de novembro.</div></div>
+      <span class="sw sw--off" role="img" aria-label="Desligado"></span>
+    </div>
+    <div>
+      <div class="j-field__label" style="margin-bottom: 8px;">Aplicar a</div>
+      <div style="display: flex; gap: 8px;">
+        <button class="j-chip" type="button" aria-pressed="true" style="flex: 1; justify-content: center; height: 44px;">Todos os meses</button>
+        <button class="j-chip" type="button" aria-pressed="false" style="flex: 1; justify-content: center; height: 44px;">Só outubro</button>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button class="j-btn j-btn--primary j-btn--lg" type="button" style="flex: 1;">Salvar meta</button>
+      <button class="j-btn j-btn--secondary j-btn--lg" type="button">Cancelar</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

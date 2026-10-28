@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Avaliações mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="j-page" style="width: 390px; height: 2560px; display: flex; flex-direction: column;">
+  <header style="padding: 16px 16px 8px; display: flex; align-items: center; justify-content: space-between;">
+    <h1 class="j-h1">Avaliações</h1>
+    <button class="j-chip" type="button">Outubro 2026
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9L12 15L18 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </header>
+
+  <main style="flex: 1; padding: 8px 16px 24px; display: flex; flex-direction: column; gap: 16px;">
+    <section class="j-card" aria-label="Resumo do mês">
+      <p style="margin: 0; font: 600 20px/28px Inter, sans-serif; letter-spacing: -0.01em;">Você gastou 8% menos que em setembro, mas Lazer subiu 24%.</p>
+      <div style="display: flex; align-items: center; gap: 16px; margin-top: 16px;">
+        <svg width="72" height="72" viewBox="0 0 72 72" role="img" aria-label="Nota do mês: 78 de 100" style="flex: none;">
+          <circle cx="36" cy="36" r="30" fill="none" style="stroke: var(--surface-2);" stroke-width="8"/>
+          <circle cx="36" cy="36" r="30" fill="none" style="stroke: var(--primary);" stroke-width="8" stroke-linecap="round" stroke-dasharray="147 188.5" transform="rotate(-90 36 36)"/>
+          <text x="36" y="42" text-anchor="middle" style="font: 600 20px Inter, sans-serif; fill: var(--text);">78</text>
+        </svg>
+        <div><div style="font: 600 14px/20px Inter, sans-serif;">Nota do mês: 78 de 100</div><div class="j-sub">6 de 9 metas no ritmo, sobra prevista positiva e gasto 8% abaixo do mês anterior.</div></div>
+      </div>
+      <a href="#" class="j-btn j-btn--ghost" style="padding-left: 0; height: 44px;">Como calculamos a nota</a>
+    </section>
+
+    <section aria-label="Insights" style="display: flex; flex-direction: column; gap: 8px;">
+      <h2 class="j-h2">O que mudou</h2>
+      <div class="j-insight">
+        <div class="j-insight__icon" style="background: var(--warning-soft); color: var(--warning-text);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11L12 5L18 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><div class="j-insight__title">Lazer ficou 24% acima da média</div><div class="j-insight__text">R$ 434,00 em outubro contra R$ 350,00 nos últimos 3 meses.</div><a href="#" class="j-btn j-btn--ghost" style="height: 44px; padding: 0 8px; margin-left: -8px;">Ajustar meta</a></div>
+      </div>
+      <div class="j-insight">
+        <div class="j-insight__icon" style="background: var(--info-soft); color: var(--info);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8V12.5M12 16V16.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <div><div class="j-insight__title">Gasto incomum de R$ 480,00</div><div class="j-insight__text">Atacadão, em 22 de outubro. É 4 vezes o valor típico dessa loja para você.</div><a href="#" class="j-btn j-btn--ghost" style="height: 44px; padding: 0 8px; margin-left: -8px;">Ver transação</a></div>
+      </div>
+      <div class="j-insight">
+        <div class="j-insight__icon" style="background: var(--info-soft); color: var(--info);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12A8 8 0 0 1 18 7M20 12A8 8 0 0 1 6 17M18 3V7H14M6 21V17H10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><div class="j-insight__title">Netflix foi reajustada</div><div class="j-insight__text">De R$ 39,90 para R$ 44,90 por mês, a partir de 24 de outubro.</div><a href="#" class="j-btn j-btn--ghost" style="height: 44px; padding: 0 8px; margin-left: -8px;">Ver recorrências</a></div>
+      </div>
+      <div class="j-insight">
+        <div class="j-insight__icon" style="background: var(--positive-soft); color: var(--positive);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 12.5L11 15.5L16 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><div class="j-insight__title">Transporte está 42% abaixo da meta</div><div class="j-insight__text">R$ 233,00 de R$ 400,00. Terceiro mês seguido dentro do limite.</div></div>
+      </div>
+    </section>
+
+    <section class="j-card" aria-label="Comparativo mês a mês">
+      <h2 class="j-h2">Mês a mês por categoria</h2>
+      <svg viewBox="0 0 340 210" style="width: 100%; height: auto; display: block; margin-top: 12px;" role="img" aria-label="Gasto de Moradia, Mercado e Lazer de maio a outubro">
+        <line class="j-grid" x1="40" x2="336" y1="20" y2="20"/><line class="j-grid" x1="40" x2="336" y1="70" y2="70"/><line class="j-grid" x1="40" x2="336" y1="120" y2="120"/><line class="j-grid" x1="40" x2="336" y1="170" y2="170"/>
+        <text class="j-axis" x="0" y="24">R$ 1,2 mil</text><text class="j-axis" x="0" y="74">R$ 800</text><text class="j-axis" x="0" y="124">R$ 400</text><text class="j-axis" x="0" y="174">R$ 0</text>
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="18"><rect x="{{b.x}}" y="{{b.y}}" width="10" height="{{b.h}}" rx="2" style="fill: {{b.c}};"/></sc-for>
+        <sc-for list="{{months}}" as="m" hint-placeholder-count="6"><text class="j-axis" x="{{m.x}}" y="192">{{m.t}}</text></sc-for>
+      </svg>
+      <div class="j-cap" style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px;">
+        <span style="display: inline-flex; align-items: center; gap: 6px;"><i class="j-dotc" style="background: var(--cat-1);"></i>Moradia</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px;"><i class="j-dotc" style="background: var(--cat-3);"></i>Mercado</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px;"><i class="j-dotc" style="background: var(--cat-6);"></i>Lazer</span>
+      </div>
+    </section>
+
+    <section class="j-card" aria-label="Distribuição do gasto">
+      <h2 class="j-h2">Para onde foi o dinheiro</h2>
+      <div style="display: flex; gap: 16px; align-items: center; margin-top: 12px;">
+        <svg viewBox="0 0 120 120" style="width: 128px; flex: none;" role="img" aria-label="Distribuição do gasto de outubro por categoria">
+          <g transform="rotate(-90 60 60)" fill="none" stroke-width="22">
+            <sc-for list="{{slices}}" as="s" hint-placeholder-count="6"><circle cx="60" cy="60" r="40" style="stroke: {{s.c}};" stroke-dasharray="{{s.da}}" stroke-dashoffset="{{s.off}}"/></sc-for>
+          </g>
+        </svg>
+        <ul style="list-style: none; margin: 0; padding: 0; flex: 1; display: flex; flex-direction: column; gap: 6px; font: 400 13px/18px Inter, sans-serif;">
+          <sc-for list="{{slices}}" as="s" hint-placeholder-count="6"><li style="display: flex; align-items: center; gap: 8px;"><i class="j-dotc" style="background: {{s.c}};"></i>{{s.name}}<b style="margin-left: auto; font-weight: 600;" class="j-num">{{s.pct}}%</b></li></sc-for>
+        </ul>
+      </div>
+    </section>
+
+    <section class="j-card" aria-label="Maiores estabelecimentos" style="padding: 0; overflow: hidden;">
+      <h2 class="j-h2" style="padding: 16px 16px 8px;">5 maiores estabelecimentos</h2>
+      <sc-for list="{{top}}" as="t" hint-placeholder-count="5">
+        <div class="j-tx" style="grid-template-columns: 24px 1fr auto;"><span class="j-cap">{{t.n}}</span><div><div class="j-tx__name">{{t.name}}</div><div class="j-tx__sub">{{t.sub}}</div></div><div class="j-tx__amount">{{t.amount}}</div></div>
+      </sc-for>
+    </section>
+  </main>
+
+  <nav class="j-nav j-nav--bottom" aria-label="Principal">
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11L12 4L20 11V20H14V14H10V20H4Z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg></span>Início</a>
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7H20M4 12H20M4 17H14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></span>Transações</a>
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M12 4V12H20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg></span>Orçamento</a>
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18L9 12L13 15L20 6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Projeções</a>
+    <a class="j-nav__item" href="#" aria-current="page"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18" cy="12" r="1.6" fill="currentColor"/></svg></span>Mais</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const series = [
+      ['var(--cat-1)', [1180, 1200, 1150, 1200, 1210, 900]],
+      ['var(--cat-3)', [780, 820, 760, 850, 840, 828]],
+      ['var(--cat-6)', [320, 360, 340, 390, 350, 434]]
+    ];
+    const bars = [];
+    series.forEach(([c, vals], si) => vals.forEach((v, mi) => {
+      const h = v / 1300 * 150;
+      bars.push({ c, x: 46 + mi * 48 + si * 12, y: (170 - h).toFixed(1), h: h.toFixed(1) });
+    }));
+    const months = ['Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out'].map((t, i) => ({ t, x: 52 + i * 48 }));
+    const data = [['Moradia', 'var(--cat-1)', 900], ['Mercado', 'var(--cat-3)', 828], ['Lazer', 'var(--cat-6)', 434], ['Restaurantes', 'var(--cat-8)', 340], ['Transporte', 'var(--cat-2)', 233], ['Outras', 'var(--text-2)', 380]];
+    const total = data.reduce((a, d) => a + d[2], 0), C = 251.3;
+    let acc = 0;
+    const slices = data.map(([name, c, v]) => {
+      const len = v / total * C;
+      const s = { name, c, pct: Math.round(v / total * 100), da: len.toFixed(1) + ' ' + C, off: (-acc).toFixed(1) };
+      acc += len;
+      return s;
+    });
+    const top = [['Aluguel (sua parte)', 'Moradia · 1 conta', 'R$ 661,24'], ['Atacadão', 'Mercado · 1 compra', 'R$ 480,00'], ['Enel', 'Moradia · 1 conta', 'R$ 238,76'], ['Posto Ipiranga', 'Transporte · 1 compra', 'R$ 209,30'], ['Pão de Açúcar', 'Mercado · 1 compra', 'R$ 186,42']].map(([name, sub, amount], i) => ({ n: i + 1, name, sub, amount }));
+    return { bars, months, slices, top };
+  }
+}
+</script>
+</body>
+</html>

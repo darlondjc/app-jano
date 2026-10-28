@@ -1,0 +1,22 @@
+<!-- @dsCard group="Ações e formulários" height=210 subtitle="Valor em R$, texto, erro" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0;padding:16px;background:var(--bg);font-family:var(--font-sans);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+</style>
+</head>
+<body>
+<label class="j-field"><span class="j-field__label">Limite mensal</span>
+<span class="j-input"><span class="j-input__prefix">R$</span><input value="900,00" inputmode="decimal"></span>
+<span class="j-field__hint">Sugestão: R$ 876,00, a média dos últimos 3 meses.</span></label>
+<label class="j-field"><span class="j-field__label">Categoria</span>
+<span class="j-input"><input value="Mercado"></span>
+<span class="j-field__hint">Digite para buscar.</span></label>
+<label class="j-field"><span class="j-field__label">Limite mensal</span>
+<span class="j-input j-input--error"><span class="j-input__prefix">R$</span><input value="" placeholder="0,00" inputmode="decimal" aria-invalid="true"></span>
+<span class="j-field__error">Informe um valor maior que zero.</span></label>
+</body>
+</html>

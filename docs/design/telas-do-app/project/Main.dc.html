@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Início mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="j-page" style="width: 390px; height: 1720px; display: flex; flex-direction: column;">
+  <header style="display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <svg width="18" height="29" viewBox="12 0 40 64" aria-hidden="true"><circle cx="32" cy="15" r="9" fill="none" stroke="#0e7c6b" stroke-width="5"/><path d="M32 24 V58 M32 42 H19 M32 52 H25 M32 42 H45 M32 52 H39" fill="none" stroke="#0e7c6b" stroke-width="5" stroke-linecap="round"/></svg>
+      <span style="font: 600 20px/24px Inter, sans-serif; letter-spacing: -0.02em;">jano</span>
+    </div>
+    <button class="j-chip" type="button" style="gap: 6px;">Outubro 2026
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9L12 15L18 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </header>
+
+  <main style="flex: 1; display: flex; flex-direction: column; gap: 16px; padding: 8px 16px 24px;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span class="j-cap">Atualizado há 3 horas</span>
+      <button class="j-btn j-btn--ghost" type="button" style="height: 44px; padding: 0 8px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12A8 8 0 0 1 18 7M20 12A8 8 0 0 1 6 17M18 3V7H14M6 21V17H10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Sincronizar
+      </button>
+    </div>
+
+    <section class="j-card" aria-label="Gasto no mês">
+      <div class="j-kpi">
+        <span class="j-kpi__label">Gasto no mês</span>
+        <div class="j-kpi__value j-kpi__value--balance">R$ 3.114<span class="j-kpi__cents">,60</span></div>
+        <span class="j-sub">de R$ 4.200,00 de meta · 74%</span>
+      </div>
+      <div class="j-goal j-goal--ok" style="margin-top: 16px;">
+        <div class="j-goal__track" role="img" aria-label="74% da meta usada, ritmo ideal em 87%">
+          <div class="j-goal__fill" style="width: 74%;"></div>
+          <div class="j-goal__pace" style="left: 87%;"></div>
+        </div>
+        <div class="j-goal__meta">
+          <span class="j-goal__state">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 12.5L11 15.5L16 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Abaixo do ritmo
+          </span>
+          <span>Ritmo ideal hoje: 87%</span>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;" aria-label="Resumo do mês">
+      <div class="j-card" style="padding: 12px;">
+        <div class="j-cap">Saldo atual</div>
+        <div style="font: 600 16px/24px Inter, sans-serif; font-variant-numeric: tabular-nums; margin-top: 4px;">R$ 4.832,17</div>
+      </div>
+      <div class="j-card" style="padding: 12px;">
+        <div class="j-cap">Receitas</div>
+        <div style="font: 600 16px/24px Inter, sans-serif; font-variant-numeric: tabular-nums; margin-top: 4px; color: var(--positive);">R$ 6.500,00</div>
+      </div>
+      <div class="j-card" style="padding: 12px;">
+        <div class="j-cap">Sobra prevista</div>
+        <div style="font: 600 16px/24px Inter, sans-serif; font-variant-numeric: tabular-nums; margin-top: 4px;">R$ 612,00</div>
+      </div>
+    </section>
+
+    <section aria-label="Alertas" style="display: flex; flex-direction: column; gap: 8px;">
+      <h2 class="j-h2">Para ver hoje</h2>
+      <div class="j-insight">
+        <div class="j-insight__icon" style="background: var(--warning-soft); color: var(--warning-text);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L22 20H2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10V14M12 17V17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <div><div class="j-insight__title">Mercado está em 92% da meta</div><div class="j-insight__text">R$ 828,00 de R$ 900,00, faltando 4 dias.</div></div>
+      </div>
+      <div class="j-insight">
+        <div class="j-insight__icon" style="background: var(--info-soft); color: var(--info);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8V12.5M12 16V16.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <div><div class="j-insight__title">Assinatura nova de R$ 39,90</div><div class="j-insight__text">Apareceu em 21 de outubro. Confirme se é sua.</div></div>
+      </div>
+      <div class="j-insight">
+        <div class="j-insight__icon" style="background: var(--warning-soft); color: var(--warning-text);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11L12 5L18 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div><div class="j-insight__title">Lazer está 24% acima da média</div><div class="j-insight__text">R$ 434,00 contra R$ 350,00 nos últimos 3 meses.</div></div>
+      </div>
+    </section>
+
+    <section class="j-card" aria-label="Gasto acumulado">
+      <h2 class="j-h2">Gasto acumulado</h2>
+      <p class="j-sub" style="margin: 4px 0 8px;">Você está R$ 543,00 abaixo do ritmo ideal.</p>
+      <svg viewBox="0 0 330 190" style="width: 100%; height: auto; display: block;" role="img" aria-label="Gasto acumulado de outubro: R$ 3.114,60 no dia 27, abaixo do ritmo ideal de R$ 3.658,00">
+        <line class="j-grid" x1="44" x2="324" y1="20" y2="20"/><line class="j-grid" x1="44" x2="324" y1="62" y2="62"/><line class="j-grid" x1="44" x2="324" y1="104" y2="104"/><line class="j-grid" x1="44" x2="324" y1="146" y2="146"/>
+        <text class="j-axis" x="0" y="24">R$ 4 mil</text><text class="j-axis" x="0" y="66">R$ 3 mil</text><text class="j-axis" x="0" y="108">R$ 2 mil</text><text class="j-axis" x="0" y="150">R$ 1 mil</text>
+        <line x1="44" y1="152" x2="324" y2="22" style="stroke: var(--text-2);" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <polyline fill="none" style="stroke: var(--primary);" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="44,150 78,111 106,104 142,96 170,89 204,81 238,74 270,68"/>
+        <circle cx="270" cy="68" r="4" style="fill: var(--primary);"/>
+        <text class="j-axis" x="44" y="176">1</text><text class="j-axis" x="130" y="176">10</text><text class="j-axis" x="214" y="176">20</text><text class="j-axis" x="304" y="176">31</text>
+      </svg>
+      <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px;" class="j-cap">
+        <span style="display: inline-flex; align-items: center; gap: 6px;"><i style="width: 20px; border-top: 2.5px solid var(--primary); display: inline-block;"></i>Seu gasto</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px;"><i style="width: 20px; border-top: 2px dashed var(--text-2); display: inline-block;"></i>Ritmo ideal</span>
+      </div>
+    </section>
+
+    <section class="j-card" aria-label="Metas por categoria" style="display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <h2 class="j-h2">Maiores categorias</h2>
+        <a href="#" class="j-btn j-btn--ghost" style="height: 44px; padding: 0 8px;">Ver todas</a>
+      </div>
+      <div class="j-goal j-goal--ok">
+        <div class="j-goal__head"><span>Moradia</span><span class="j-num">R$ 900 <span class="j-sub">de R$ 1.200</span></span></div>
+        <div class="j-goal__track"><div class="j-goal__fill" style="width: 75%;"></div><div class="j-goal__pace" style="left: 87%;"></div></div>
+        <div class="j-goal__meta"><span class="j-goal__state">No ritmo</span><span>75%</span></div>
+      </div>
+      <div class="j-goal j-goal--warn">
+        <div class="j-goal__head"><span>Mercado</span><span class="j-num">R$ 828 <span class="j-sub">de R$ 900</span></span></div>
+        <div class="j-goal__track"><div class="j-goal__fill" style="width: 92%;"></div><div class="j-goal__pace" style="left: 87%;"></div></div>
+        <div class="j-goal__meta"><span class="j-goal__state">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L22 20H2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10V14M12 17V17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Atenção</span><span>92%</span></div>
+      </div>
+      <div class="j-goal j-goal--ok">
+        <div class="j-goal__head"><span>Restaurantes</span><span class="j-num">R$ 340 <span class="j-sub">de R$ 500</span></span></div>
+        <div class="j-goal__track"><div class="j-goal__fill" style="width: 68%;"></div><div class="j-goal__pace" style="left: 87%;"></div></div>
+        <div class="j-goal__meta"><span class="j-goal__state">No ritmo</span><span>68%</span></div>
+      </div>
+      <div class="j-goal j-goal--over">
+        <div class="j-goal__head"><span>Lazer</span><span class="j-num">R$ 434 <span class="j-sub">de R$ 350</span></span></div>
+        <div class="j-goal__track"><div class="j-goal__fill" style="width: 100%;"></div><div class="j-goal__pace" style="left: 87%;"></div></div>
+        <div class="j-goal__meta"><span class="j-goal__state">
+          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12.5M12 16V16.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Acima da meta</span><span>124%</span></div>
+      </div>
+    </section>
+
+    <section aria-label="Últimas transações">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+        <h2 class="j-h2">Últimas transações</h2>
+        <a href="#" class="j-btn j-btn--ghost" style="height: 44px; padding: 0 8px;">Ver todas</a>
+      </div>
+      <div style="border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden;">
+        <div class="j-tx"><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-3);"></i></div><div><div class="j-tx__name">Pão de Açúcar</div><div class="j-tx__sub">Mercado · 27 out</div></div><div class="j-tx__amount">−R$ 186,42</div></div>
+        <div class="j-tx"><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-8);"></i></div><div><div class="j-tx__name">iFood</div><div class="j-tx__sub">Restaurantes · 26 out</div></div><div class="j-tx__amount">−R$ 58,90</div></div>
+        <div class="j-tx"><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-2);"></i></div><div><div class="j-tx__name">Uber</div><div class="j-tx__sub">Transporte · 26 out</div></div><div class="j-tx__amount">−R$ 23,70</div></div>
+        <div class="j-tx"><div class="j-tx__icon" style="background: var(--positive-soft);"><i class="j-dotc" style="background: var(--positive);"></i></div><div><div class="j-tx__name">Pix recebido · João</div><div class="j-tx__sub">Receita · 25 out</div></div><div class="j-tx__amount j-tx__amount--in">+R$ 150,00</div></div>
+        <div class="j-tx"><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-5);"></i></div><div><div class="j-tx__name">Netflix</div><div class="j-tx__sub">Assinaturas · 24 out</div></div><div class="j-tx__amount">−R$ 44,90</div></div>
+        <div class="j-tx" style="border-bottom: 0;"><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-4);"></i></div><div><div class="j-tx__name">Farmácia Pague Menos</div><div class="j-tx__sub">Saúde · 23 out</div></div><div class="j-tx__amount">−R$ 67,35</div></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="j-nav j-nav--bottom" aria-label="Principal">
+    <a class="j-nav__item" href="#" aria-current="page"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11L12 4L20 11V20H14V14H10V20H4Z" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg></span>Início</a>
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7H20M4 12H20M4 17H14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg></span>Transações</a>
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M12 4V12H20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"/></svg></span>Orçamento</a>
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18L9 12L13 15L20 6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Projeções</a>
+    <a class="j-nav__item" href="#"><span class="j-nav__ic"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="18" cy="12" r="1.6" fill="currentColor"/></svg></span>Mais</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1720}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

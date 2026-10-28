@@ -1,0 +1,31 @@
+<!-- @dsCard group="Dados" height=230 subtitle="Valor, variação e meta" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0;padding:16px;background:var(--bg);font-family:var(--font-sans);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.sub{font:400 14px/20px var(--font-sans);color:var(--text-2)}
+</style>
+</head>
+<body>
+<div class="j-card j-kpi">
+<div class="j-kpi__label">Saldo atual</div>
+<div class="j-kpi__value j-kpi__value--balance">R$ 4.832<span class="j-kpi__cents">,17</span></div>
+<span class="j-delta j-delta--neutral">Atualizado há 3 horas</span>
+</div>
+<div class="j-card j-kpi">
+<div class="j-kpi__label">Gasto no mês · outubro</div>
+<div class="j-kpi__value">R$ 3.114<span class="j-kpi__cents">,60</span></div>
+<div><span class="j-delta j-delta--good"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 2V12M3 8L7 12L11 8" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>8% menor que setembro</span></div>
+<div class="sub">74% da meta de R$ 4.200,00</div>
+</div>
+<div class="j-card j-kpi">
+<div class="j-kpi__label">Lazer · outubro</div>
+<div class="j-kpi__value">R$ 434<span class="j-kpi__cents">,00</span></div>
+<div><span class="j-delta j-delta--bad"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 12V2M3 6L7 2L11 6" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>24% acima da média</span></div>
+<div class="sub">Média de 3 meses: R$ 350,00</div>
+</div>
+</body>
+</html>

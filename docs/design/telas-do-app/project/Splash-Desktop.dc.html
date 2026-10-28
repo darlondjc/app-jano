@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Splash desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+@keyframes jdraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes jrise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes jbar{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+.k-ring{stroke-dasharray:1;stroke-dashoffset:1;animation:jdraw .7s ease-out .2s forwards}
+.k-stem{stroke-dasharray:1;stroke-dashoffset:1;animation:jdraw .5s ease-out .85s forwards}
+.k-teeth{stroke-dasharray:1;stroke-dashoffset:1;animation:jdraw .6s ease-out 1.25s forwards}
+.k-name{opacity:0;animation:jrise .6s ease-out 1.7s forwards}
+.k-tag{opacity:0;animation:jrise .6s ease-out 2.1s forwards}
+.k-load{opacity:0;animation:jrise .4s ease-out 2.4s forwards}
+.k-load i{display:block;width:40%;height:100%;border-radius:99px;background:var(--on-primary);animation:jbar 1.4s ease-in-out 2.6s infinite}
+@media (prefers-reduced-motion: reduce){
+  .k-ring,.k-stem,.k-teeth{animation:none;stroke-dashoffset:0}
+  .k-name,.k-tag,.k-load{animation:none;opacity:1}
+  .k-load i{animation:none;transform:translateX(75%)}
+}
+</style>
+</helmet>
+<div style="min-height: 860px; background: var(--primary); color: var(--on-primary); font-family: var(--font-sans); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; position: relative;">
+  <svg width="104" height="166" viewBox="12 0 40 64" role="img" aria-label="Símbolo do Jano: uma chave de duas faces" style="display: block;">
+    <circle class="k-ring" pathLength="1" cx="32" cy="15" r="9" fill="none" stroke="#ffffff" stroke-width="5"/>
+    <path class="k-stem" pathLength="1" d="M32 24 V58" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+    <path class="k-teeth" pathLength="1" d="M32 42 H19 M32 52 H25 M32 42 H45 M32 52 H39" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+  </svg>
+  <div style="text-align: center;">
+    <div class="k-name" style="font: 600 72px/1 Inter, sans-serif; letter-spacing: -0.03em; color: #ffffff;">jano</div>
+    <div class="k-tag" style="margin-top: 16px; font: 500 20px/28px Inter, sans-serif; color: #ffffff; opacity: 0.9;">Veja o que passou. Planeje o que vem.</div>
+  </div>
+  <div class="k-load" style="position: absolute; bottom: 80px; width: 120px; height: 4px; border-radius: 99px; background: rgba(255, 255, 255, 0.3); overflow: hidden;" role="progressbar" aria-label="Carregando"><i></i></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

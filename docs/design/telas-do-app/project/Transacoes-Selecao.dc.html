@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Transações seleção</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+.chk{width:22px;height:22px;border-radius:6px;border:2px solid var(--border-strong);display:inline-flex;align-items:center;justify-content:center;flex:none;background:var(--surface)}
+.chk--on{background:var(--primary);border-color:var(--primary);color:var(--on-primary)}
+</style>
+</helmet>
+<div class="j-page" style="width: 390px; height: 844px; display: flex; flex-direction: column;">
+  <header style="padding: 12px 8px 12px 16px; display: flex; align-items: center; gap: 8px; background: var(--primary-soft); color: var(--primary-text);">
+    <button class="j-iconbtn" type="button" aria-label="Cancelar seleção" style="border-color: transparent; background: transparent; color: inherit;">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <h1 style="margin: 0; font: 600 18px/24px Inter, sans-serif; flex: 1;">2 selecionadas</h1>
+    <button class="j-btn j-btn--ghost" type="button">Selecionar todas</button>
+  </header>
+  <main style="flex: 1; overflow: hidden;">
+    <div class="j-day">TERÇA, 27 DE OUTUBRO</div>
+    <div class="j-tx" style="grid-template-columns: 24px 40px 1fr auto;"><span class="chk chk--on"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5L10 17.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-3);"></i></div><div><div class="j-tx__name">Pão de Açúcar</div><div class="j-tx__sub">Mercado · Conta</div></div><div class="j-tx__amount">−R$ 186,42</div></div>
+    <div class="j-tx" style="grid-template-columns: 24px 40px 1fr auto;"><span class="chk"></span><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-2);"></i></div><div><div class="j-tx__name">Uber</div><div class="j-tx__sub">Transporte · Cartão</div></div><div class="j-tx__amount">−R$ 23,70</div></div>
+    <div class="j-day">SEGUNDA, 26 DE OUTUBRO</div>
+    <div class="j-tx" style="grid-template-columns: 24px 40px 1fr auto;"><span class="chk chk--on"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5L10 17.5L19 7" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-8);"></i></div><div><div class="j-tx__name">iFood</div><div class="j-tx__sub">Restaurantes · Cartão</div></div><div class="j-tx__amount">−R$ 58,90</div></div>
+    <div class="j-tx" style="grid-template-columns: 24px 40px 1fr auto;"><span class="chk"></span><div class="j-tx__icon" style="background: var(--positive-soft);"><i class="j-dotc" style="background: var(--positive);"></i></div><div><div class="j-tx__name">Pix recebido · João</div><div class="j-tx__sub">Receita · Conta</div></div><div class="j-tx__amount j-tx__amount--in">+R$ 150,00</div></div>
+    <div class="j-day">DOMINGO, 25 DE OUTUBRO</div>
+    <div class="j-tx" style="grid-template-columns: 24px 40px 1fr auto;"><span class="chk"></span><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--text-2);"></i></div><div><div class="j-tx__name">Transferência para Poupança</div><div class="j-tx__sub">Transferência · fora do total</div></div><div class="j-tx__amount">−R$ 500,00</div></div>
+    <div class="j-tx" style="grid-template-columns: 24px 40px 1fr auto;"><span class="chk"></span><div class="j-tx__icon" style="background: var(--surface-2);"><i class="j-dotc" style="background: var(--cat-6);"></i></div><div><div class="j-tx__name">Cinemark</div><div class="j-tx__sub">Lazer · Cartão</div></div><div class="j-tx__amount">−R$ 64,00</div></div>
+  </main>
+  <div style="background: var(--surface); border-top: 1px solid var(--border); padding: 12px 16px 20px; box-shadow: var(--shadow-sheet);">
+    <div class="j-sub" style="margin-bottom: 8px;">Total selecionado: <b style="color: var(--text);">−R$ 245,32</b></div>
+    <div style="display: flex; gap: 8px;">
+      <button class="j-btn j-btn--primary j-btn--lg" type="button" style="flex: 1;">Categorizar</button>
+      <button class="j-btn j-btn--secondary j-btn--lg" type="button" style="flex: 1;">Marcar transferência</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

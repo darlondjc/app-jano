@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Estados da importação desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="j-page" style="min-height: 640px; padding: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: start;">
+  <section class="j-card" aria-label="Arquivo em formato inválido" style="display: flex; flex-direction: column; gap: 16px;">
+    <div class="j-cap">ARQUIVO EM FORMATO INVÁLIDO</div>
+    <div style="border: 2px dashed var(--danger); border-radius: var(--radius-lg); padding: 20px; display: flex; align-items: center; gap: 12px; background: var(--danger-soft);">
+      <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--danger); flex: none;"><path d="M6 3H14L19 8V21H6Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <div><div style="font: 600 14px/20px Inter, sans-serif; color: var(--danger);">extrato.pdf</div><div class="j-cap" style="color: var(--danger);">2,1 MB · formato não aceito</div></div>
+    </div>
+    <div class="j-banner j-banner--danger" role="alert"><div><span class="j-banner__title">Não conseguimos ler esse arquivo.</span> O Jano lê arquivos OFX ou CSV, não PDF.</div></div>
+    <ol style="margin: 0; padding-left: 20px; font: 400 14px/20px Inter, sans-serif; color: var(--text-2); display: flex; flex-direction: column; gap: 6px;">
+      <li>No internet banking, abra Extrato e exporte.</li>
+      <li>Escolha OFX. Se não houver, escolha CSV.</li>
+      <li>Envie o novo arquivo.</li>
+    </ol>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;"><button class="j-btn j-btn--primary" type="button">Escolher outro arquivo</button><button class="j-btn j-btn--ghost" type="button">Como baixar o OFX</button></div>
+  </section>
+
+  <section class="j-card" aria-label="Importação parcial com avisos" style="display: flex; flex-direction: column; gap: 16px;">
+    <div class="j-cap">IMPORTAÇÃO PARCIAL COM AVISOS</div>
+    <div class="j-banner j-banner--warn" role="status"><div><span class="j-banner__title">Vamos importar 198 de 212 transações.</span> 14 linhas têm problemas e ficaram de fora.</div></div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+      <div class="j-card" style="padding: 12px;"><div class="j-cap">Importadas</div><div style="font: 600 20px/28px Inter, sans-serif; color: var(--positive);" class="j-num">198</div></div>
+      <div class="j-card" style="padding: 12px;"><div class="j-cap">Com aviso</div><div style="font: 600 20px/28px Inter, sans-serif; color: var(--warning-text);" class="j-num">14</div></div>
+      <div class="j-card" style="padding: 12px;"><div class="j-cap">Duplicadas</div><div style="font: 600 20px/28px Inter, sans-serif;" class="j-num">14</div></div>
+    </div>
+    <ul style="margin: 0; padding-left: 20px; font: 400 14px/20px Inter, sans-serif; display: flex; flex-direction: column; gap: 6px;">
+      <li>9 linhas sem data válida (linhas 41 a 49)</li>
+      <li>5 valores em formato desconhecido</li>
+    </ul>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;"><button class="j-btn j-btn--primary" type="button">Continuar com 198</button><button class="j-btn j-btn--secondary" type="button">Escolher outro arquivo</button></div>
+  </section>
+
+  <section class="j-card" aria-label="Importação concluída" style="display: flex; flex-direction: column; gap: 16px;">
+    <div class="j-cap">IMPORTAÇÃO CONCLUÍDA</div>
+    <div class="j-banner j-banner--good" role="status"><div><span class="j-banner__title">212 transações importadas.</span> De 1 out 2025 a 27 out 2026.</div></div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; justify-content: space-between;"><span class="j-sub">Novas</span><b class="j-num">212</b></div>
+      <div style="display: flex; justify-content: space-between;"><span class="j-sub">Duplicatas ignoradas</span><b class="j-num">14</b></div>
+      <div style="display: flex; justify-content: space-between;"><span class="j-sub">Com categoria sugerida</span><b class="j-num">198</b></div>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;"><button class="j-btn j-btn--primary" type="button">Ver meu mês</button><button class="j-btn j-btn--ghost" type="button">Revisar categorias</button></div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":640}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

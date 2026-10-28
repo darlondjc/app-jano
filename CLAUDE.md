@@ -1,6 +1,10 @@
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
 
+# Design aprovado
+
+Antes de criar ou mudar tela, componente, ícone, logo ou texto de interface, consulte `docs/design/` (comece pelo `README.md` de lá). É a cópia local dos protótipos, do design system e dos documentos aprovados no Claude Design. Se algo não estiver lá, busque o artefato no Claude Design e baixe para essa pasta.
+
 # General Guidelines for working with Nx
 
 - For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies

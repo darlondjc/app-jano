@@ -1,0 +1,19 @@
+<!-- @dsCard group="Feedback" height=330 subtitle="Informação, atenção, erro e sucesso" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0;padding:16px;background:var(--bg);font-family:var(--font-sans);display:flex;flex-direction:column;gap:12px;max-width:640px}
+.j-banner svg{flex:none;margin-top:1px}
+.j-banner a{color:inherit;font-weight:600;text-decoration:underline;margin-left:4px}
+</style>
+</head>
+<body>
+<div class="j-banner j-banner--info" role="status"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.75"/><path d="M10 6V10.5M10 13.5V13.6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/></svg><div><span class="j-banner__title">Última importação há 12 dias.</span> Importe um novo extrato para manter as metas em dia.<a href="#">Importar</a></div></div>
+<div class="j-banner j-banner--warn" role="status"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3L22 20H2Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 10V14M12 17V17.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><div><span class="j-banner__title">O consentimento expira em 15 dias.</span> Renove para continuar sincronizando suas transações.<a href="#">Renovar</a></div></div>
+<div class="j-banner j-banner--danger" role="alert"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9 9L15 15M15 9L9 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><div><span class="j-banner__title">A sincronização falhou.</span> Seus dados estão salvos, mas não atualizados desde 24 de outubro.<a href="#">Tentar de novo</a></div></div>
+<div class="j-banner j-banner--good" role="status"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 12.5L11 15.5L16 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><div><span class="j-banner__title">Importação concluída.</span> 212 transações novas e 14 duplicadas ignoradas.</div></div>
+</body>
+</html>

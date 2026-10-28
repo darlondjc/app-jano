@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Transações desktop estados</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="j-page" style="min-height: 620px; padding: 32px; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start;">
+  <section style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+    <div class="j-cap">BUSCA SEM RESULTADO</div>
+    <label class="j-input" style="height: 44px; max-width: 480px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="margin-right: 8px; color: var(--text-2);"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input value="Padaria Zé" aria-label="Buscar transações">
+    </label>
+    <div class="j-card j-empty" style="padding: 64px 24px;">
+      <svg width="48" height="48" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 8 A24 24 0 0 0 32 56 Z" style="fill: var(--primary);"/><path d="M32 8 A24 24 0 0 1 32 56" fill="none" style="stroke: var(--primary);" stroke-width="4" stroke-dasharray="4 5" stroke-linecap="round"/></svg>
+      <div class="j-empty__title">Nada encontrado para “Padaria Zé”</div>
+      <div class="j-empty__text">Confira a grafia ou busque só por “Padaria”. A busca olha o mês de outubro.</div>
+      <div style="display: flex; gap: 8px;">
+        <button class="j-btn j-btn--secondary" type="button">Buscar em todos os meses</button>
+        <button class="j-btn j-btn--ghost" type="button">Limpar busca</button>
+      </div>
+    </div>
+  </section>
+  <aside class="j-panel" aria-label="Detalhe sem sugestão" style="flex: 0 0 360px; border: 1px solid var(--border); border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: 16px;">
+    <div class="j-cap">TRANSAÇÃO SEM CATEGORIA SUGERIDA</div>
+    <div><h2 style="margin: 0; font: 600 20px/28px Inter, sans-serif;">Pix · Mercadinho Souza</h2><div class="j-sub">21 de outubro · Conta</div></div>
+    <div class="j-kpi__value">−R$ 42<span class="j-kpi__cents">,00</span></div>
+    <div class="j-banner j-banner--info">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px;"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8V12.5M12 16V16.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <div><span class="j-banner__title">Sem sugestão de categoria.</span> Pix para lojas pequenas não traz a categoria. Escolha uma e o Jano lembra.</div>
+    </div>
+    <div>
+      <div class="j-field__label" style="margin-bottom: 8px;">Categoria</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="j-chip" type="button" aria-pressed="true">Mercado</button>
+        <button class="j-chip" type="button" aria-pressed="false">Restaurantes</button>
+        <button class="j-chip" type="button" aria-pressed="false">Transporte</button>
+        <button class="j-chip" type="button" aria-pressed="false">Saúde</button>
+        <button class="j-chip" type="button" aria-pressed="false">Outros</button>
+      </div>
+    </div>
+    <label style="display: flex; align-items: center; gap: 10px; min-height: 44px; font: 400 14px/20px Inter, sans-serif;"><input type="checkbox" checked style="accent-color: var(--primary);">Criar regra: contiver “MERCADINHO SOUZA” → Mercado</label>
+    <button class="j-btn j-btn--primary" type="button">Salvar categoria</button>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":620}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

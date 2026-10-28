@@ -1,0 +1,88 @@
+<!-- @dsCard group="Dados" height=470 subtitle="Projeção, comparativo, rosca e sparkline" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0;padding:16px;background:var(--bg);font-family:var(--font-sans);color:var(--text);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+h3{margin:0 0 12px;font:600 16px/24px var(--font-sans)}
+svg{display:block;width:100%;height:auto}
+.axis{font:500 12px/16px var(--font-sans);fill:var(--text-2)}
+.grid{stroke:var(--chart-grid);stroke-width:1}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font:400 12px/16px var(--font-sans);color:var(--text-2);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.key{width:20px;height:0;border-top:2.5px solid var(--primary)}
+.key--dash{border-top:2.5px dashed var(--info)}
+.key--band{height:10px;border:0;background:var(--projection-band);border-radius:2px}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.donut{display:flex;gap:16px;align-items:center}
+.donut ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font:400 13px/18px var(--font-sans);flex:1}
+.donut li{display:flex;align-items:center;gap:8px}
+.donut li b{margin-left:auto;font-weight:600;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<div class="j-card">
+<h3>Saldo projetado</h3>
+<svg viewBox="0 0 360 190" role="img" aria-label="Saldo realizado de julho a outubro e projeção até dezembro, com faixa de incerteza">
+<line class="grid" x1="40" x2="350" y1="30" y2="30"/><line class="grid" x1="40" x2="350" y1="70" y2="70"/><line class="grid" x1="40" x2="350" y1="110" y2="110"/><line class="grid" x1="40" x2="350" y1="150" y2="150"/>
+<text class="axis" x="0" y="34">R$ 8 mil</text><text class="axis" x="0" y="74">R$ 6 mil</text><text class="axis" x="0" y="114">R$ 4 mil</text><text class="axis" x="0" y="154">R$ 2 mil</text>
+<polygon style="fill:var(--projection-band)" points="170,92 230,72 290,56 350,38 350,104 290,108 230,104 170,92"/>
+<polyline fill="none" style="stroke:var(--primary)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="50,118 110,104 140,112 170,92"/>
+<polyline fill="none" style="stroke:var(--info)" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="6 5" points="170,92 230,88 290,82 350,72"/>
+<line x1="170" x2="170" y1="24" y2="156" style="stroke:var(--border-strong)" stroke-width="1" stroke-dasharray="2 3"/>
+<text class="axis" x="174" y="22">hoje</text>
+<text class="axis" x="40" y="178">Jul</text><text class="axis" x="100" y="178">Ago</text><text class="axis" x="160" y="178">Out</text><text class="axis" x="220" y="178">Nov</text><text class="axis" x="280" y="178">Dez</text><text class="axis" x="330" y="178">Jan</text>
+</svg>
+<div class="legend"><span><i class="key"></i>Realizado</span><span><i class="key key--dash"></i>Projeção</span><span><i class="key key--band"></i>Faixa de incerteza</span></div>
+</div>
+
+<div class="j-card">
+<h3>Gasto por mês e meta</h3>
+<svg viewBox="0 0 360 190" role="img" aria-label="Gasto mensal de maio a outubro comparado à meta de R$ 4.200">
+<line class="grid" x1="40" x2="350" y1="30" y2="30"/><line class="grid" x1="40" x2="350" y1="90" y2="90"/><line class="grid" x1="40" x2="350" y1="150" y2="150"/>
+<text class="axis" x="0" y="34">R$ 5 mil</text><text class="axis" x="0" y="94">R$ 3 mil</text><text class="axis" x="0" y="154">R$ 1 mil</text>
+<rect x="52" y="52" width="32" height="98" rx="4" style="fill:var(--primary-soft)"/><rect x="104" y="44" width="32" height="106" rx="4" style="fill:var(--primary-soft)"/><rect x="156" y="58" width="32" height="92" rx="4" style="fill:var(--primary-soft)"/><rect x="208" y="40" width="32" height="110" rx="4" style="fill:var(--primary-soft)"/><rect x="260" y="50" width="32" height="100" rx="4" style="fill:var(--primary-soft)"/><rect x="312" y="62" width="32" height="88" rx="4" style="fill:var(--primary)"/>
+<line x1="40" x2="350" y1="46" y2="46" style="stroke:var(--text)" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text class="axis" x="44" y="40">Meta R$ 4.200</text>
+<text class="axis" x="54" y="178">Mai</text><text class="axis" x="106" y="178">Jun</text><text class="axis" x="160" y="178">Jul</text><text class="axis" x="210" y="178">Ago</text><text class="axis" x="264" y="178">Set</text><text class="axis" x="316" y="178">Out</text>
+</svg>
+<div class="legend"><span><i class="dot" style="background:var(--primary-soft);border:1px solid var(--primary)"></i>Meses fechados</span><span><i class="dot" style="background:var(--primary)"></i>Mês atual</span></div>
+</div>
+
+<div class="j-card">
+<h3>Para onde foi o dinheiro</h3>
+<div class="donut">
+<svg viewBox="0 0 120 120" style="width:140px;flex:none" role="img" aria-label="Distribuição: Moradia 38%, Mercado 22%, Transporte 14%, Restaurantes 12%, Outros 14%">
+<g transform="rotate(-90 60 60)" fill="none" stroke-width="22">
+<circle cx="60" cy="60" r="40" style="stroke:var(--cat-1)" stroke-dasharray="95.5 251.3" stroke-dashoffset="0"/>
+<circle cx="60" cy="60" r="40" style="stroke:var(--cat-3)" stroke-dasharray="55.3 251.3" stroke-dashoffset="-95.5"/>
+<circle cx="60" cy="60" r="40" style="stroke:var(--cat-2)" stroke-dasharray="35.2 251.3" stroke-dashoffset="-150.8"/>
+<circle cx="60" cy="60" r="40" style="stroke:var(--cat-8)" stroke-dasharray="30.2 251.3" stroke-dashoffset="-186"/>
+<circle cx="60" cy="60" r="40" style="stroke:var(--text-2)" stroke-dasharray="35.1 251.3" stroke-dashoffset="-216.2"/>
+</g>
+</svg>
+<ul>
+<li><i class="dot" style="background:var(--cat-1)"></i>Moradia<b>38%</b></li>
+<li><i class="dot" style="background:var(--cat-3)"></i>Mercado<b>22%</b></li>
+<li><i class="dot" style="background:var(--cat-2)"></i>Transporte<b>14%</b></li>
+<li><i class="dot" style="background:var(--cat-8)"></i>Restaurantes<b>12%</b></li>
+<li><i class="dot" style="background:var(--text-2)"></i>Outros<b>14%</b></li>
+</ul>
+</div>
+</div>
+
+<div class="j-card">
+<h3>Tendência (sparkline)</h3>
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:16px"><span class="j-kpi__label" style="width:96px">Mercado</span>
+<svg viewBox="0 0 120 32" style="width:120px" role="img" aria-label="Mercado nos últimos 6 meses, em alta"><polyline fill="none" style="stroke:var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,22 24,18 46,24 68,14 90,16 118,6"/><circle cx="118" cy="6" r="3" style="fill:var(--primary)"/></svg>
+<span class="j-delta j-delta--bad">+8%</span></div>
+<div style="display:flex;align-items:center;gap:16px"><span class="j-kpi__label" style="width:96px">Transporte</span>
+<svg viewBox="0 0 120 32" style="width:120px" role="img" aria-label="Transporte nos últimos 6 meses, em queda"><polyline fill="none" style="stroke:var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,8 24,12 46,10 68,18 90,20 118,26"/><circle cx="118" cy="26" r="3" style="fill:var(--primary)"/></svg>
+<span class="j-delta j-delta--good">−12%</span></div>
+</div>
+</div>
+</body>
+</html>

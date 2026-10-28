@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Boas-vindas mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="j-page" style="width: 390px; height: 844px; display: flex; flex-direction: column;">
+  <main style="flex: 1; padding: 64px 24px 16px; display: flex; flex-direction: column; gap: 32px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <svg width="30" height="48" viewBox="12 0 40 64" aria-hidden="true"><circle cx="32" cy="15" r="9" fill="none" stroke="#0e7c6b" stroke-width="5"/><path d="M32 24 V58 M32 42 H19 M32 52 H25 M32 42 H45 M32 52 H39" fill="none" stroke="#0e7c6b" stroke-width="5" stroke-linecap="round"/></svg>
+      <span style="font: 600 40px/1 Inter, sans-serif; letter-spacing: -0.03em;">jano</span>
+    </div>
+    <div>
+      <h1 style="margin: 0; font: 600 28px/36px Inter, sans-serif; letter-spacing: -0.01em;">Veja o que passou. Planeje o que vem.</h1>
+      <p class="j-sub" style="margin: 12px 0 0; font-size: 16px; line-height: 24px;">O Jano organiza seus gastos, acompanha suas metas e mostra como o mês deve fechar.</p>
+    </div>
+    <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px;">
+      <li style="display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: start;">
+        <span class="j-insight__icon" style="background: var(--primary-soft); color: var(--primary-text);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12S6 5 12 5S22 12 22 12S18 19 12 19S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>
+        <div><div style="font: 600 16px/24px Inter, sans-serif;">Só lê os dados</div><div class="j-sub">Você envia o extrato e o Jano apenas lê.</div></div>
+      </li>
+      <li style="display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: start;">
+        <span class="j-insight__icon" style="background: var(--primary-soft); color: var(--primary-text);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M6 18L18 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
+        <div><div style="font: 600 16px/24px Inter, sans-serif;">Nunca move dinheiro</div><div class="j-sub">Sem pagamentos, sem transferências, sem Pix.</div></div>
+      </li>
+      <li style="display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: start;">
+        <span class="j-insight__icon" style="background: var(--primary-soft); color: var(--primary-text);"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8A4 4 0 0 1 16 8V11" fill="none" stroke="currentColor" stroke-width="2"/></svg></span>
+        <div><div style="font: 600 16px/24px Inter, sans-serif;">Nunca pede a senha do banco</div><div class="j-sub">Você exporta o arquivo no seu banco e envia aqui.</div></div>
+      </li>
+    </ul>
+  </main>
+  <footer style="padding: 16px 24px 32px; display: flex; flex-direction: column; gap: 8px;">
+    <button class="j-btn j-btn--primary j-btn--lg" type="button">Começar</button>
+    <span class="j-cap" style="text-align: center;">Você pode exportar ou apagar seus dados quando quiser.</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

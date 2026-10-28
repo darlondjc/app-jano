@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Como importar mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="j-page" style="width: 390px; height: 844px; display: flex; flex-direction: column;">
+  <header style="padding: 16px 16px 8px;">
+    <div style="display: flex; gap: 6px;" role="img" aria-label="Passo 2 de 5"><i style="flex: 1; height: 4px; border-radius: 99px; background: var(--primary);"></i><i style="flex: 1; height: 4px; border-radius: 99px; background: var(--primary);"></i><i style="flex: 1; height: 4px; border-radius: 99px; background: var(--border-strong);"></i><i style="flex: 1; height: 4px; border-radius: 99px; background: var(--border-strong);"></i><i style="flex: 1; height: 4px; border-radius: 99px; background: var(--border-strong);"></i></div>
+    <div class="j-cap" style="margin-top: 8px;">Passo 2 de 5</div>
+  </header>
+  <main style="flex: 1; padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 20px;">
+    <div>
+      <h1 class="j-h1">Baixe o extrato do seu banco</h1>
+      <p class="j-sub" style="margin: 8px 0 0;">Leva cerca de um minuto. Faça isso uma vez por mês e o Jano mantém tudo em dia.</p>
+    </div>
+    <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px;">
+      <li style="display: grid; grid-template-columns: 32px 1fr; gap: 12px;"><span style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-soft); color: var(--primary-text); display: flex; align-items: center; justify-content: center; font: 600 14px/20px Inter, sans-serif;">1</span><div><div style="font: 600 14px/20px Inter, sans-serif;">Entre no internet banking</div><div class="j-sub">No site ou no app do seu banco, pelo canal oficial.</div></div></li>
+      <li style="display: grid; grid-template-columns: 32px 1fr; gap: 12px;"><span style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-soft); color: var(--primary-text); display: flex; align-items: center; justify-content: center; font: 600 14px/20px Inter, sans-serif;">2</span><div><div style="font: 600 14px/20px Inter, sans-serif;">Abra Extrato e escolha o período</div><div class="j-sub">O ideal é pegar os últimos 12 meses.</div></div></li>
+      <li style="display: grid; grid-template-columns: 32px 1fr; gap: 12px;"><span style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-soft); color: var(--primary-text); display: flex; align-items: center; justify-content: center; font: 600 14px/20px Inter, sans-serif;">3</span><div><div style="font: 600 14px/20px Inter, sans-serif;">Baixe em OFX (ou CSV)</div><div class="j-sub">OFX traz datas e valores já organizados.</div></div></li>
+      <li style="display: grid; grid-template-columns: 32px 1fr; gap: 12px;"><span style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-soft); color: var(--primary-text); display: flex; align-items: center; justify-content: center; font: 600 14px/20px Inter, sans-serif;">4</span><div><div style="font: 600 14px/20px Inter, sans-serif;">Volte e envie o arquivo</div><div class="j-sub">Ele fica salvo no seu aparelho, em Downloads.</div></div></li>
+    </ol>
+    <div class="j-card" style="padding: 12px 16px; display: flex; align-items: center; gap: 12px; background: var(--surface-2); border: 0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; color: var(--text-2);"><path d="M4 12A8 8 0 0 1 18 7M20 12A8 8 0 0 1 6 17M18 3V7H14M6 21V17H10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div style="flex: 1;"><div style="font: 500 14px/20px Inter, sans-serif;">Sincronização automática</div><div class="j-cap">Sem precisar baixar arquivos.</div></div>
+      <span class="j-tag">Em breve</span>
+    </div>
+  </main>
+  <footer style="padding: 16px 16px 32px; display: flex; flex-direction: column; gap: 8px;">
+    <button class="j-btn j-btn--primary j-btn--lg" type="button">Já tenho o arquivo</button>
+    <button class="j-btn j-btn--ghost" type="button">Ver exemplo de arquivo OFX</button>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

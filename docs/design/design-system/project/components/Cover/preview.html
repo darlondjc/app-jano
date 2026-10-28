@@ -1,0 +1,41 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+html,body{margin:0;background:var(--bg)}
+svg{display:block;width:960px;height:288px}
+</style>
+</head>
+<body>
+<!-- Derivação: fundo = --bg; blocos de cor à direita = --primary, --primary-soft, --cat-1..--cat-4, --warning-soft; padrão = meias-luas meio cheias, meio tracejadas (o símbolo de estado vazio do Jano); nome em --text, 600, com a tagline em --text-2. -->
+<svg viewBox="0 0 960 288" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Jano. Veja o que passou. Planeje o que vem.">
+  <rect width="960" height="288" style="fill:var(--bg)"/>
+  <!-- padrão à esquerda: meias-luas -->
+  <g style="fill:var(--primary-soft)">
+    <path d="M60 40 A18 18 0 0 0 60 76 Z"/><path d="M140 40 A18 18 0 0 0 140 76 Z"/><path d="M220 40 A18 18 0 0 0 220 76 Z"/><path d="M300 40 A18 18 0 0 0 300 76 Z"/><path d="M380 40 A18 18 0 0 0 380 76 Z"/>
+  </g>
+  <g fill="none" style="stroke:var(--primary)" stroke-width="2" stroke-dasharray="3 4" stroke-linecap="round">
+    <path d="M60 40 A18 18 0 0 1 60 76"/><path d="M140 40 A18 18 0 0 1 140 76"/><path d="M220 40 A18 18 0 0 1 220 76"/><path d="M300 40 A18 18 0 0 1 300 76"/><path d="M380 40 A18 18 0 0 1 380 76"/>
+  </g>
+  <!-- blocos de cor -->
+  <rect x="480" y="0" width="480" height="288" style="fill:var(--surface-2)"/>
+  <rect x="520" y="40" width="160" height="208" rx="16" style="fill:var(--primary)"/>
+  <rect x="696" y="40" width="112" height="100" rx="16" style="fill:var(--primary-soft)"/>
+  <rect x="696" y="148" width="112" height="100" rx="16" style="fill:var(--warning-soft)"/>
+  <rect x="824" y="40" width="96" height="48" rx="12" style="fill:var(--cat-1)"/>
+  <rect x="824" y="96" width="96" height="48" rx="12" style="fill:var(--cat-2)"/>
+  <rect x="824" y="152" width="96" height="48" rx="12" style="fill:var(--cat-3)"/>
+  <rect x="824" y="208" width="96" height="40" rx="12" style="fill:var(--cat-4)"/>
+  <!-- símbolo sobre o bloco principal -->
+  <g transform="translate(600 144) scale(1.6) translate(-32 -32)" fill="none" style="stroke:var(--on-primary)" stroke-width="5" stroke-linecap="round">
+    <circle cx="32" cy="15" r="9"/><path d="M32 24 V58 M32 42 H19 M32 52 H25 M32 42 H45 M32 52 H39"/>
+  </g>
+  <!-- nome -->
+  <text x="40" y="236" font-family="Inter, system-ui, sans-serif" font-weight="600" font-size="96" letter-spacing="-3" style="fill:var(--text)">jano</text>
+  <text x="44" y="266" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="16" style="fill:var(--text-2)">Veja o que passou. Planeje o que vem.</text>
+</svg>
+</body>
+</html>

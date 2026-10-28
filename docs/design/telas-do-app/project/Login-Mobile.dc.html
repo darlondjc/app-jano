@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Login mobile</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+@keyframes jspin{to{transform:rotate(360deg)}}
+.spin{animation:jspin 0.9s linear infinite;transform-origin:center}
+@media (prefers-reduced-motion: reduce){.spin{animation:none}}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;height:52px;border-radius:var(--radius-sm);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font:500 16px/24px Inter,sans-serif;cursor:pointer}
+.gbtn:hover{background:var(--surface-2)}
+.gbtn[disabled]{cursor:progress;opacity:.8}
+.gmark{width:22px;height:22px;border-radius:50%;border:1px solid var(--border-strong);display:inline-flex;align-items:center;justify-content:center;font:600 13px/1 Inter,sans-serif;color:var(--text)}
+</style>
+</helmet>
+<div class="j-page" style="width: 390px; height: 844px; display: flex; flex-direction: column;">
+  <main style="flex: 1; padding: 72px 24px 16px; display: flex; flex-direction: column; gap: 32px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <svg width="24" height="38" viewBox="12 0 40 64" aria-hidden="true"><circle cx="32" cy="15" r="9" fill="none" stroke="#0e7c6b" stroke-width="5"/><path d="M32 24 V58 M32 42 H19 M32 52 H25 M32 42 H45 M32 52 H39" fill="none" stroke="#0e7c6b" stroke-width="5" stroke-linecap="round"/></svg>
+      <span style="font: 600 32px/1 Inter, sans-serif; letter-spacing: -0.03em;">jano</span>
+    </div>
+    <div>
+      <h1 style="margin: 0; font: 600 28px/36px Inter, sans-serif; letter-spacing: -0.01em;">Entre no Jano</h1>
+      <p class="j-sub" style="margin: 8px 0 0; font-size: 16px; line-height: 24px;">Use sua conta Google. Você não precisa criar outra senha.</p>
+    </div>
+
+    <sc-if value="{{isError}}" hint-placeholder-val="{{ false }}">
+      <div class="j-banner j-banner--danger" role="alert">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px;"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5V12.5M12 16V16.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <div><span class="j-banner__title">Não foi possível entrar.</span> O login com o Google foi cancelado ou expirou. Nada foi alterado na sua conta.</div>
+      </div>
+    </sc-if>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <button class="gbtn" type="button" onClick="{{start}}" disabled="{{isLoading}}">
+        <sc-if value="{{isLoading}}" hint-placeholder-val="{{ false }}">
+          <svg class="spin" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" style="stroke: var(--border);" stroke-width="3"/><path d="M12 3A9 9 0 0 1 21 12" fill="none" style="stroke: var(--primary);" stroke-width="3" stroke-linecap="round"/></svg>
+          Abrindo o Google...
+        </sc-if>
+        <sc-if value="{{notLoading}}" hint-placeholder-val="{{ true }}">
+          <span class="gmark" aria-hidden="true">G</span>
+          {{buttonLabel}}
+        </sc-if>
+      </button>
+      <span class="j-cap" style="text-align: center;">Você será levado ao Google e volta para cá em seguida.</span>
+    </div>
+
+    <div class="j-card" style="padding: 16px; display: flex; gap: 12px; background: var(--surface-2); border: 0;">
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; color: var(--primary-text); margin-top: 2px;"><rect x="5" y="11" width="14" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8A4 4 0 0 1 16 8V11" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      <div class="j-sub">O Jano só lê os dados que você envia. Nunca move dinheiro e nunca pede a senha do banco.</div>
+    </div>
+  </main>
+  <footer style="padding: 16px 24px 32px;">
+    <p class="j-cap" style="margin: 0; text-align: center;">Ao continuar, você aceita os <a href="#" style="color: var(--primary-text);">Termos de uso</a> e a <a href="#" style="color: var(--primary-text);">Política de privacidade</a>. Você pode exportar ou apagar seus dados quando quiser.</p>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"view":{"editor":"enum","default":"default","options":["default","loading","error"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const st = this.state || {};
+    const view = st.view || this.props.view || 'default';
+    return {
+      isLoading: view === 'loading',
+      notLoading: view !== 'loading',
+      isError: view === 'error',
+      buttonLabel: view === 'error' ? 'Tentar de novo com o Google' : 'Continuar com Google',
+      start: () => this.setState({ view: 'loading' })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+{
+ "v": 3,
+ "layout": "files",
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-10-27T18:15:00Z"
+ },
+ "title": "Jano",
+ "namespace": "Jano",
+ "libraries": [],
+ "sections": {},
+ "groups": [
+  "Logos"
+ ],
+ "assetGroups": {
+  "Logos": {
+   "name": "Logos",
+   "tile": "l",
+   "order": [
+    "jano-simbolo-verde.svg",
+    "jano-simbolo-branco.svg",
+    "jano-icone-app.svg",
+    "jano-simbolo-verde-claro.svg"
+   ],
+   "files": {
+    "jano-simbolo-verde.svg": {
+     "name": "jano-simbolo-verde.svg",
+     "blob": "/_blob/98158a285b4675bfe2d10c0967073c97",
+     "size": 380,
+     "type": "image/svg+xml"
+    },
+    "jano-simbolo-branco.svg": {
+     "name": "jano-simbolo-branco.svg",
+     "blob": "/_blob/d26463161737ce4801e76ca0a44ba8c3",
+     "size": 391,
+     "type": "image/svg+xml"
+    },
+    "jano-icone-app.svg": {
+     "name": "jano-icone-app.svg",
+     "blob": "/_blob/24bced6ff349b0d65cf314dc1e03dff4",
+     "size": 498,
+     "type": "image/svg+xml"
+    },
+    "jano-simbolo-verde-claro.svg": {
+     "name": "jano-simbolo-verde-claro.svg",
+     "blob": "/_blob/3817a977652d7b408f308e2b478f06c5",
+     "size": 396,
+     "type": "image/svg+xml"
+    }
+   }
+  }
+ },
+ "blobs": {},
+ "docs": {
+  "readme": "project/README.md",
+  "sections": []
+ },
+ "lastChange": {
+  "by": "Claude",
+  "at": "2026-10-27T19:00:00Z",
+  "via": "Claude",
+  "note": "Design system Jano: tokens, componentes, gráficos e logos"
+ }
+}

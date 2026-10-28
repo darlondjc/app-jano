@@ -1,0 +1,17 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-27T17:47:00Z" },
+  "title": "Jano — Direções de identidade",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1200, "h": 880, "title": "A · Equilíbrio" },
+    "DirecaoB.dc.html": { "x": 1280, "y": 0, "w": 1200, "h": 880, "title": "B · Arco" },
+    "DirecaoC.dc.html": { "x": 2560, "y": 0, "w": 1200, "h": 880, "title": "C · Placar" }
+  },
+  "order": ["Main.dc.html", "DirecaoB.dc.html", "DirecaoC.dc.html"],
+  "notes": {
+    "titulo": { "x": 0, "y": -300, "text": "Jano — 3 direções de identidade visual", "kind": "title1", "maxW": 3760 }
+  },
+  "designSystems": []
+}

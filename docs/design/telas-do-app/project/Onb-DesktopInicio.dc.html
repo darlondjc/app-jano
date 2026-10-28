@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Início com lembrete desktop</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="jano.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div class="j-page" style="min-height: 560px; padding: 32px; display: flex; flex-direction: column; gap: 24px;">
+  <header style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+    <div><h1 class="j-h1">Como está seu mês</h1><div class="j-sub">Dia 27 de 31</div></div>
+    <button class="j-chip" type="button" style="height: 40px;">Outubro 2026</button>
+  </header>
+  <div class="j-banner j-banner--info" role="status" style="align-items: center;">
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none;"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8V12.5M12 16V16.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <div style="flex: 1;"><span class="j-banner__title">Última importação há 12 dias.</span> Os dados do mês podem estar incompletos.</div>
+    <button class="j-btn j-btn--primary" type="button">Importar novo extrato</button>
+  </div>
+  <section style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;" aria-label="Resumo do mês">
+    <div class="j-card j-kpi"><span class="j-kpi__label">Saldo atual</span><div class="j-kpi__value">R$ 4.832<span class="j-kpi__cents">,17</span></div></div>
+    <div class="j-card j-kpi"><span class="j-kpi__label">Gasto no mês</span><div class="j-kpi__value">R$ 3.114<span class="j-kpi__cents">,60</span></div></div>
+    <div class="j-card j-kpi"><span class="j-kpi__label">Receitas</span><div class="j-kpi__value">R$ 6.500<span class="j-kpi__cents">,00</span></div></div>
+    <div class="j-card j-kpi"><span class="j-kpi__label">Sobra prevista</span><div class="j-kpi__value" style="color: var(--positive);">R$ 612<span class="j-kpi__cents">,00</span></div></div>
+  </section>
+  <div class="j-card" style="padding: 12px 16px; display: flex; align-items: center; gap: 12px; background: var(--surface-2); border: 0; max-width: 520px;">
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; color: var(--text-2);"><path d="M4 12A8 8 0 0 1 18 7M20 12A8 8 0 0 1 6 17M18 3V7H14M6 21V17H10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div style="flex: 1;"><div style="font: 500 14px/20px Inter, sans-serif;">Sincronização automática</div><div class="j-cap">Sem precisar baixar arquivos.</div></div>
+    <span class="j-tag">Em breve</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":560}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

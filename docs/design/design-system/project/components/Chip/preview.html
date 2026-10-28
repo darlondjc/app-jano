@@ -1,0 +1,28 @@
+<!-- @dsCard group="Ações e formulários" height=150 subtitle="Filtro e tag de categoria" -->
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+<style>
+body{margin:0;padding:16px;background:var(--bg);font-family:var(--font-sans);display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+</style>
+</head>
+<body>
+<div class="row">
+<button class="j-chip" aria-pressed="true">Outubro</button>
+<button class="j-chip" aria-pressed="false">Conta corrente</button>
+<button class="j-chip" aria-pressed="false">Cartão</button>
+<button class="j-chip" aria-pressed="false">Sem categoria</button>
+<button class="j-chip" aria-pressed="false">Acima de R$ 100</button>
+</div>
+<div class="row">
+<span class="j-tag"><span class="j-tag__dot" style="background:var(--cat-3)"></span>Mercado</span>
+<span class="j-tag"><span class="j-tag__dot" style="background:var(--cat-2)"></span>Transporte</span>
+<span class="j-tag"><span class="j-tag__dot" style="background:var(--cat-8)"></span>Restaurantes</span>
+<span class="j-tag"><span class="j-tag__dot" style="background:var(--cat-6)"></span>Assinaturas</span>
+<span class="j-tag"><span class="j-tag__dot" style="background:var(--cat-4)"></span>Lazer</span>
+</div>
+</body>
+</html>
