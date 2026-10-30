@@ -21,6 +21,7 @@ import {
   bankCategoryToName,
   decodeBytes,
   isFaturaBB,
+  isLikelyTransfer,
   parseFaturaBB,
   parseOfx,
   planImport,
@@ -31,6 +32,7 @@ import {
 import { JanoBanner, JanoButton, JanoCategoryBadge } from '@jano/ui';
 import {
   agruparPorDia,
+  mesAtual,
   classeValor,
   gastosDoMes,
   mesAnterior,
@@ -38,6 +40,7 @@ import {
   rotuloMes,
 } from './agrupar';
 import { linhasDoPdf } from './pdf';
+import { marcarTransferencias } from './transferencias';
 
 interface Previa {
   fileName: string;
@@ -300,11 +303,17 @@ interface Previa {
                 [attr.aria-label]="'Categoria de ' + t.description"
                 (change)="categorizar(t, $event)"
               >
-                <option value="" [selected]="!t.categoryId">
+                <option value="" [selected]="!t.categoryId && !t.isTransfer">
                   Sem categoria
                 </option>
+                <option value="__transferencia__" [selected]="t.isTransfer">
+                  Transferência (fora dos totais)
+                </option>
                 @for (c of categoriasOrdenadas(); track c.id) {
-                  <option [value]="c.id" [selected]="c.id === t.categoryId">
+                  <option
+                    [value]="c.id"
+                    [selected]="!t.isTransfer && c.id === t.categoryId"
+                  >
                     {{ c.name }}
                   </option>
                 }
@@ -326,7 +335,7 @@ export class Transacoes {
 
   protected readonly money = formatBRL;
   protected readonly classeValor = classeValor;
-  protected readonly month = signal(new Date().toISOString().slice(0, 7));
+  protected readonly month = signal(mesAtual());
   protected readonly txs = signal<TransactionDoc[]>([]);
   protected readonly contas = signal<AccountDoc[]>([]);
   protected readonly categorias = signal<CategoryDoc[]>([]);
@@ -373,7 +382,13 @@ export class Transacoes {
   private async carregar(): Promise<void> {
     this.carregando.set(true);
     try {
-      this.txs.set(await this.repo.listMonth(this.uid, this.month()));
+      const lista = await this.repo.listMonth(this.uid, this.month());
+      const r = await marcarTransferencias(this.repo, this.uid, lista);
+      this.txs.set(r.txs);
+      if (r.marcadas)
+        this.aviso.set(
+          `${r.marcadas} lançamentos (pagamento de fatura, aplicações) foram marcados como transferência e saíram dos totais.`,
+        );
     } catch (e) {
       this.falha(e);
     } finally {
@@ -395,12 +410,22 @@ export class Transacoes {
   }
 
   protected async categorizar(t: TransactionDoc, ev: Event): Promise<void> {
-    const categoryId = (ev.target as HTMLSelectElement).value || null;
+    const valor = (ev.target as HTMLSelectElement).value;
+    const transferencia = valor === '__transferencia__';
+    const categoryId = transferencia ? null : valor || null;
     try {
-      await this.repo.setCategory(this.uid, t.id, categoryId);
+      if (transferencia) await this.repo.setTransfer(this.uid, t.id);
+      else await this.repo.setCategory(this.uid, t.id, categoryId);
       this.txs.update((list) =>
         list.map((x) =>
-          x.id === t.id ? { ...x, categoryId, categoryIsManual: true } : x,
+          x.id === t.id
+            ? {
+                ...x,
+                categoryId,
+                categoryIsManual: true,
+                isTransfer: transferencia,
+              }
+            : x,
         ),
       );
     } catch (e) {
@@ -530,10 +555,17 @@ export class Transacoes {
     this.ocupado.set(true);
     try {
       const catIds = new Set(this.categorias().map((c) => c.id));
-      const rows = p.plan.fresh.map((tx) => {
+      const rows = p.plan.fresh.map((raw) => {
+        const tx = {
+          ...raw,
+          isTransfer: raw.isTransfer || isLikelyTransfer(raw.descriptionNorm),
+        };
         const nome = this.nomeCategoria(tx);
         const id = nome ? slugify(nome) : null;
-        return { tx, categoryId: id && catIds.has(id) ? id : null };
+        return {
+          tx,
+          categoryId: !tx.isTransfer && id && catIds.has(id) ? id : null,
+        };
       });
       const importId = crypto.randomUUID();
       await this.repo.commitImport(this.uid, p.accountId, importId, rows);
