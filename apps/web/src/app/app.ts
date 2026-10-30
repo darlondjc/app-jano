@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { AuthService } from '@jano/data-access';
 import { JanoSplash } from '@jano/ui';
+import { Preferencias } from './conta/preferencias';
 import { AtualizacaoBar } from './versao/atualizacao-bar';
 import { AtualizacaoService } from './versao/atualizacao.service';
 import { lerContextoSplash, marcarSplashVista, splashDuracao } from './splash';
@@ -23,6 +24,7 @@ export class App {
   protected readonly splash = signal(this.duracao > 0);
 
   constructor() {
+    inject(Preferencias);
     inject(AtualizacaoService).iniciar();
     if (this.duracao > 0) void this.encerrarSplash();
   }

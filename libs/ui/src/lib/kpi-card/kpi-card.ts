@@ -4,6 +4,7 @@ import {
   computed,
   input,
 } from '@angular/core';
+import { valoresOcultos } from '@jano/engine';
 
 /** Indicador com valor em destaque; os centavos ficam menores. */
 @Component({
@@ -19,8 +20,12 @@ import {
           toneClass()
         "
       >
-        {{ sign() }}R$ {{ reais()
-        }}<span class="j-kpi__cents">,{{ centavos() }}</span>
+        @if (oculto()) {
+          R$ ••••••
+        } @else {
+          {{ sign() }}R$ {{ reais()
+          }}<span class="j-kpi__cents">,{{ centavos() }}</span>
+        }
       </div>
       <ng-content />
     </div>
@@ -39,6 +44,7 @@ export class JanoKpiCard {
     return kind ? ` j-kpi__value--${kind}` : '';
   });
 
+  protected readonly oculto = valoresOcultos;
   private readonly abs = computed(() => Math.abs(this.valueCents()));
   protected readonly sign = computed(() => (this.valueCents() < 0 ? '−' : ''));
   protected readonly reais = computed(() =>

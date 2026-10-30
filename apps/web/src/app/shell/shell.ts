@@ -16,10 +16,10 @@ import {
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
-import { AuthService } from '@jano/data-access';
 import { JanoBackToTop, JanoButton, JanoLogo, JanoProgressBar } from '@jano/ui';
 import { VERSAO_ATUAL } from '../versao/changelog';
 import { haNovidades } from '../versao/novidades';
+import { AvatarMenu } from './avatar-menu';
 import { Progresso } from './progresso';
 
 interface Item {
@@ -63,8 +63,8 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
-    JanoButton,
     JanoLogo,
+    AvatarMenu,
     JanoProgressBar,
     JanoBackToTop,
   ],
@@ -119,23 +119,13 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
       gap: 4px;
       border-top: 1px solid var(--border);
     }
-    .rodape .j-btn {
-      justify-content: flex-start;
-    }
-    .nome {
-      padding: 0 12px;
-      font: 500 14px/20px var(--font-sans);
-    }
     .versao {
-      padding: 4px 12px 0;
+      padding: 0 12px;
     }
-    .ponto {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      margin-left: 6px;
-      border-radius: 50%;
-      background: var(--primary);
+    .topo-largo {
+      display: flex;
+      justify-content: flex-end;
+      padding: 12px 24px 0;
     }
     main {
       flex: 1 1 0;
@@ -167,6 +157,9 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
         right: 0;
         bottom: 0;
         z-index: 40;
+      }
+      .topo-largo {
+        display: none;
       }
       main {
         padding-bottom: 80px;
@@ -219,48 +212,21 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
         }
       </nav>
       <div class="rodape">
-        <div class="nome">{{ nome() }}</div>
-        <a janoButton variant="ghost" [small]="true" routerLink="/novidades"
-          >Novidades
-          @if (novidades()) {
-            <span class="ponto" aria-label="há novidades"></span>
-          }
-        </a>
-        <button
-          janoButton
-          variant="ghost"
-          [small]="true"
-          type="button"
-          (click)="sair()"
-        >
-          Sair
-        </button>
         <span class="j-cap versao">Jano v{{ versao }}</span>
       </div>
     </aside>
 
     <header class="topo">
       <jano-logo [size]="26" />
-      <span>
-        <a janoButton variant="ghost" [small]="true" routerLink="/novidades"
-          >Novidades
-          @if (novidades()) {
-            <span class="ponto" aria-label="há novidades"></span>
-          }
-        </a>
-        <button
-          janoButton
-          variant="ghost"
-          [small]="true"
-          type="button"
-          (click)="sair()"
-        >
-          Sair
-        </button>
-      </span>
+      <jano-avatar-menu [novidades]="novidades()" />
     </header>
 
-    <main><router-outlet /></main>
+    <main>
+      <div class="topo-largo">
+        <jano-avatar-menu [novidades]="novidades()" />
+      </div>
+      <router-outlet />
+    </main>
 
     <nav class="j-nav j-nav--bottom abas" aria-label="Principal">
       @for (i of itens; track i.rota) {
@@ -291,7 +257,6 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
   `,
 })
 export class Shell {
-  private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   protected readonly progresso = inject(Progresso);
 
@@ -312,14 +277,5 @@ export class Shell {
         this.progresso.concluir();
       if (e instanceof NavigationEnd) this.novidades.set(haNovidades());
     });
-  }
-
-  protected nome(): string {
-    return this.auth.user()?.displayName ?? '';
-  }
-
-  protected async sair(): Promise<void> {
-    await this.auth.signOut();
-    await this.router.navigateByUrl('/entrar');
   }
 }

@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.5.0',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Avatar com suas iniciais no topo, com menu da conta (Conta e dados, Novidades, Ocultar valores e Sair).',
+      },
+      {
+        tipo: 'novo',
+        texto:
+          'Tela Conta e dados: última importação, verificar atualização do app, ocultar valores e exportar ou apagar seus dados.',
+      },
+    ],
+  },
+  {
     version: '0.4.0',
     date: '2026-10-30',
     items: [
