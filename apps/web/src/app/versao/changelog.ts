@@ -14,6 +14,27 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.4.0',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Transações redesenhada: tabela no computador, busca, filtros, período, detalhe do lançamento e seleção em lote.',
+      },
+      {
+        tipo: 'novo',
+        texto:
+          'Início com indicadores do mês, gráfico de gasto acumulado com ritmo ideal e projeção, e alertas.',
+      },
+      {
+        tipo: 'novo',
+        texto:
+          'Ao recategorizar, dá para criar uma regra e aplicá-la aos lançamentos parecidos.',
+      },
+    ],
+  },
+  {
     version: '0.3.1',
     date: '2026-10-30',
     items: [

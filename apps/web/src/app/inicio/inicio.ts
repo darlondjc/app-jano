@@ -157,7 +157,7 @@ import { GraficoAcumulado } from './grafico-acumulado';
         <a janoButton variant="primary" routerLink="/transacoes">Importar</a>
       </div>
     } @else {
-      <section class="kpis" aria-label="Resumo do mês">
+      <section class="kpis j-kpis-2col" aria-label="Resumo do mês">
         <jano-kpi-card
           label="Sobra do mês"
           [valueCents]="totais().net"
@@ -339,6 +339,7 @@ import { GraficoAcumulado } from './grafico-acumulado';
               <div class="metas">
                 @for (m of apertadas(); track m.categoryId) {
                   <jano-goal-bar
+                    [plain]="true"
                     [name]="nomeCategoria(m.categoryId)"
                     [spentCents]="m.spentCents"
                     [limitCents]="m.limitCents"

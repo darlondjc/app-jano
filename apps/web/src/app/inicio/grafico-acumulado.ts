@@ -1,17 +1,17 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
+  ElementRef,
+  inject,
   input,
+  signal,
 } from '@angular/core';
 import { formatBRL } from '@jano/engine';
 
-const W = 760;
-const H = 300;
 const X0 = 56;
-const X1 = 744;
 const Y0 = 24; // topo
-const Y1 = 264; // base
 const PASSOS_REAIS = [
   100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000,
 ];
@@ -33,6 +33,7 @@ export function rotuloEixo(cents: number): string {
       display: block;
     }
     .legenda {
+      margin-top: 12px;
       display: flex;
       gap: 16px;
       flex-wrap: wrap;
@@ -49,8 +50,6 @@ export function rotuloEixo(cents: number): string {
       display: inline-block;
     }
     svg {
-      width: 100%;
-      height: auto;
       display: block;
       margin-top: 16px;
     }
@@ -91,7 +90,8 @@ export function rotuloEixo(cents: number): string {
       <span><i style="border-top: 2.5px dashed var(--info)"></i>Projeção</span>
     </div>
     <svg
-      [attr.viewBox]="'0 0 ' + w + ' ' + h"
+      [attr.width]="w()"
+      [attr.height]="h()"
       role="img"
       [attr.aria-label]="resumo()"
     >
@@ -99,7 +99,7 @@ export function rotuloEixo(cents: number): string {
         <line
           class="grade"
           [attr.x1]="x0"
-          [attr.x2]="x1"
+          [attr.x2]="x1()"
           [attr.y1]="t.y"
           [attr.y2]="t.y"
         />
@@ -137,8 +137,8 @@ export function rotuloEixo(cents: number): string {
       <line
         [attr.x1]="hoje().x"
         [attr.x2]="hoje().x"
-        y1="20"
-        y2="266"
+        [attr.y1]="20"
+        [attr.y2]="y1() + 2"
         style="stroke: var(--border-strong)"
         stroke-width="1"
         stroke-dasharray="2 3"
@@ -149,9 +149,16 @@ export function rotuloEixo(cents: number): string {
         r="5"
         style="fill: var(--primary)"
       />
-      <text class="eixo" [attr.x]="hoje().x + 6" y="36">hoje</text>
+      <text class="eixo" [attr.x]="hoje().x - 6" y="36" text-anchor="end">
+        hoje
+      </text>
       @for (d of rotulosX(); track d.dia) {
-        <text class="eixo" [attr.x]="d.x" y="288" text-anchor="middle">
+        <text
+          class="eixo"
+          [attr.x]="d.x"
+          [attr.y]="y1() + 24"
+          text-anchor="middle"
+        >
           {{ d.dia }}
         </text>
       }
@@ -186,11 +193,26 @@ export class GraficoAcumulado {
   /** Gasto projetado para o último dia. */
   readonly projecao = input.required<number>();
 
-  protected readonly w = W;
-  protected readonly h = H;
+  /** Largura medida do contêiner: o gráfico é redesenhado, e os textos não encolhem no celular. */
+  protected readonly w = signal(760);
+  protected readonly h = computed(() =>
+    Math.round(Math.min(Math.max(this.w() * 0.42, 220), 300)),
+  );
   protected readonly x0 = X0;
-  protected readonly x1 = X1;
+  protected readonly x1 = computed(() => this.w() - 16);
+  private readonly y1 = computed(() => this.h() - 36);
   protected readonly money = formatBRL;
+
+  constructor() {
+    const el = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    afterNextRender(() => {
+      const medir = () =>
+        this.w.set(Math.max(Math.round(el.getBoundingClientRect().width), 280));
+      medir();
+      if (typeof ResizeObserver !== 'undefined')
+        new ResizeObserver(medir).observe(el);
+    });
+  }
 
   private readonly teto = computed(() => {
     const maior =
@@ -203,8 +225,9 @@ export class GraficoAcumulado {
   });
 
   private readonly px = (dia: number) =>
-    X0 + ((dia - 1) / Math.max(this.dias() - 1, 1)) * (X1 - X0);
-  private readonly py = (v: number) => Y1 - (v / this.teto().max) * (Y1 - Y0);
+    X0 + ((dia - 1) / Math.max(this.dias() - 1, 1)) * (this.x1() - X0);
+  private readonly py = (v: number) =>
+    this.y1() - (v / this.teto().max) * (this.y1() - Y0);
 
   protected readonly ticks = computed(() =>
     [0, 1, 2, 3, 4].map((i) => ({
@@ -223,7 +246,7 @@ export class GraficoAcumulado {
   });
   protected readonly proj = computed(() => {
     const h = this.hoje();
-    return `${h.x.toFixed(1)},${h.y.toFixed(1)} ${X1},${this.py(this.projecao()).toFixed(1)}`;
+    return `${h.x.toFixed(1)},${h.y.toFixed(1)} ${this.x1()},${this.py(this.projecao()).toFixed(1)}`;
   });
   protected readonly ideal = computed(() => {
     const l = this.limite();
@@ -231,7 +254,7 @@ export class GraficoAcumulado {
     return {
       x1: X0,
       y1: this.py(l / this.dias()),
-      x2: X1,
+      x2: this.x1(),
       y2: this.py(l),
     };
   });

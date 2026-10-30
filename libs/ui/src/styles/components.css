@@ -525,3 +525,23 @@ jano-kpi-card .j-kpi {
   font-family: var(--font-sans);
   box-sizing: border-box;
 }
+
+/* Cartões de indicador em duas colunas no celular (valor menor para caber). */
+@media (max-width: 599px) {
+  .j-kpis-2col {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+  .j-kpis-2col .j-card {
+    padding: var(--space-4);
+  }
+  .j-kpis-2col .j-kpi__value {
+    font-size: 22px;
+    line-height: 28px;
+  }
+  .j-kpis-2col .j-kpi__label,
+  .j-kpis-2col .j-cap {
+    font-size: 12px;
+    line-height: 16px;
+  }
+}

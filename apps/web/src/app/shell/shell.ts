@@ -75,6 +75,8 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
       border-right: 1px solid var(--border);
     }
     .marca {
+      text-decoration: none;
+      color: inherit;
       display: inline-flex;
       padding: 24px 16px 8px 20px;
     }

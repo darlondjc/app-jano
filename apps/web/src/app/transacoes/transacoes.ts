@@ -114,6 +114,10 @@ interface Previa {
     .linha-chips .j-chip {
       flex: none;
     }
+    .linha-chips.periodo {
+      flex-wrap: wrap;
+      overflow: visible;
+    }
     .nav-mes {
       display: inline-flex;
       align-items: center;
@@ -486,14 +490,6 @@ interface Previa {
           Receitas
         </button>
         <button
-          class="j-chip"
-          type="button"
-          [attr.aria-pressed]="filtros().semCategoria"
-          (click)="mudar({ semCategoria: !filtros().semCategoria })"
-        >
-          Sem categoria · {{ semCategoriaN() }}
-        </button>
-        <button
           class="j-chip ocultar-largo"
           type="button"
           (click)="filtrosAbertos.set(true)"
@@ -506,13 +502,21 @@ interface Previa {
         <button
           class="j-chip"
           type="button"
+          [attr.aria-pressed]="filtros().semCategoria"
+          (click)="mudar({ semCategoria: !filtros().semCategoria })"
+        >
+          Sem categoria · {{ semCategoriaN() }}
+        </button>
+        <button
+          class="j-chip"
+          type="button"
           [attr.aria-pressed]="selecionando()"
           (click)="alternarSelecao()"
         >
           Selecionar
         </button>
       </div>
-      <div class="linha-chips" role="group" aria-label="Período">
+      <div class="linha-chips periodo" role="group" aria-label="Período">
         <button
           class="j-chip"
           type="button"
