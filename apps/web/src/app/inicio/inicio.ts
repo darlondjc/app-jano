@@ -8,6 +8,7 @@ import {
 import { RouterLink } from '@angular/router';
 import {
   AuthService,
+  BalancesRepository,
   BudgetsRepository,
   CatalogRepository,
   ContaRepository,
@@ -45,6 +46,7 @@ import { GraficoAcumulado } from './grafico-acumulado';
 import { Progresso } from '../shell/progresso';
 import { haQuantoTempo } from '../conta/tempo';
 import { deveLembrar } from './lembrete';
+import { saldoAtual, type SaldoAtual } from './saldo';
 
 const CHAVE_LEMBRETE = 'jano.lembreteImportacao';
 
@@ -86,6 +88,13 @@ function lerDispensado(): string | null {
     h2 {
       margin: 0;
       font: 600 18px/24px var(--font-sans);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px 16px;
     }
     .titulo-secao {
       display: flex;
@@ -154,11 +163,16 @@ function lerDispensado(): string | null {
   `,
   template: `
     <header>
-      <h1>Como está seu mês</h1>
-      <div class="j-sub">
-        Olá, {{ nome() }} · dia {{ diaAtual }} de {{ diasNoMes }} ·
-        {{ mes() }}
+      <div>
+        <h1>Como está seu mês</h1>
+        <div class="j-sub">
+          Olá, {{ nome() }} · dia {{ diaAtual }} de {{ diasNoMes }} ·
+          {{ mes() }}
+        </div>
       </div>
+      @if (saldo(); as s) {
+        <span class="j-cap">Saldo atualizado {{ quando(s.atualizadoEm) }}</span>
+      }
     </header>
 
     @if (erro()) {
@@ -221,13 +235,19 @@ function lerDispensado(): string | null {
       </div>
     } @else {
       <section class="kpis j-kpis-2col" aria-label="Resumo do mês">
-        <jano-kpi-card
-          label="Sobra do mês"
-          [valueCents]="totais().net"
-          tone="auto"
-        >
-          <span class="j-cap">receitas menos gastos até agora</span>
-        </jano-kpi-card>
+        @if (saldo(); as s) {
+          <jano-kpi-card label="Saldo atual" [valueCents]="s.cents">
+            <span class="j-cap">{{ s.legenda }}</span>
+          </jano-kpi-card>
+        } @else {
+          <jano-kpi-card
+            label="Sobra do mês"
+            [valueCents]="totais().net"
+            tone="auto"
+          >
+            <span class="j-cap">receitas menos gastos até agora</span>
+          </jano-kpi-card>
+        }
         <jano-kpi-card
           label="Gasto no mês"
           [valueCents]="totais().spent"
@@ -436,6 +456,7 @@ export class Inicio {
   private readonly budgetRepo = inject(BudgetsRepository);
   private readonly catalog = inject(CatalogRepository);
   private readonly contaRepo = inject(ContaRepository);
+  private readonly balancesRepo = inject(BalancesRepository);
 
   protected readonly money = formatBRL;
   protected readonly classeValor = classeValor;
@@ -471,6 +492,9 @@ export class Inicio {
   private readonly categorias = signal<CategoryDoc[]>([]);
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
+  /** Saldo do banco (Open Finance); sem sincronização, o primeiro KPI volta a ser a sobra do mês. */
+  protected readonly saldo = signal<SaldoAtual | null>(null);
+  protected readonly quando = haQuantoTempo;
 
   protected readonly cartoes = signal<ReadonlySet<string>>(new Set());
   private readonly ultimaImportacao = signal<string | null>(null);
@@ -579,7 +603,7 @@ export class Inicio {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {
-      const [txs, budgets, cats, contas] = await Promise.all([
+      const [txs, budgets, cats, contas, saldos] = await Promise.all([
         this.txRepo.listRange(
           uid,
           previousMonths(this.month, 3).at(-1) as string,
@@ -588,7 +612,10 @@ export class Inicio {
         this.budgetRepo.list(uid),
         this.catalog.categories(uid),
         this.catalog.accounts(uid),
+        // Só alimenta o KPI de saldo: se falhar, o resto da tela segue normal.
+        this.balancesRepo.list(uid).catch(() => []),
       ]);
+      this.saldo.set(saldoAtual(saldos));
       this.cartoes.set(
         new Set(contas.filter((c) => c.type === 'cartao').map((c) => c.id)),
       );
