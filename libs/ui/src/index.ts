@@ -11,3 +11,4 @@ export * from './lib/icon/icon';
 export * from './lib/icon/category-badge';
 export * from './lib/progress-bar/progress-bar';
 export * from './lib/back-to-top/back-to-top';
+export * from './lib/skeleton/skeleton';

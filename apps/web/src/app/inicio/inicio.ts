@@ -32,6 +32,10 @@ import {
   JanoCategoryBadge,
   JanoGoalBar,
   JanoKpiCard,
+  JanoSkeletonCard,
+  JanoSkeletonGroup,
+  JanoSkeletonKpi,
+  JanoSkeletonRows,
 } from '@jano/ui';
 import { classeValor, mesAtual, rotuloMes } from '../transacoes/agrupar';
 import { marcarTransferencias } from '../transacoes/transferencias';
@@ -48,6 +52,10 @@ import { Progresso } from '../shell/progresso';
     JanoGoalBar,
     JanoKpiCard,
     JanoCategoryBadge,
+    JanoSkeletonCard,
+    JanoSkeletonGroup,
+    JanoSkeletonKpi,
+    JanoSkeletonRows,
     GraficoAcumulado,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -147,7 +155,22 @@ import { Progresso } from '../shell/progresso';
     }
 
     @if (carregando()) {
-      <p class="j-sub vazio">Carregando seu mês...</p>
+      <jano-skeleton-group label="Carregando seu mês">
+        <section class="kpis j-kpis-2col">
+          @for (n of [1, 2, 3, 4]; track n) {
+            <jano-skeleton-kpi />
+          }
+        </section>
+        <div class="colunas">
+          <div class="principal">
+            <jano-skeleton-card altura="240px" />
+            <jano-skeleton-rows [count]="6" />
+          </div>
+          <div class="lateral">
+            <jano-skeleton-card altura="160px" />
+          </div>
+        </div>
+      </jano-skeleton-group>
     } @else if (!txs().length) {
       <div class="j-card vazio">
         <h2 style="margin: 0 0 8px">Vamos começar</h2>
@@ -409,7 +432,10 @@ export class Inicio {
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
 
-  protected readonly totais = computed(() => monthTotals(this.txs()));
+  protected readonly cartoes = signal<ReadonlySet<string>>(new Set());
+  protected readonly totais = computed(() =>
+    monthTotals(this.txs(), this.cartoes()),
+  );
   protected readonly linhasMetas = computed(() =>
     budgetRows(this.budgets(), this.totais().spentByCategory),
   );
@@ -427,7 +453,7 @@ export class Inicio {
     () => this.totais().income - this.gastoProjetado(),
   );
   protected readonly serie = computed(() =>
-    cumulativeSpend(this.txs(), this.diaAtual),
+    cumulativeSpend(this.txs(), this.diaAtual, this.cartoes()),
   );
   protected readonly statusMeta = computed(() => {
     const limite = this.limiteTotal();
@@ -495,7 +521,7 @@ export class Inicio {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {
-      const [txs, budgets, cats] = await Promise.all([
+      const [txs, budgets, cats, contas] = await Promise.all([
         this.txRepo.listRange(
           uid,
           previousMonths(this.month, 3).at(-1) as string,
@@ -503,7 +529,11 @@ export class Inicio {
         ),
         this.budgetRepo.list(uid),
         this.catalog.categories(uid),
+        this.catalog.accounts(uid),
       ]);
+      this.cartoes.set(
+        new Set(contas.filter((c) => c.type === 'cartao').map((c) => c.id)),
+      );
       this.historico.set(
         (await marcarTransferencias(this.txRepo, uid, txs)).txs,
       );

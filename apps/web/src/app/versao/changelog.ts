@@ -14,6 +14,28 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.5.2',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'correcao',
+        texto:
+          'Estornos e reembolsos no cartão agora abatem o gasto em vez de contar como receita.',
+      },
+    ],
+  },
+  {
+    version: '0.5.1',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Enquanto os dados carregam, as telas mostram esqueletos no formato do conteúdo em vez de textos de espera.',
+      },
+    ],
+  },
+  {
     version: '0.5.0',
     date: '2026-10-30',
     items: [

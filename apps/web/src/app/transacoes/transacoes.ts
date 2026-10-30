@@ -31,7 +31,14 @@ import {
   type FaturaResult,
   type ImportPlan,
 } from '@jano/import-file';
-import { JanoBanner, JanoButton, JanoCategoryBadge } from '@jano/ui';
+import {
+  JanoBanner,
+  JanoButton,
+  JanoCategoryBadge,
+  JanoSkeleton,
+  JanoSkeletonGroup,
+  JanoSkeletonRows,
+} from '@jano/ui';
 import {
   agruparPorDia,
   classeValor,
@@ -65,7 +72,15 @@ interface Previa {
 
 @Component({
   selector: 'jano-transacoes',
-  imports: [JanoButton, JanoBanner, JanoCategoryBadge, DetalheTransacao],
+  imports: [
+    JanoButton,
+    JanoBanner,
+    JanoCategoryBadge,
+    JanoSkeleton,
+    JanoSkeletonGroup,
+    JanoSkeletonRows,
+    DetalheTransacao,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -416,11 +431,15 @@ interface Previa {
     <header class="topo">
       <div>
         <h1>Transações</h1>
-        <div class="j-sub resumo">
-          {{ visiveis().length }} de {{ filtradas().length }} transações ·
-          gastos de {{ money(gastos()) }}
-          <span class="j-cap">(transferências ficam de fora)</span>
-        </div>
+        @if (carregando()) {
+          <jano-skeleton w="320px" h="14px" style="margin-top: 10px" />
+        } @else {
+          <div class="j-sub resumo">
+            {{ visiveis().length }} de {{ filtradas().length }} transações ·
+            gastos de {{ money(gastos()) }}
+            <span class="j-cap">(transferências ficam de fora)</span>
+          </div>
+        }
       </div>
       <label class="imp">
         <input
@@ -775,9 +794,9 @@ interface Previa {
 
       <main>
         @if (carregando()) {
-          <p class="j-sub" style="text-align: center; padding: 48px 16px">
-            Carregando...
-          </p>
+          <jano-skeleton-group label="Carregando transações">
+            <jano-skeleton-rows [count]="8" />
+          </jano-skeleton-group>
         } @else if (!txs().length) {
           <div class="j-empty" style="padding: 48px 16px">
             <div class="j-empty__title">Nenhuma transação neste período</div>
@@ -1055,13 +1074,29 @@ export class Transacoes {
     ),
   );
   protected readonly filtradas = computed(() =>
-    filtrar(this.txs(), this.filtros(), (id) => this.nomeCategoria2(id)),
+    filtrar(
+      this.txs(),
+      this.filtros(),
+      (id) => this.nomeCategoria2(id),
+      this.cartoes(),
+    ),
   );
   protected readonly visiveis = computed(() =>
     this.filtradas().slice(0, this.limite()),
   );
   protected readonly grupos = computed(() => agruparPorDia(this.visiveis()));
-  protected readonly gastos = computed(() => gastosDoMes(this.filtradas()));
+  /** Ids das contas de cartão: crédito nelas é estorno, não receita. */
+  protected readonly cartoes = computed(
+    () =>
+      new Set(
+        this.contas()
+          .filter((c) => c.type === 'cartao')
+          .map((c) => c.id),
+      ),
+  );
+  protected readonly gastos = computed(() =>
+    gastosDoMes(this.filtradas(), this.cartoes()),
+  );
   protected readonly semCategoriaN = computed(
     () => this.txs().filter((t) => !t.categoryId && !t.isTransfer).length,
   );

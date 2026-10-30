@@ -7,7 +7,7 @@ import {
 import { RouterLink } from '@angular/router';
 import { AuthService, ContaRepository } from '@jano/data-access';
 import type { RegistroImportacao } from '@jano/data-access';
-import { JanoButton } from '@jano/ui';
+import { JanoButton, JanoSkeleton, JanoSkeletonGroup } from '@jano/ui';
 import { BUILD_ID } from '../../environments/build-info';
 import { AtualizacaoService } from '../versao/atualizacao.service';
 import { VERSAO_ATUAL } from '../versao/changelog';
@@ -27,7 +27,7 @@ export function haQuantoTempo(iso: string, agora = new Date()): string {
 /** Conta e dados: importação, atualização do app, privacidade e dados pessoais. */
 @Component({
   selector: 'jano-conta',
-  imports: [RouterLink, JanoButton],
+  imports: [RouterLink, JanoButton, JanoSkeleton, JanoSkeletonGroup],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -117,7 +117,9 @@ export function haQuantoTempo(iso: string, agora = new Date()): string {
     <section class="j-card">
       <h2>Importação</h2>
       @if (carregandoImp()) {
-        <p>Verificando…</p>
+        <jano-skeleton-group label="Verificando importações">
+          <jano-skeleton w="70%" h="14px" />
+        </jano-skeleton-group>
       } @else if (ultima(); as u) {
         <p>
           Última importação {{ quando(u.createdAt) }}: {{ u.fileName }} ({{
