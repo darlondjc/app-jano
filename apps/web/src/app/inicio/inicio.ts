@@ -32,6 +32,10 @@ import {
   JanoCategoryBadge,
   JanoGoalBar,
   JanoKpiCard,
+  JanoSkeletonCard,
+  JanoSkeletonGroup,
+  JanoSkeletonKpi,
+  JanoSkeletonRows,
 } from '@jano/ui';
 import { classeValor, mesAtual, rotuloMes } from '../transacoes/agrupar';
 import { marcarTransferencias } from '../transacoes/transferencias';
@@ -48,6 +52,10 @@ import { Progresso } from '../shell/progresso';
     JanoGoalBar,
     JanoKpiCard,
     JanoCategoryBadge,
+    JanoSkeletonCard,
+    JanoSkeletonGroup,
+    JanoSkeletonKpi,
+    JanoSkeletonRows,
     GraficoAcumulado,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -147,7 +155,22 @@ import { Progresso } from '../shell/progresso';
     }
 
     @if (carregando()) {
-      <p class="j-sub vazio">Carregando seu mês...</p>
+      <jano-skeleton-group label="Carregando seu mês">
+        <section class="kpis j-kpis-2col">
+          @for (n of [1, 2, 3, 4]; track n) {
+            <jano-skeleton-kpi />
+          }
+        </section>
+        <div class="colunas">
+          <div class="principal">
+            <jano-skeleton-card altura="240px" />
+            <jano-skeleton-rows [count]="6" />
+          </div>
+          <div class="lateral">
+            <jano-skeleton-card altura="160px" />
+          </div>
+        </div>
+      </jano-skeleton-group>
     } @else if (!txs().length) {
       <div class="j-card vazio">
         <h2 style="margin: 0 0 8px">Vamos começar</h2>

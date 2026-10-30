@@ -5,6 +5,10 @@
 
 Antes de criar ou mudar tela, componente, ícone, logo ou texto de interface, consulte `docs/design/` (comece pelo `README.md` de lá). É a cópia local dos protótipos, do design system e dos documentos aprovados no Claude Design. Se algo não estiver lá, busque o artefato no Claude Design e baixe para essa pasta.
 
+## Estados de carregamento
+
+Toda tela ou componente que busca dados mostra **skeleton** enquanto carrega, nunca texto como "Carregando...". Use os componentes de `@jano/ui` (`JanoSkeletonGroup`, `JanoSkeleton`, `JanoSkeletonKpi`, `JanoSkeletonCard`, `JanoSkeletonRows`, `JanoSkeletonGoals`): o esqueleto tem a forma do conteúdo real, fica dentro de um `jano-skeleton-group` (`aria-busy` e texto para leitores de tela) e não tem animação. Carregamentos de dados também passam por `Progresso.acompanhar` (barra de progresso no topo).
+
 # General Guidelines for working with Nx
 
 - For navigating/exploring the workspace, invoke the `nx-workspace` skill first - it has patterns for querying projects, targets, and dependencies

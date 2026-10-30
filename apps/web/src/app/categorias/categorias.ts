@@ -19,6 +19,8 @@ import {
   JanoButton,
   JanoCategoryBadge,
   JanoIcon,
+  JanoSkeletonGroup,
+  JanoSkeletonRows,
 } from '@jano/ui';
 
 interface Form {
@@ -38,7 +40,14 @@ const NOVA: Form = {
 
 @Component({
   selector: 'jano-categorias',
-  imports: [JanoButton, JanoBanner, JanoCategoryBadge, JanoIcon],
+  imports: [
+    JanoButton,
+    JanoBanner,
+    JanoCategoryBadge,
+    JanoIcon,
+    JanoSkeletonGroup,
+    JanoSkeletonRows,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -307,6 +316,11 @@ const NOVA: Form = {
       </section>
     }
 
+    @if (carregando()) {
+      <jano-skeleton-group label="Carregando categorias">
+        <jano-skeleton-rows [count]="8" />
+      </jano-skeleton-group>
+    }
     @for (grupo of grupos(); track grupo.titulo) {
       @if (grupo.itens.length) {
         <h2>{{ grupo.titulo }}</h2>
@@ -383,6 +397,7 @@ export class Categorias {
   protected readonly form = signal<Form | null>(null);
   protected readonly apagando = signal<CategoryDoc | null>(null);
   protected readonly ocupado = signal(false);
+  protected readonly carregando = signal(true);
   protected readonly erro = signal('');
   protected readonly aviso = signal('');
 
@@ -419,6 +434,8 @@ export class Categorias {
       this.categorias.set(await this.catalog.categories(this.uid));
     } catch (e) {
       this.falha(e);
+    } finally {
+      this.carregando.set(false);
     }
   }
 

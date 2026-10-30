@@ -21,12 +21,28 @@ import {
   monthTotals,
 } from '@jano/engine';
 import { parseAmountToCents } from '@jano/import-file';
-import { JanoBanner, JanoButton, JanoGoalBar, JanoKpiCard } from '@jano/ui';
+import {
+  JanoBanner,
+  JanoButton,
+  JanoGoalBar,
+  JanoKpiCard,
+  JanoSkeletonGoals,
+  JanoSkeletonGroup,
+  JanoSkeletonKpi,
+} from '@jano/ui';
 import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
 
 @Component({
   selector: 'jano-orcamento',
-  imports: [JanoButton, JanoBanner, JanoGoalBar, JanoKpiCard],
+  imports: [
+    JanoButton,
+    JanoBanner,
+    JanoGoalBar,
+    JanoKpiCard,
+    JanoSkeletonGoals,
+    JanoSkeletonGroup,
+    JanoSkeletonKpi,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -117,69 +133,78 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
       }}</jano-banner>
     }
 
-    <jano-kpi-card
-      label="Gasto do mês"
-      [valueCents]="totais().spent"
-      tone="out"
-    >
-      <div class="j-sub">
-        de {{ money(limiteTotal()) }} em metas · receitas
-        {{ money(totais().income) }}
-      </div>
-    </jano-kpi-card>
+    @if (carregando()) {
+      <jano-skeleton-group label="Carregando metas">
+        <jano-skeleton-kpi />
+        <div style="margin-top: 24px">
+          <jano-skeleton-goals [count]="4" />
+        </div>
+      </jano-skeleton-group>
+    } @else {
+      <jano-kpi-card
+        label="Gasto do mês"
+        [valueCents]="totais().spent"
+        tone="out"
+      >
+        <div class="j-sub">
+          de {{ money(limiteTotal()) }} em metas · receitas
+          {{ money(totais().income) }}
+        </div>
+      </jano-kpi-card>
 
-    @if (!linhas().length && !carregando()) {
-      <p class="j-sub" style="margin-top:24px">
-        Você ainda não criou metas. Escolha uma categoria abaixo e defina um
-        limite mensal.
-      </p>
+      @if (!linhas().length && !carregando()) {
+        <p class="j-sub" style="margin-top:24px">
+          Você ainda não criou metas. Escolha uma categoria abaixo e defina um
+          limite mensal.
+        </p>
+      }
+
+      <div class="metas">
+        @for (l of linhas(); track l.categoryId) {
+          <div class="linha">
+            <jano-goal-bar
+              [name]="nome(l.categoryId)"
+              [spentCents]="l.spentCents"
+              [limitCents]="l.limitCents"
+              [pace]="pace()"
+              [daysLeft]="daysLeft()"
+            />
+            <div class="edicao">
+              <label class="j-sr" [for]="'lim-' + l.categoryId"
+                >Limite de {{ nome(l.categoryId) }}</label
+              >
+              <span class="j-input">
+                <span class="j-input__prefix">R$</span>
+                <input
+                  [id]="'lim-' + l.categoryId"
+                  [value]="paraTexto(l.limitCents)"
+                  #campo
+                  inputmode="decimal"
+                />
+              </span>
+              <button
+                janoButton
+                variant="secondary"
+                type="button"
+                (click)="salvar(l.categoryId, campo.value)"
+              >
+                Salvar
+              </button>
+              <button
+                janoButton
+                variant="ghost"
+                type="button"
+                (click)="remover(l.categoryId)"
+              >
+                Remover
+              </button>
+            </div>
+          </div>
+        }
+      </div>
     }
 
-    <div class="metas">
-      @for (l of linhas(); track l.categoryId) {
-        <div class="linha">
-          <jano-goal-bar
-            [name]="nome(l.categoryId)"
-            [spentCents]="l.spentCents"
-            [limitCents]="l.limitCents"
-            [pace]="pace()"
-            [daysLeft]="daysLeft()"
-          />
-          <div class="edicao">
-            <label class="j-sr" [for]="'lim-' + l.categoryId"
-              >Limite de {{ nome(l.categoryId) }}</label
-            >
-            <span class="j-input">
-              <span class="j-input__prefix">R$</span>
-              <input
-                [id]="'lim-' + l.categoryId"
-                [value]="paraTexto(l.limitCents)"
-                #campo
-                inputmode="decimal"
-              />
-            </span>
-            <button
-              janoButton
-              variant="secondary"
-              type="button"
-              (click)="salvar(l.categoryId, campo.value)"
-            >
-              Salvar
-            </button>
-            <button
-              janoButton
-              variant="ghost"
-              type="button"
-              (click)="remover(l.categoryId)"
-            >
-              Remover
-            </button>
-          </div>
-        </div>
-      }
-    </div>
-
-    @if (semMeta().length) {
+    @if (!carregando() && semMeta().length) {
       <div class="nova">
         <label class="j-field">
           <span class="j-field__label">Nova meta</span>
