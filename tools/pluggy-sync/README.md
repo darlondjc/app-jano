@@ -47,5 +47,6 @@ npm run pluggy -- sync --desde 2026-09-01         # período maior
   id da Pluggy.
 - **Lançamento refeito pelo banco.** No fechamento da fatura o banco pode reapresentar um
   lançamento com outra data, valor ou descrição. Com `providerId` (sempre presente no Open
-  Finance) isso só atualiza a chave; sem ele, o lançamento pode aparecer duas vezes e você
-  apaga o antigo no app. O script não remove lançamentos que sumiram da Pluggy.
+  Finance) a chave é a mesma: não duplica, mas o que já está no app não é atualizado. Sem
+  ele, o lançamento pode aparecer duas vezes e você apaga o antigo no app. O script não
+  remove lançamentos que sumiram da Pluggy.
