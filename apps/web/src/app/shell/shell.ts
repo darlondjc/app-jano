@@ -54,6 +54,11 @@ const ITENS: Item[] = [
     rotulo: 'Projeções',
     d: 'M4 18L9 12L13 15L20 6',
   },
+  {
+    rota: '/recorrencias',
+    rotulo: 'Recorrências',
+    d: 'M4 12A8 8 0 0 1 18 7M20 12A8 8 0 0 1 6 17M18 3V7H14M6 21V17H10',
+  },
   { rota: '/categorias', rotulo: 'Categorias', d: 'M4 4H12L20 12L12 20L4 12Z' },
 ];
 
@@ -68,13 +73,8 @@ const MAIS_EXTRAS: Item[] = [
   { rota: '/novidades', rotulo: 'Novidades', d: 'M12 4V13M12 18V18.5' },
 ];
 
-/** Telas previstas no protótipo que ainda não existem. */
-const EM_BREVE: Omit<Item, 'rota'>[] = [
-  {
-    rotulo: 'Recorrências',
-    d: 'M4 12A8 8 0 0 1 18 7M20 12A8 8 0 0 1 6 17M18 3V7H14M6 21V17H10',
-  },
-];
+/** Telas previstas no protótipo que ainda não existem (nenhuma por enquanto). */
+const EM_BREVE: Omit<Item, 'rota'>[] = [];
 
 /** Estrutura do app logado: menu lateral no desktop, barra de abas no celular. */
 @Component({

@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.8.0',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Tela Recorrências: assinaturas, contas fixas e entradas que se repetem, com próxima data, aviso de reajuste, totais mensais e calendário do mês.',
+      },
+    ],
+  },
+  {
     version: '0.7.0',
     date: '2026-10-30',
     items: [

@@ -264,3 +264,28 @@ describe('monthScore', () => {
     ).toBe(0);
   });
 });
+
+describe('detectRecurrences de entradas', () => {
+  const sal = (date: string, cents: number) => ({
+    date,
+    amountCents: cents,
+    categoryId: null,
+    descriptionNorm: 'SALARIO EMPRESA',
+    isTransfer: false,
+  });
+  const txs = [
+    sal('2026-08-05', 630000),
+    sal('2026-09-05', 635000),
+    sal('2026-10-05', 635000),
+  ];
+  it('detecta salário mensal e não conta como gasto', () => {
+    expect(detectRecurrences(txs)).toEqual([]);
+    const [r] = detectRecurrences(txs, 'entrada');
+    expect(r).toMatchObject({
+      description: 'SALARIO EMPRESA',
+      amountCents: 635000,
+      day: 5,
+      months: 3,
+    });
+  });
+});

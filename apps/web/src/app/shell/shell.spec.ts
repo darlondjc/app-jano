@@ -22,7 +22,7 @@ describe('Shell', () => {
     return f;
   }
 
-  it('mostra os itens do menu e os que ainda virão', async () => {
+  it('mostra os itens do menu lateral', async () => {
     const f = await criar();
     const el = f.nativeElement as HTMLElement;
     const links = [...el.querySelectorAll('aside nav a')].map((a) =>
@@ -34,10 +34,10 @@ describe('Shell', () => {
       'Orçamento',
       'Avaliações',
       'Projeções',
+      'Recorrências',
       'Categorias',
     ]);
-    expect(el.textContent).toContain('Recorrências');
-    expect(el.textContent).toContain('em breve');
+    expect(el.textContent).not.toContain('em breve');
   });
 
   it('no celular as abas são as principais e "Mais" abre o resto', async () => {
@@ -60,6 +60,7 @@ describe('Shell', () => {
     );
     expect(mais).toEqual([
       'Avaliações',
+      'Recorrências',
       'Categorias',
       'Conta e dados',
       'Novidades',

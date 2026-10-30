@@ -42,6 +42,11 @@ export const appRoutes: Route[] = [
           import('./projecoes/projecoes').then((m) => m.Projecoes),
       },
       {
+        path: 'recorrencias',
+        loadComponent: () =>
+          import('./recorrencias/recorrencias').then((m) => m.Recorrencias),
+      },
+      {
         path: 'conta',
         loadComponent: () => import('./conta/conta').then((m) => m.Conta),
       },
