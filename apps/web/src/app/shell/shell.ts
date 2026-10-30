@@ -43,12 +43,16 @@ const ITENS: Item[] = [
     rotulo: 'Orçamento',
     d: 'M4 12a8 8 0 1 0 16 0a8 8 0 1 0 -16 0M12 4V12H20',
   },
+  {
+    rota: '/avaliacoes',
+    rotulo: 'Avaliações',
+    d: 'M5 19V13M12 19V6M19 19V10',
+  },
   { rota: '/categorias', rotulo: 'Categorias', d: 'M4 4H12L20 12L12 20L4 12Z' },
 ];
 
 /** Telas previstas no protótipo que ainda não existem. */
 const EM_BREVE: Omit<Item, 'rota'>[] = [
-  { rotulo: 'Avaliações', d: 'M5 19V13M12 19V6M19 19V10' },
   { rotulo: 'Projeções', d: 'M4 18L9 12L13 15L20 6' },
   {
     rotulo: 'Recorrências',

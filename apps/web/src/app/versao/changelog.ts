@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.6.0',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Tela Avaliações: leitura do mês em uma frase, nota de 0 a 100 com explicação, insights com ação, comparativo mês a mês por categoria, distribuição do gasto e os 5 maiores estabelecimentos.',
+      },
+    ],
+  },
+  {
     version: '0.5.2',
     date: '2026-10-30',
     items: [

@@ -28,8 +28,14 @@ describe('Shell', () => {
     const links = [...el.querySelectorAll('aside nav a')].map((a) =>
       a.textContent?.trim(),
     );
-    expect(links).toEqual(['Início', 'Transações', 'Orçamento', 'Categorias']);
-    expect(el.textContent).toContain('Avaliações');
+    expect(links).toEqual([
+      'Início',
+      'Transações',
+      'Orçamento',
+      'Avaliações',
+      'Categorias',
+    ]);
+    expect(el.textContent).toContain('Projeções');
     expect(el.textContent).toContain('em breve');
   });
 

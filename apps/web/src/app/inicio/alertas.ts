@@ -8,9 +8,11 @@ import {
 } from '@jano/engine';
 
 export interface Alerta {
-  tom: 'warn' | 'info';
+  tom: 'warn' | 'info' | 'good';
   titulo: string;
   texto: string;
+  /** Link de ação do cartão (usado na tela Avaliações). */
+  acao?: { rotulo: string; rota: string };
 }
 
 export interface EntradaAlertas {
@@ -26,6 +28,8 @@ export interface EntradaAlertas {
   assinaturasId: string | null;
   nomeCategoria: (id: string) => string;
   moeda: (cents: number) => string;
+  /** Quantos alertas devolver (padrão 4). */
+  max?: number;
 }
 
 const MAX = 4;
@@ -51,11 +55,13 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
             tom: 'warn',
             titulo: `${nome} passou da meta (${pct}%)`,
             texto: `${e.moeda(m.spent)} de ${e.moeda(m.limitCents)}.`,
+            acao: { rotulo: 'Ajustar meta', rota: '/orcamento' },
           }
         : {
             tom: 'warn',
             titulo: `${nome} está em ${pct}% da meta`,
             texto: `${e.moeda(m.spent)} de ${e.moeda(m.limitCents)}, faltando ${e.daysLeft} ${e.daysLeft === 1 ? 'dia' : 'dias'}.`,
+            acao: { rotulo: 'Ajustar meta', rota: '/orcamento' },
           },
     );
   }
@@ -66,6 +72,7 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
       tom: 'warn',
       titulo: `${e.nomeCategoria(acima.categoryId)} está ${acima.pct}% acima da média`,
       texto: `${e.moeda(acima.spentCents)} contra ${e.moeda(acima.avgCents)} nos meses anteriores.`,
+      acao: { rotulo: 'Ajustar meta', rota: '/orcamento' },
     });
 
   const incomum = unusualTransactions(e.txs, e.month)[0];
@@ -74,6 +81,7 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
       tom: 'info',
       titulo: `Gasto fora do padrão: ${incomum.description}`,
       texto: `${e.moeda(incomum.amountCents)}, cerca de ${incomum.times.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} vezes o normal da categoria.`,
+      acao: { rotulo: 'Ver transações', rota: '/transacoes' },
     });
 
   if (e.assinaturasId) {
@@ -83,6 +91,7 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
         tom: 'info',
         titulo: `Assinatura nova de ${e.moeda(nova.amountCents)}`,
         texto: `${nova.description} apareceu em ${nova.firstSeen.slice(8)}/${nova.firstSeen.slice(5, 7)}. Confirme se é sua.`,
+        acao: { rotulo: 'Ver transações', rota: '/transacoes' },
       });
   }
 
@@ -92,7 +101,8 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
       tom: 'info',
       titulo: `${reajuste.description} subiu ${reajuste.pct.toLocaleString('pt-BR')}%`,
       texto: `De ${e.moeda(reajuste.fromCents)} para ${e.moeda(reajuste.toCents)} por mês.`,
+      acao: { rotulo: 'Ver transações', rota: '/transacoes' },
     });
 
-  return out.slice(0, MAX);
+  return out.slice(0, e.max ?? MAX);
 }
