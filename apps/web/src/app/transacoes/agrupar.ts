@@ -88,3 +88,24 @@ export function classeValor(t: {
   const tom = t.isTransfer ? 'neutral' : t.amountCents > 0 ? 'in' : 'out';
   return `j-tx__amount j-num j-tx__amount--${tom}`;
 }
+
+const MESES_CURTOS = [
+  'jan',
+  'fev',
+  'mar',
+  'abr',
+  'mai',
+  'jun',
+  'jul',
+  'ago',
+  'set',
+  'out',
+  'nov',
+  'dez',
+];
+
+/** "2026-10-27" → "27 out". */
+export function dataCurta(date: string): string {
+  const [, m, d] = date.split('-').map(Number);
+  return `${d} ${MESES_CURTOS[m - 1]}`;
+}

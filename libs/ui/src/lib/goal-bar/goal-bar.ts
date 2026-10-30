@@ -11,7 +11,7 @@ import { formatBRL, goalStatus } from '@jano/engine';
   selector: 'jano-goal-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div [class]="'j-card j-goal j-goal--' + modifier()">
+    <div [class]="(plain() ? '' : 'j-card ') + 'j-goal j-goal--' + modifier()">
       <div class="j-goal__head">
         <span>{{ name() }}</span
         ><span class="j-goal__pct j-num">{{ percent() }}%</span>
@@ -40,6 +40,8 @@ import { formatBRL, goalStatus } from '@jano/engine';
   `,
 })
 export class JanoGoalBar {
+  /** Sem moldura de cartão, para usar dentro de outro cartão. */
+  readonly plain = input(false);
   readonly name = input.required<string>();
   readonly spentCents = input.required<number>();
   readonly limitCents = input.required<number>();

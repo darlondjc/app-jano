@@ -6,3 +6,4 @@ export * from './lib/data/models';
 export * from './lib/data/transactions.repository';
 export * from './lib/data/catalog.repository';
 export * from './lib/data/budgets.repository';
+export * from './lib/data/rules.repository';

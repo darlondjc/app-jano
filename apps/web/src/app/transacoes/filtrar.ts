@@ -1,0 +1,84 @@
+import { formatBRL } from '@jano/engine';
+
+export type TipoFiltro = 'gastos' | 'receitas' | 'transferencias';
+
+export interface Filtros {
+  busca: string;
+  tipo: TipoFiltro | null;
+  /** Ids de categoria; '' = sem categoria. Vazio = todas. */
+  categorias: string[];
+  /** Id da conta ou null = todas. */
+  conta: string | null;
+  /** Só lançamentos sem categoria (fora transferências). */
+  semCategoria: boolean;
+}
+
+export const SEM_FILTROS: Filtros = {
+  busca: '',
+  tipo: null,
+  categorias: [],
+  conta: null,
+  semCategoria: false,
+};
+
+interface Linha {
+  accountId: string;
+  description: string;
+  descriptionNorm: string;
+  amountCents: number;
+  categoryId: string | null;
+  isTransfer: boolean;
+}
+
+const simples = (s: string): string =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+export function totalDeFiltros(f: Filtros): number {
+  return (
+    (f.tipo ? 1 : 0) +
+    (f.categorias.length ? 1 : 0) +
+    (f.conta ? 1 : 0) +
+    (f.semCategoria ? 1 : 0)
+  );
+}
+
+/** Busca por nome, categoria ou valor ("186", "186,42"). */
+export function casaBusca(
+  t: Linha,
+  busca: string,
+  nomeCategoria: (id: string | null) => string,
+): boolean {
+  const q = simples(busca.trim());
+  if (!q) return true;
+  if (
+    simples(t.description).includes(q) ||
+    simples(nomeCategoria(t.categoryId)).includes(q)
+  )
+    return true;
+  if (/^\d[\d.,]*$/.test(q)) {
+    const valor = formatBRL(Math.abs(t.amountCents))
+      .replace(/[^\d,]/g, '')
+      .replace(/^0+(?=\d)/, '');
+    return valor.includes(q.replace(/\./g, ''));
+  }
+  return false;
+}
+
+export function filtrar<T extends Linha>(
+  txs: T[],
+  f: Filtros,
+  nomeCategoria: (id: string | null) => string,
+): T[] {
+  return txs.filter((t) => {
+    if (f.conta && t.accountId !== f.conta) return false;
+    if (f.tipo === 'gastos' && !(t.amountCents < 0 && !t.isTransfer))
+      return false;
+    if (f.tipo === 'receitas' && !(t.amountCents > 0 && !t.isTransfer))
+      return false;
+    if (f.tipo === 'transferencias' && !t.isTransfer) return false;
+    if (f.semCategoria && (t.categoryId !== null || t.isTransfer)) return false;
+    if (f.categorias.length && !f.categorias.includes(t.categoryId ?? ''))
+      return false;
+    return casaBusca(t, f.busca, nomeCategoria);
+  });
+}

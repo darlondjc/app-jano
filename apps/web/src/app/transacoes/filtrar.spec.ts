@@ -1,0 +1,66 @@
+import { filtrar, SEM_FILTROS, totalDeFiltros, type Filtros } from './filtrar';
+
+const base = {
+  accountId: 'conta',
+  descriptionNorm: '',
+  isTransfer: false,
+};
+const txs = [
+  {
+    ...base,
+    description: 'Pão de Açúcar',
+    amountCents: -18642,
+    categoryId: 'mercado',
+  },
+  {
+    ...base,
+    description: 'Uber',
+    amountCents: -2370,
+    categoryId: 'transporte',
+    accountId: 'cartao',
+  },
+  { ...base, description: 'Salário', amountCents: 635000, categoryId: null },
+  {
+    ...base,
+    description: 'Pagamento de fatura',
+    amountCents: -100000,
+    categoryId: null,
+    isTransfer: true,
+  },
+];
+const nome = (id: string | null) =>
+  id === 'mercado' ? 'Mercado' : (id ?? 'Sem categoria');
+const com = (p: Partial<Filtros>) =>
+  filtrar(txs, { ...SEM_FILTROS, ...p }, nome).map((t) => t.description);
+
+describe('filtrar', () => {
+  it('sem filtros devolve tudo', () => expect(com({})).toHaveLength(4));
+  it('tipo gastos exclui transferência e receita', () =>
+    expect(com({ tipo: 'gastos' })).toEqual(['Pão de Açúcar', 'Uber']));
+  it('tipo receitas e transferências', () => {
+    expect(com({ tipo: 'receitas' })).toEqual(['Salário']);
+    expect(com({ tipo: 'transferencias' })).toEqual(['Pagamento de fatura']);
+  });
+  it('categorias, incluindo sem categoria', () => {
+    expect(com({ categorias: ['mercado'] })).toEqual(['Pão de Açúcar']);
+    expect(com({ categorias: [''] })).toEqual([
+      'Salário',
+      'Pagamento de fatura',
+    ]);
+  });
+  it('só sem categoria ignora transferências', () =>
+    expect(com({ semCategoria: true })).toEqual(['Salário']));
+  it('conta', () => expect(com({ conta: 'cartao' })).toEqual(['Uber']));
+  it('busca ignora acento e caixa', () =>
+    expect(com({ busca: 'pao de acucar' })).toEqual(['Pão de Açúcar']));
+  it('busca por nome da categoria', () =>
+    expect(com({ busca: 'mercado' })).toEqual(['Pão de Açúcar']));
+  it('busca por valor', () => {
+    expect(com({ busca: '186' })).toEqual(['Pão de Açúcar']);
+    expect(com({ busca: '23,70' })).toEqual(['Uber']);
+  });
+  it('conta quantos filtros estão ativos', () =>
+    expect(totalDeFiltros({ ...SEM_FILTROS, tipo: 'gastos', conta: 'x' })).toBe(
+      2,
+    ));
+});

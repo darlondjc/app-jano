@@ -9,3 +9,5 @@ export * from './lib/logo/logo';
 export * from './lib/icon/icons';
 export * from './lib/icon/icon';
 export * from './lib/icon/category-badge';
+export * from './lib/progress-bar/progress-bar';
+export * from './lib/back-to-top/back-to-top';
