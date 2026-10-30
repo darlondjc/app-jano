@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.8.2',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'O app abre mais rápido: o carregamento inicial ficou cerca de 40% menor (de 240 KB para 147 KB transferidos).',
+      },
+    ],
+  },
+  {
     version: '0.8.1',
     date: '2026-10-30',
     items: [

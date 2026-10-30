@@ -8,7 +8,7 @@ import {
   where,
   writeBatch,
   updateDoc,
-} from 'firebase/firestore';
+} from 'firebase/firestore/lite';
 import { hashKey, type KeyedTransaction } from '@jano/import-file';
 import { paths } from '../firebase/paths';
 import { FirebaseService } from '../firebase/firebase.service';
