@@ -39,14 +39,13 @@ npm run pluggy -- sync --desde 2026-09-01         # período maior
 - **Não misture com arquivo no mesmo período.** A Pluggy e o OFX identificam o mesmo
   lançamento de jeitos diferentes, então a deduplicação não casa um com o outro. Use
   `"inicio"` com o primeiro dia depois da última importação por arquivo.
-- O consentimento do Open Finance vence (em geral 12 meses). Quando a Pluggy parar de trazer
-  dados, renove a autorização no Meu Pluggy.
-- Lançamentos pendentes ficam de fora até serem confirmados pelo banco.
-- **Reconectar um banco cria um item novo.** Troque o id antigo pelo novo em `"itemIds"`. Os
-  lançamentos não duplicam, porque a chave vem do id do próprio banco (`providerId`), não do
-  id da Pluggy.
-- **Lançamento refeito pelo banco.** No fechamento da fatura o banco pode reapresentar um
-  lançamento com outra data, valor ou descrição. Com `providerId` (sempre presente no Open
-  Finance) a chave é a mesma: não duplica, mas o que já está no app não é atualizado. Sem
-  ele, o lançamento pode aparecer duas vezes e você apaga o antigo no app. O script não
-  remove lançamentos que sumiram da Pluggy.
+- **A autorização do Meu Pluggy vence em 1 ano.** Quando vence, a sincronização volta vazia,
+  sem erro. Renove em Applications → sua aplicação → Demo → Connect Account → MeuPluggy e
+  confira se o itemId mudou.
+- **Cartão só entra quando a fatura fecha.** Compras da fatura aberta vêm da Pluggy como
+  pendentes, e pendentes ficam de fora.
+- **Como a deduplicação funciona.** O Meu Pluggy não repassa o id do banco (`providerId`),
+  então a chave é data + valor + descrição. Ela sobrevive a reconectar o banco, quando a
+  Pluggy troca todos os ids. Se o banco refizer um lançamento com outra data, valor ou
+  descrição, ele aparece duas vezes e você apaga o antigo no app. O script não remove
+  lançamentos que sumiram da Pluggy.
