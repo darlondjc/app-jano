@@ -161,7 +161,22 @@ async function sync(
       `- ${account.name} → ${accountId}: ${rows.length} novas, ` +
         `${plan.duplicates.length} já existiam, ${semCategoria} sem categoria.`,
     );
-    if (seco) continue;
+    if (seco) {
+      // Na simulação, mostra cada lançamento para conferir antes de gravar.
+      for (const { tx, categoryId } of rows) {
+        const valor = (tx.amountCents / 100).toFixed(2).replace('.', ',');
+        const cat = tx.isTransfer ? 'transferência' : (categoryId ?? '—');
+        console.log(
+          `    ${tx.date}  ${valor.padStart(11)}  ${cat.padEnd(16)} ${tx.description}`,
+        );
+      }
+      const semId = rows.filter((r) => !r.tx.externalId).length;
+      if (semId)
+        console.log(
+          `    ${semId} sem id do banco (providerId): chave por data + valor + descrição.`,
+        );
+      continue;
+    }
 
     const importId = crypto.randomUUID();
     for (let i = 0; i < rows.length; i += BATCH_LIMIT) {
