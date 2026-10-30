@@ -1,0 +1,9 @@
+{
+  "name": "open-finance",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/open-finance/src",
+  "projectType": "library",
+  "tags": ["type:import", "scope:shared"],
+  "// targets": "to see all targets run: nx show project open-finance --web",
+  "targets": {}
+}
