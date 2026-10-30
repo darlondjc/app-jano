@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.7.0',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Tela Projeções: saldo previsto para 3, 6 ou 12 meses com faixa de incerteza, cenários "e se" (cortar categoria, nova parcela, renda extra) e próximas cobranças recorrentes.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'No celular, o menu ganhou a aba "Mais" com Avaliações, Categorias, Conta e dados e Novidades.',
+      },
+    ],
+  },
+  {
     version: '0.6.0',
     date: '2026-10-30',
     items: [

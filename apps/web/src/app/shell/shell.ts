@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -48,12 +49,27 @@ const ITENS: Item[] = [
     rotulo: 'Avaliações',
     d: 'M5 19V13M12 19V6M19 19V10',
   },
+  {
+    rota: '/projecoes',
+    rotulo: 'Projeções',
+    d: 'M4 18L9 12L13 15L20 6',
+  },
   { rota: '/categorias', rotulo: 'Categorias', d: 'M4 4H12L20 12L12 20L4 12Z' },
+];
+
+/** Abas do celular: as quatro principais e "Mais" com o resto. */
+const PRINCIPAIS = ['/', '/transacoes', '/orcamento', '/projecoes'];
+const MAIS_EXTRAS: Item[] = [
+  {
+    rota: '/conta',
+    rotulo: 'Conta e dados',
+    d: 'M12 12a4 4 0 1 0 0 -8a4 4 0 0 0 0 8M4 20a8 8 0 0 1 16 0',
+  },
+  { rota: '/novidades', rotulo: 'Novidades', d: 'M12 4V13M12 18V18.5' },
 ];
 
 /** Telas previstas no protótipo que ainda não existem. */
 const EM_BREVE: Omit<Item, 'rota'>[] = [
-  { rotulo: 'Projeções', d: 'M4 18L9 12L13 15L20 6' },
   {
     rotulo: 'Recorrências',
     d: 'M4 12A8 8 0 0 1 18 7M20 12A8 8 0 0 1 6 17M18 3V7H14M6 21V17H10',
@@ -169,6 +185,62 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
         padding-bottom: 80px;
       }
     }
+    .mais-fundo {
+      position: fixed;
+      inset: 0;
+      z-index: 41;
+      border: 0;
+      background: var(--overlay);
+      cursor: default;
+    }
+    .mais {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 84px;
+      z-index: 42;
+      padding: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sheet);
+    }
+    .mais a,
+    .mais .breve {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 48px;
+      padding: 0 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      text-decoration: none;
+      font: 500 15px/20px var(--font-sans);
+    }
+    .mais a[aria-current='page'] {
+      color: var(--primary-text);
+      background: var(--primary-soft);
+    }
+    .mais .breve {
+      color: var(--text-2);
+      opacity: 0.6;
+    }
+    .mais .breve small {
+      margin-left: auto;
+      font: 500 11px/16px var(--font-sans);
+    }
+    .ponto {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+    button.j-nav__item {
+      border: 0;
+      background: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
   `,
   template: `
     <jano-progress-bar [ativo]="progresso.ativo()" />
@@ -233,7 +305,7 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
     </main>
 
     <nav class="j-nav j-nav--bottom abas" aria-label="Principal">
-      @for (i of itens; track i.rota) {
+      @for (i of principais; track i.rota) {
         <a
           class="j-nav__item"
           [routerLink]="i.rota"
@@ -256,7 +328,66 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
           {{ i.rotulo }}
         </a>
       }
+      <button
+        class="j-nav__item"
+        type="button"
+        aria-haspopup="menu"
+        [attr.aria-expanded]="maisAberto()"
+        [attr.aria-current]="maisAtivo() ? 'page' : null"
+        (click)="maisAberto.set(!maisAberto())"
+      >
+        <span class="j-nav__ic">
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M5 12H5.01M12 12H12.01M19 12H19.01"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+            />
+          </svg>
+        </span>
+        Mais
+      </button>
     </nav>
+    @if (maisAberto()) {
+      <button
+        class="mais-fundo"
+        type="button"
+        aria-label="Fechar menu"
+        (click)="maisAberto.set(false)"
+      ></button>
+      <div class="mais" role="menu" aria-label="Mais">
+        @for (i of maisItens; track i.rota) {
+          <a
+            role="menuitem"
+            [routerLink]="i.rota"
+            routerLinkActive
+            ariaCurrentWhenActive="page"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                [attr.d]="i.d"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+            {{ i.rotulo }}
+            @if (i.rota === '/novidades' && novidades()) {
+              <span class="ponto" aria-label="há novidades"></span>
+            }
+          </a>
+        }
+        @for (i of emBreve; track i.rotulo) {
+          <span class="breve" aria-disabled="true">
+            {{ i.rotulo }}<small>em breve</small>
+          </span>
+        }
+      </div>
+    }
     <jano-back-to-top />
   `,
 })
@@ -265,6 +396,18 @@ export class Shell {
   protected readonly progresso = inject(Progresso);
 
   protected readonly itens = ITENS;
+  protected readonly principais = ITENS.filter((i) =>
+    PRINCIPAIS.includes(i.rota),
+  );
+  protected readonly maisItens = [
+    ...ITENS.filter((i) => !PRINCIPAIS.includes(i.rota)),
+    ...MAIS_EXTRAS,
+  ];
+  protected readonly maisAberto = signal(false);
+  private readonly url = signal(this.router.url);
+  protected readonly maisAtivo = computed(() =>
+    this.maisItens.some((i) => this.url().startsWith(i.rota)),
+  );
   protected readonly emBreve = EM_BREVE;
   protected readonly versao = VERSAO_ATUAL;
   protected readonly novidades = signal(haNovidades());
@@ -279,7 +422,11 @@ export class Shell {
         e instanceof NavigationSkipped
       )
         this.progresso.concluir();
-      if (e instanceof NavigationEnd) this.novidades.set(haNovidades());
+      if (e instanceof NavigationEnd) {
+        this.novidades.set(haNovidades());
+        this.url.set(e.urlAfterRedirects);
+        this.maisAberto.set(false);
+      }
     });
   }
 }
