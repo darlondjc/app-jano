@@ -14,6 +14,27 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.9.0',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Saldo atual no Início: a soma da conta corrente e da poupança, direto do banco pelo Open Finance, com a data da última atualização.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Projeções parte do saldo do banco quando ele existe, sem precisar digitar.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Ícone do app instalado com a chave um pouco menor, mais equilibrado na tela inicial.',
+      },
+    ],
+  },
+  {
     version: '0.8.3',
     date: '2026-10-30',
     items: [

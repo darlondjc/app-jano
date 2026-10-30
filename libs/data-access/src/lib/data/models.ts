@@ -26,6 +26,24 @@ export interface AccountDoc {
   type: 'conta' | 'cartao';
 }
 
+/** Saldo de uma conta no banco, gravado pela sincronização Open Finance (tools/pluggy-sync). */
+export interface BalanceDoc {
+  /** Id da conta no provedor. */
+  id: string;
+  name: string;
+  kind: 'conta' | 'cartao';
+  /** "corrente", "poupança", "cartão de crédito"... */
+  detail: string | null;
+  /** Conta do Jano ligada a ela, se houver. */
+  accountId: string | null;
+  /** Centavos. No cartão é o valor devido. */
+  balanceCents: number;
+  /** Última atualização no banco, quando o provedor informa (ISO 8601). */
+  bankUpdatedAt: string | null;
+  /** Quando a sincronização gravou (ISO 8601). */
+  syncedAt: string;
+}
+
 export interface CategoryDoc {
   id: string;
   name: string;

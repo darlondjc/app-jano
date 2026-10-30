@@ -10,6 +10,7 @@ import {
 import { RouterLink } from '@angular/router';
 import {
   AuthService,
+  BalancesRepository,
   CatalogRepository,
   TransactionsRepository,
   type CategoryDoc,
@@ -33,6 +34,8 @@ import {
   JanoSkeletonKpi,
 } from '@jano/ui';
 import { Preferencias } from '../conta/preferencias';
+import { haQuantoTempo } from '../conta/tempo';
+import { saldoAtual, type SaldoAtual } from '../inicio/saldo';
 import { Progresso } from '../shell/progresso';
 import { marcarTransferencias } from '../transacoes/transferencias';
 import { mesAtual } from '../transacoes/agrupar';
@@ -469,23 +472,36 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
               }
             </svg>
 
-            <div class="saldo">
-              <label for="saldo">Saldo de hoje (opcional):</label>
-              <span class="j-input">
-                <span class="j-input__prefix">R$</span>
-                <input
-                  id="saldo"
-                  inputmode="decimal"
-                  placeholder="0,00"
-                  [value]="saldoTexto()"
-                  (change)="definirSaldo($any($event.target).value)"
-                />
-              </span>
-              <span class="sub"
-                >Sem ele, o gráfico parte de R$ 0 e mostra só a variação.
-                Guardado apenas neste aparelho.</span
-              >
-            </div>
+            @if (saldoBanco(); as s) {
+              <div class="saldo">
+                <span
+                  >Saldo de hoje:
+                  <b class="j-num">{{ money(s.cents) }}</b></span
+                >
+                <span class="sub"
+                  >{{ s.legenda }}, do banco, atualizado
+                  {{ quando(s.atualizadoEm) }}.</span
+                >
+              </div>
+            } @else {
+              <div class="saldo">
+                <label for="saldo">Saldo de hoje (opcional):</label>
+                <span class="j-input">
+                  <span class="j-input__prefix">R$</span>
+                  <input
+                    id="saldo"
+                    inputmode="decimal"
+                    placeholder="0,00"
+                    [value]="saldoTexto()"
+                    (change)="definirSaldo($any($event.target).value)"
+                  />
+                </span>
+                <span class="sub"
+                  >Sem ele, o gráfico parte de R$ 0 e mostra só a variação.
+                  Guardado apenas neste aparelho.</span
+                >
+              </div>
+            }
 
             <details style="margin-top: 12px">
               <summary>Ver os valores do gráfico</summary>
@@ -702,6 +718,7 @@ export class Projecoes {
   private readonly txRepo = inject(TransactionsRepository);
   private readonly catalog = inject(CatalogRepository);
   private readonly prefs = inject(Preferencias);
+  private readonly balancesRepo = inject(BalancesRepository);
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly money = formatBRL;
@@ -730,6 +747,10 @@ export class Projecoes {
   protected readonly parcelaTexto = signal('400,00');
   protected readonly rendaLigada = signal(false);
   protected readonly rendaTexto = signal('800,00');
+
+  /** Saldo do banco (Open Finance); quando existe, substitui o digitado à mão. */
+  protected readonly saldoBanco = signal<SaldoAtual | null>(null);
+  protected readonly quando = haQuantoTempo;
 
   protected readonly saldoTexto = computed(() =>
     this.prefs.saldoInicial() ? dinheiro(this.prefs.saldoInicial()) : '',
@@ -778,7 +799,7 @@ export class Projecoes {
         0,
       ).getDate(),
       horizonte: this.horizonte(),
-      saldoInicial: this.prefs.saldoInicial(),
+      saldoInicial: this.saldoBanco()?.cents ?? this.prefs.saldoInicial(),
       cenarios: this.cenarios().lista,
     }),
   );
@@ -953,7 +974,7 @@ export class Projecoes {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {
-      const [txs, cats, contas] = await Promise.all([
+      const [txs, cats, contas, saldos] = await Promise.all([
         this.txRepo.listRange(
           uid,
           previousMonths(this.month, 6).at(-1) as string,
@@ -961,7 +982,9 @@ export class Projecoes {
         ),
         this.catalog.categories(uid),
         this.catalog.accounts(uid),
+        this.balancesRepo.list(uid).catch(() => []),
       ]);
+      this.saldoBanco.set(saldoAtual(saldos));
       this.cartoes.set(
         new Set(contas.filter((c) => c.type === 'cartao').map((c) => c.id)),
       );
