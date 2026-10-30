@@ -75,6 +75,11 @@ export function rotuloMes(month: string): string {
   return `${nome[0].toUpperCase()}${nome.slice(1)} ${y}`;
 }
 
+/** Mês corrente no fuso do usuário (toISOString usaria UTC e virava o mês cedo demais). */
+export function mesAtual(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 /** Classe de cor do valor: verde entrada, vermelho saída, cinza transferência. */
 export function classeValor(t: {
   amountCents: number;

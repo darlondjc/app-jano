@@ -14,6 +14,21 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.3.1',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'correcao',
+        texto:
+          'Pagamento de fatura, aplicações e resgates deixam de contar como gasto ou receita; dá para marcar qualquer lançamento como transferência.',
+      },
+      {
+        tipo: 'correcao',
+        texto: 'O mês exibido não vira para o seguinte antes da hora à noite.',
+      },
+    ],
+  },
+  {
     version: '0.3.0',
     date: '2026-10-27',
     items: [

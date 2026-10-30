@@ -30,7 +30,8 @@ import {
   JanoGoalBar,
   JanoKpiCard,
 } from '@jano/ui';
-import { classeValor, rotuloMes } from '../transacoes/agrupar';
+import { marcarTransferencias } from '../transacoes/transferencias';
+import { classeValor, mesAtual, rotuloMes } from '../transacoes/agrupar';
 
 @Component({
   selector: 'jano-inicio',
@@ -215,7 +216,7 @@ export class Inicio {
   protected readonly money = formatBRL;
   protected readonly classeValor = classeValor;
   private readonly hoje = new Date();
-  private readonly month = this.hoje.toISOString().slice(0, 7);
+  private readonly month = mesAtual(this.hoje);
   protected readonly mes = computed(() => rotuloMes(this.month));
   protected readonly txs = signal<TransactionDoc[]>([]);
   private readonly budgets = signal<BudgetDoc[]>([]);
@@ -277,7 +278,7 @@ export class Inicio {
         this.budgetRepo.list(uid),
         this.catalog.categories(uid),
       ]);
-      this.txs.set(txs);
+      this.txs.set((await marcarTransferencias(this.txRepo, uid, txs)).txs);
       this.budgets.set(budgets);
       this.categorias.set(cats);
     } catch (e) {

@@ -91,6 +91,29 @@ export class TransactionsRepository {
     await updateDoc(doc(this.db, paths.transactions(uid), id), {
       categoryId,
       categoryIsManual: true,
+      isTransfer: false,
     });
+  }
+
+  /** Marca à mão como transferência (fora dos totais). */
+  async setTransfer(uid: string, id: string): Promise<void> {
+    await updateDoc(doc(this.db, paths.transactions(uid), id), {
+      categoryId: null,
+      categoryIsManual: true,
+      isTransfer: true,
+    });
+  }
+
+  /** Marca em lote (detecção automática); não mexe na escolha manual de categoria. */
+  async markTransfers(uid: string, ids: string[]): Promise<void> {
+    for (let i = 0; i < ids.length; i += BATCH_LIMIT) {
+      const batch = writeBatch(this.db);
+      for (const id of ids.slice(i, i + BATCH_LIMIT)) {
+        batch.update(doc(this.db, paths.transactions(uid), id), {
+          isTransfer: true,
+        });
+      }
+      await batch.commit();
+    }
   }
 }
