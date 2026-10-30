@@ -22,6 +22,7 @@ export interface PluggyAccount {
   marketingName?: string | null;
   number?: string | null;
   balance?: number | null;
+  updatedAt?: string;
   currencyCode: string;
   itemId: string;
 }

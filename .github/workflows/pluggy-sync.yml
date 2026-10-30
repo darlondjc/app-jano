@@ -1,0 +1,41 @@
+name: Sincronizar Open Finance
+
+# Todo dia às 6h de Brasília (9h UTC; o Brasil não tem horário de verão desde 2019).
+# O GitHub pode atrasar alguns minutos. Também dá para rodar à mão em Actions → Run workflow.
+on:
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pluggy-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    # Agendamentos só rodam no repositório original, nunca em forks.
+    if: github.repository == 'darlondjc/app-jano'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # O log é público: a sincronização só imprime nomes de conta e contagens. Nunca usar --seco aqui.
+      - name: Sincronizar
+        env:
+          PLUGGY_CLIENT_ID: ${{ secrets.PLUGGY_CLIENT_ID }}
+          PLUGGY_CLIENT_SECRET: ${{ secrets.PLUGGY_CLIENT_SECRET }}
+          PLUGGY_CONFIG: ${{ secrets.PLUGGY_CONFIG }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$PLUGGY_CONFIG" > pluggy.config.json
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase.json"
+          npm run pluggy -- sync

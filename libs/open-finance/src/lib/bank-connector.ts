@@ -11,7 +11,10 @@ export interface ConnectedAccount {
   number?: string;
   /** Tipo informado pelo provedor, ex.: corrente ou poupança. */
   detail?: string;
+  /** Saldo no banco. No cartão é o valor devido (positivo = deve). */
   balanceCents?: number;
+  /** Quando o provedor atualizou a conta pela última vez (ISO 8601). */
+  updatedAt?: string;
 }
 
 export interface FetchRange {

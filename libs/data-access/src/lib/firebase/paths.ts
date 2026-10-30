@@ -11,4 +11,6 @@ export const paths = {
   recurrences: (uid: string) => `users/${uid}/recurrences`,
   scenarios: (uid: string) => `users/${uid}/scenarios`,
   insights: (uid: string) => `users/${uid}/insights`,
+  /** Saldo de cada conta no banco, gravado pela sincronização Open Finance (tools/pluggy-sync). */
+  balances: (uid: string) => `users/${uid}/balances`,
 } as const;

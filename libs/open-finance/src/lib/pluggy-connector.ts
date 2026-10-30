@@ -55,6 +55,7 @@ export function toConnectedAccount(a: PluggyAccount): ConnectedAccount {
     number: a.number ?? undefined,
     detail: SUBTIPOS[a.subtype] ?? a.subtype,
     balanceCents: a.balance == null ? undefined : toCents(a.balance),
+    updatedAt: a.updatedAt,
   };
 }
 

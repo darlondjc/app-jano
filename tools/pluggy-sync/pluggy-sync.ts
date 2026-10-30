@@ -17,6 +17,7 @@ import {
   PluggyConnector,
   categorizar,
   type CategoriaRef,
+  type ConnectedAccount,
   type RegraRef,
 } from '@jano/open-finance';
 
@@ -130,7 +131,8 @@ async function sync(
   console.log(
     `Período: ${desde} a ${ate}${seco ? ' (simulação, nada é gravado)' : ''}`,
   );
-  for (const account of await connector.listAccounts()) {
+  const contasPluggy = await connector.listAccounts();
+  for (const account of contasPluggy) {
     const accountId = config.contas[account.externalId];
     if (!accountId) {
       console.log(`- ${account.name}: sem mapeamento, ignorada.`);
@@ -213,6 +215,42 @@ async function sync(
       createdAt: new Date().toISOString(),
     });
   }
+  if (!seco) await gravarSaldos(db, base, contasPluggy, config);
+}
+
+/**
+ * Saldo de cada conta do banco, inclusive as sem mapeamento (a poupança entra no "Saldo
+ * atual" do Início). Nunca vai para o log: no GitHub Actions ele é público.
+ */
+async function gravarSaldos(
+  db: Firestore,
+  base: string,
+  contas: ConnectedAccount[],
+  config: Config,
+): Promise<void> {
+  const col = db.collection(`${base}/balances`);
+  const batch = db.batch();
+  const ids = new Set<string>();
+  const syncedAt = new Date().toISOString();
+  for (const a of contas) {
+    if (a.balanceCents === undefined) continue;
+    ids.add(a.externalId);
+    batch.set(col.doc(a.externalId), {
+      name: a.name,
+      kind: a.kind,
+      detail: a.detail ?? null,
+      number: a.number ?? null,
+      accountId: config.contas[a.externalId] ?? null,
+      balanceCents: a.balanceCents,
+      bankUpdatedAt: a.updatedAt ?? null,
+      syncedAt,
+    });
+  }
+  // Reconectar o banco troca os ids das contas: some com o saldo das que não existem mais.
+  for (const d of (await col.get()).docs)
+    if (!ids.has(d.id)) batch.delete(d.ref);
+  await batch.commit();
+  console.log(`Saldos atualizados: ${ids.size} contas.`);
 }
 
 async function main(): Promise<void> {

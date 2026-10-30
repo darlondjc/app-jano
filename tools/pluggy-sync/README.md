@@ -49,3 +49,29 @@ npm run pluggy -- sync --desde 2026-09-01         # período maior
   Pluggy troca todos os ids. Se o banco refizer um lançamento com outra data, valor ou
   descrição, ele aparece duas vezes e você apaga o antigo no app. O script não remove
   lançamentos que sumiram da Pluggy.
+
+## Sincronização diária (GitHub Actions)
+
+O workflow `.github/workflows/pluggy-sync.yml` roda `sync` todo dia às 6h de Brasília. Ele só
+dispara depois de estar na branch `main`. Cadastre em Settings → Secrets and variables →
+Actions → New repository secret:
+
+| Secret                     | Conteúdo                                       |
+| -------------------------- | ---------------------------------------------- |
+| `PLUGGY_CLIENT_ID`         | Client ID da aplicação na Pluggy               |
+| `PLUGGY_CLIENT_SECRET`     | Client Secret da aplicação na Pluggy           |
+| `PLUGGY_CONFIG`            | O conteúdo inteiro do seu `pluggy.config.json` |
+| `FIREBASE_SERVICE_ACCOUNT` | O conteúdo inteiro do JSON da conta de serviço |
+
+Para testar sem esperar o horário: Actions → Sincronizar Open Finance → Run workflow.
+
+O repositório é público, então os logs também são. A sincronização imprime só nomes de
+conta e contagens, nunca saldos nem lançamentos. Não rode `--seco` no workflow. O GitHub
+desliga agendamentos de repositórios públicos sem commits por 60 dias; ele avisa por
+e-mail e basta reativar em Actions.
+
+## Saldo
+
+A cada sincronização o saldo de todas as contas do banco (inclusive as sem mapeamento, como a
+poupança) vai para `users/{uid}/balances`, com a data da atualização. No cartão, o saldo é o
+valor da fatura em aberto.
