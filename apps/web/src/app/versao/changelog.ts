@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.8.1',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'O Início avisa quando faz 7 dias ou mais desde a última importação, com atalho para importar um novo extrato.',
+      },
+    ],
+  },
+  {
     version: '0.8.0',
     date: '2026-10-30',
     items: [

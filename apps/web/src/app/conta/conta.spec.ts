@@ -1,4 +1,4 @@
-import { haQuantoTempo } from './conta';
+import { haQuantoTempo } from './tempo';
 
 describe('haQuantoTempo', () => {
   const agora = new Date('2026-10-30T15:00:00Z');
