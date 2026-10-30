@@ -64,10 +64,12 @@ interface Previa {
     }
     header {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 12px;
-      flex-wrap: wrap;
+    }
+    header label {
+      flex: none;
     }
     h1 {
       margin: 0;
@@ -158,8 +160,13 @@ interface Previa {
           accept=".ofx,.OFX,.pdf,.PDF"
           (change)="escolherArquivo($event)"
         />
-        <span class="j-btn j-btn--primary" role="button" tabindex="0"
-          >Importar extrato ou fatura</span
+        <span
+          class="j-btn j-btn--primary"
+          role="button"
+          tabindex="0"
+          title="Importar extrato (OFX) ou fatura do cartão (PDF)"
+          aria-label="Importar extrato ou fatura"
+          >Importar</span
         >
       </label>
     </header>
