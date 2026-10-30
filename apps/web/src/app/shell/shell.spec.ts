@@ -22,7 +22,7 @@ describe('Shell', () => {
     return f;
   }
 
-  it('mostra os itens do menu e os que ainda virão', async () => {
+  it('mostra os itens do menu lateral', async () => {
     const f = await criar();
     const el = f.nativeElement as HTMLElement;
     const links = [...el.querySelectorAll('aside nav a')].map((a) =>
@@ -33,10 +33,38 @@ describe('Shell', () => {
       'Transações',
       'Orçamento',
       'Avaliações',
+      'Projeções',
+      'Recorrências',
       'Categorias',
     ]);
-    expect(el.textContent).toContain('Projeções');
-    expect(el.textContent).toContain('em breve');
+    expect(el.textContent).not.toContain('em breve');
+  });
+
+  it('no celular as abas são as principais e "Mais" abre o resto', async () => {
+    const f = await criar();
+    const el = f.nativeElement as HTMLElement;
+    const abas = [...el.querySelectorAll('nav.abas .j-nav__item')].map((a) =>
+      a.textContent?.trim(),
+    );
+    expect(abas).toEqual([
+      'Início',
+      'Transações',
+      'Orçamento',
+      'Projeções',
+      'Mais',
+    ]);
+    (el.querySelector('nav.abas button') as HTMLButtonElement).click();
+    await f.whenStable();
+    const mais = [...el.querySelectorAll('.mais [role="menuitem"]')].map(
+      (a) => a.textContent?.trim().split('\n')[0],
+    );
+    expect(mais).toEqual([
+      'Avaliações',
+      'Recorrências',
+      'Categorias',
+      'Conta e dados',
+      'Novidades',
+    ]);
   });
 
   it('o avatar mostra as iniciais e o menu leva a Conta e dados e ao sair', async () => {

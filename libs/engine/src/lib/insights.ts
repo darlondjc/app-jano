@@ -171,9 +171,16 @@ export interface RecurringSeries {
  * Séries mensais: mesma descrição em 3+ meses diferentes, cobrada em dias próximos (±4) e
  * com valores dentro de 25% do último. Serve de base às recorrências da projeção.
  */
-export function detectRecurrences(txs: HistTx[]): RecurringSeries[] {
+export function detectRecurrences(
+  txs: HistTx[],
+  tipo: 'gasto' | 'entrada' = 'gasto',
+): RecurringSeries[] {
   const groups = new Map<string, HistTx[]>();
-  for (const t of spends(txs)) {
+  const candidatas =
+    tipo === 'gasto'
+      ? spends(txs)
+      : txs.filter((t) => !t.isTransfer && t.amountCents > 0);
+  for (const t of candidatas) {
     (
       groups.get(t.descriptionNorm) ??
       groups.set(t.descriptionNorm, []).get(t.descriptionNorm)!
@@ -190,16 +197,16 @@ export function detectRecurrences(txs: HistTx[]): RecurringSeries[] {
       .map((t) => Number(t.date.slice(8, 10)))
       .sort((a, b) => a - b);
     const day = days[Math.floor(days.length / 2)];
-    const last = -series[series.length - 1].amountCents;
+    const last = Math.abs(series[series.length - 1].amountCents);
     const steady = series.every(
-      (t) => Math.abs(-t.amountCents - last) <= last * 0.25,
+      (t) => Math.abs(Math.abs(t.amountCents) - last) <= last * 0.25,
     );
     const regular = days.every((d) => Math.abs(d - day) <= 4);
     if (!steady || !regular) continue;
     out.push({
       description,
       amountCents: last,
-      previousCents: -series[series.length - 2].amountCents,
+      previousCents: Math.abs(series[series.length - 2].amountCents),
       day,
       months: series.length,
       firstSeen: sorted[0].date,
