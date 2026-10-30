@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { collection, doc, getDocs, setDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc } from 'firebase/firestore/lite';
 import { hashKey } from '@jano/import-file';
 import { paths } from '../firebase/paths';
 import { FirebaseService } from '../firebase/firebase.service';

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore/lite';
 import { FIREBASE_CONFIG } from './firebase.config';
 
 /** Ponto único de inicialização do Firebase. */

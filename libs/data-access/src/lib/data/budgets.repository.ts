@@ -5,7 +5,7 @@ import {
   doc,
   getDocs,
   setDoc,
-} from 'firebase/firestore';
+} from 'firebase/firestore/lite';
 import { FirebaseService } from '../firebase/firebase.service';
 import { paths } from '../firebase/paths';
 

@@ -6,7 +6,7 @@ import {
   orderBy,
   query,
   writeBatch,
-} from 'firebase/firestore';
+} from 'firebase/firestore/lite';
 import { paths } from '../firebase/paths';
 import { FirebaseService } from '../firebase/firebase.service';
 
