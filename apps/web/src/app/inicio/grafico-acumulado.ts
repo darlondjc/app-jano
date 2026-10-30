@@ -8,7 +8,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { formatBRL } from '@jano/engine';
+import { formatBRL, valoresOcultos } from '@jano/engine';
 
 const X0 = 56;
 const Y0 = 24; // topo
@@ -18,6 +18,7 @@ const PASSOS_REAIS = [
 
 /** "R$ 4,5 mil" / "R$ 800". Valores do eixo, em centavos. */
 export function rotuloEixo(cents: number): string {
+  if (valoresOcultos()) return 'R$ ••';
   const reais = cents / 100;
   return reais >= 1000
     ? `R$ ${(reais / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`

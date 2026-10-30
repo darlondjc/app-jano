@@ -24,21 +24,25 @@ export class AtualizacaoService {
     });
   }
 
-  async verificar(): Promise<void> {
+  /** Consulta o servidor agora. "erro" = sem rede ou sem version.json (ex.: em desenvolvimento). */
+  async verificar(): Promise<'atual' | 'nova' | 'erro'> {
     try {
       const url = new URL('version.json', document.baseURI);
       url.searchParams.set('t', String(Date.now()));
       const r = await fetch(url, { cache: 'no-store' });
-      if (!r.ok) return;
+      if (!r.ok) return 'erro';
       const info = (await r.json()) as { buildId?: string; version?: string };
       if (info.buildId && info.buildId !== BUILD_ID) {
         this.disponivel.set({
           buildId: info.buildId,
           version: info.version ?? '',
         });
+        return 'nova';
       }
+      return 'atual';
     } catch {
       // Sem rede ou arquivo ausente: tenta de novo no próximo ciclo.
+      return 'erro';
     }
   }
 

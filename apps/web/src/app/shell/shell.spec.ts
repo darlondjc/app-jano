@@ -33,13 +33,22 @@ describe('Shell', () => {
     expect(el.textContent).toContain('em breve');
   });
 
-  it('sair encerra a sessão e vai para o login', async () => {
+  it('o avatar mostra as iniciais e o menu leva a Conta e dados e ao sair', async () => {
     const f = await criar();
+    const el = f.nativeElement as HTMLElement;
+    const avatar = el.querySelector('.topo-largo .avatar') as HTMLButtonElement;
+    expect(avatar.textContent?.trim()).toBe('DT');
+    avatar.click();
+    await f.whenStable();
+    const itens = [...el.querySelectorAll('.topo-largo [role^="menuitem"]')];
+    expect(itens.map((i) => i.textContent?.trim().split('\n')[0])).toEqual([
+      'Conta e dados',
+      'Novidades',
+      'Ocultar valores desligado',
+      'Sair',
+    ]);
     const nav = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
-    const sair = [...f.nativeElement.querySelectorAll('aside button')].find(
-      (b: HTMLElement) => b.textContent?.trim() === 'Sair',
-    ) as HTMLButtonElement;
-    sair.click();
+    (itens[3] as HTMLButtonElement).click();
     await f.whenStable();
     expect(signOut).toHaveBeenCalled();
     expect(nav).toHaveBeenCalledWith('/entrar');

@@ -1,3 +1,5 @@
+import { signal } from '@angular/core';
+
 /** Dinheiro sempre em centavos inteiros. */
 export type Cents = number;
 
@@ -18,8 +20,17 @@ export function monthPace(year: number, month: number, day: number): number {
   return Math.min(Math.max(day / daysInMonth, 0), 1);
 }
 
-/** Linha de transação para formatação em pt-BR. */
+/**
+ * Modo "ocultar valores": quando ligado, todo valor formatado vira máscara.
+ * É um signal, então telas que formatam dentro de template ou computed atualizam sozinhas.
+ */
+export const valoresOcultos = signal(false);
+
+export const MASCARA_VALOR = 'R$ ••••••';
+
+/** Valor em reais no formato pt-BR (ou a máscara, com os valores ocultos). */
 export function formatBRL(cents: Cents): string {
+  if (valoresOcultos()) return MASCARA_VALOR;
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',

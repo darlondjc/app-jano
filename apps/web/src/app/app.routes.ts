@@ -32,6 +32,10 @@ export const appRoutes: Route[] = [
           import('./categorias/categorias').then((m) => m.Categorias),
       },
       {
+        path: 'conta',
+        loadComponent: () => import('./conta/conta').then((m) => m.Conta),
+      },
+      {
         path: 'novidades',
         loadComponent: () =>
           import('./versao/novidades').then((m) => m.Novidades),
