@@ -37,6 +37,7 @@ import { classeValor, mesAtual, rotuloMes } from '../transacoes/agrupar';
 import { marcarTransferencias } from '../transacoes/transferencias';
 import { montarAlertas } from './alertas';
 import { GraficoAcumulado } from './grafico-acumulado';
+import { Progresso } from '../shell/progresso';
 
 @Component({
   selector: 'jano-inicio',
@@ -368,6 +369,7 @@ import { GraficoAcumulado } from './grafico-acumulado';
 })
 export class Inicio {
   private readonly auth = inject(AuthService);
+  private readonly progresso = inject(Progresso);
   private readonly txRepo = inject(TransactionsRepository);
   private readonly budgetRepo = inject(BudgetsRepository);
   private readonly catalog = inject(CatalogRepository);
@@ -485,7 +487,11 @@ export class Inicio {
     return `${Number(d)}/${m}`;
   }
 
-  private async carregar(): Promise<void> {
+  private carregar(): Promise<void> {
+    return this.progresso.acompanhar(this.carregarDados());
+  }
+
+  private async carregarDados(): Promise<void> {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {

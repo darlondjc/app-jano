@@ -6,17 +6,21 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  NavigationCancel,
   NavigationEnd,
+  NavigationError,
+  NavigationSkipped,
+  NavigationStart,
   Router,
   RouterLink,
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
 import { AuthService } from '@jano/data-access';
-import { JanoButton, JanoLogo } from '@jano/ui';
-import { filter } from 'rxjs';
+import { JanoBackToTop, JanoButton, JanoLogo, JanoProgressBar } from '@jano/ui';
 import { VERSAO_ATUAL } from '../versao/changelog';
 import { haNovidades } from '../versao/novidades';
+import { Progresso } from './progresso';
 
 interface Item {
   rota: string;
@@ -55,7 +59,15 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
 /** Estrutura do app logado: menu lateral no desktop, barra de abas no celular. */
 @Component({
   selector: 'jano-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, JanoButton, JanoLogo],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    JanoButton,
+    JanoLogo,
+    JanoProgressBar,
+    JanoBackToTop,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -162,6 +174,7 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
     }
   `,
   template: `
+    <jano-progress-bar [ativo]="progresso.ativo()" />
     <aside class="lado">
       <a class="marca" routerLink="/" aria-label="Jano, início">
         <jano-logo [size]="30" />
@@ -274,11 +287,13 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [
         </a>
       }
     </nav>
+    <jano-back-to-top />
   `,
 })
 export class Shell {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  protected readonly progresso = inject(Progresso);
 
   protected readonly itens = ITENS;
   protected readonly emBreve = EM_BREVE;
@@ -286,12 +301,17 @@ export class Shell {
   protected readonly novidades = signal(haNovidades());
 
   constructor() {
-    this.router.events
-      .pipe(
-        filter((e) => e instanceof NavigationEnd),
-        takeUntilDestroyed(),
+    this.router.events.pipe(takeUntilDestroyed()).subscribe((e) => {
+      if (e instanceof NavigationStart) this.progresso.iniciar();
+      else if (
+        e instanceof NavigationEnd ||
+        e instanceof NavigationCancel ||
+        e instanceof NavigationError ||
+        e instanceof NavigationSkipped
       )
-      .subscribe(() => this.novidades.set(haNovidades()));
+        this.progresso.concluir();
+      if (e instanceof NavigationEnd) this.novidades.set(haNovidades());
+    });
   }
 
   protected nome(): string {

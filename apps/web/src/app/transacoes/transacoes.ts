@@ -52,6 +52,7 @@ import {
 } from './filtrar';
 import { linhasDoPdf } from './pdf';
 import { marcarTransferencias } from './transferencias';
+import { Progresso } from '../shell/progresso';
 
 interface Previa {
   fileName: string;
@@ -1001,6 +1002,7 @@ interface Previa {
 })
 export class Transacoes {
   private readonly auth = inject(AuthService);
+  private readonly progresso = inject(Progresso);
   private readonly repo = inject(TransactionsRepository);
   private readonly catalog = inject(CatalogRepository);
   private readonly rulesRepo = inject(RulesRepository);
@@ -1099,7 +1101,11 @@ export class Transacoes {
     }
   }
 
-  private async carregar(): Promise<void> {
+  private carregar(): Promise<void> {
+    return this.progresso.acompanhar(this.carregarDados());
+  }
+
+  private async carregarDados(): Promise<void> {
     this.carregando.set(true);
     this.limite.set(50);
     this.detalheId.set(null);

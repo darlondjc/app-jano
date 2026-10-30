@@ -32,6 +32,11 @@ export const CHANGELOG: Versao[] = [
         texto:
           'Ao recategorizar, dá para criar uma regra e aplicá-la aos lançamentos parecidos.',
       },
+      {
+        tipo: 'novo',
+        texto:
+          'Barra de progresso no topo durante carregamentos e botão para voltar ao topo da página.',
+      },
     ],
   },
   {
