@@ -14,6 +14,27 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.8.3',
+    date: '2026-10-30',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Sincronização diária com o Open Finance (Meu Pluggy): as transações do banco chegam sozinhas toda manhã, sem importar arquivo.',
+      },
+      {
+        tipo: 'correcao',
+        texto:
+          'Resgates do BB Rende Fácil abreviados no extrato ("REND.FACIL") agora contam como transferência, não como receita.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Compras em supermercados e restaurantes passam a ser categorizadas automaticamente.',
+      },
+    ],
+  },
+  {
     version: '0.8.2',
     date: '2026-10-30',
     items: [
