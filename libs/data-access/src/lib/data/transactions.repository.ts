@@ -36,6 +36,44 @@ export class TransactionsRepository {
     }));
   }
 
+  /** Do primeiro dia de `fromMonth` ao último de `toMonth` (AAAA-MM). */
+  async listRange(
+    uid: string,
+    fromMonth: string,
+    toMonth: string,
+  ): Promise<TransactionDoc[]> {
+    const snap = await getDocs(
+      query(
+        collection(this.db, paths.transactions(uid)),
+        where('date', '>=', monthBounds(fromMonth).from),
+        where('date', '<', monthBounds(toMonth).toExclusive),
+        orderBy('date', 'desc'),
+      ),
+    );
+    return snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as Omit<TransactionDoc, 'id'>),
+    }));
+  }
+
+  /** Mesma alteração em vários lançamentos (seleção múltipla, regra aplicada ao período). */
+  async bulkUpdate(
+    uid: string,
+    ids: string[],
+    patch: Pick<
+      TransactionDoc,
+      'categoryId' | 'categoryIsManual' | 'isTransfer'
+    >,
+  ): Promise<void> {
+    for (let i = 0; i < ids.length; i += BATCH_LIMIT) {
+      const batch = writeBatch(this.db);
+      for (const id of ids.slice(i, i + BATCH_LIMIT)) {
+        batch.update(doc(this.db, paths.transactions(uid), id), { ...patch });
+      }
+      await batch.commit();
+    }
+  }
+
   /** Chaves já gravadas no período do arquivo (para a prévia). */
   async existingKeys(
     uid: string,

@@ -1,0 +1,95 @@
+import { TestBed } from '@angular/core/testing';
+import type { CategoryDoc, TransactionDoc } from '@jano/data-access';
+import { DetalheTransacao, TRANSFERENCIA } from './detalhe';
+
+const tx: TransactionDoc = {
+  id: 't1',
+  accountId: 'conta',
+  date: '2026-10-21',
+  amountCents: -4200,
+  description: 'Pix · Mercadinho Souza',
+  descriptionNorm: 'PIX MERCADINHO SOUZA',
+  dedupeKey: 'k',
+  categoryId: null,
+  categoryIsManual: false,
+  isTransfer: false,
+  importId: null,
+};
+const cats: CategoryDoc[] = [
+  {
+    id: 'mercado',
+    name: 'Mercado',
+    color: 'cat-3',
+    icon: 'carrinho',
+    type: 'despesa',
+    position: 1,
+  },
+  {
+    id: 'lazer',
+    name: 'Lazer',
+    color: 'cat-6',
+    icon: 'jogos',
+    type: 'despesa',
+    position: 2,
+  },
+];
+
+function montar(t = tx) {
+  const f = TestBed.createComponent(DetalheTransacao);
+  f.componentRef.setInput('tx', t);
+  f.componentRef.setInput('categorias', cats);
+  f.componentRef.setInput('conta', 'Conta corrente');
+  f.detectChanges();
+  const saidas: unknown[] = [];
+  f.componentInstance.salvar.subscribe((v) => saidas.push(v));
+  return { f, el: f.nativeElement as HTMLElement, saidas };
+}
+
+const botao = (el: HTMLElement, texto: string) =>
+  [...el.querySelectorAll('button')].find((b) =>
+    b.textContent?.trim().startsWith(texto),
+  ) as HTMLButtonElement;
+
+describe('DetalheTransacao', () => {
+  it('só habilita Salvar depois de escolher algo', () => {
+    const { f, el } = montar();
+    expect(botao(el, 'Salvar').disabled).toBe(true);
+    botao(el, 'Mercado').click();
+    f.detectChanges();
+    expect(botao(el, 'Salvar').disabled).toBe(false);
+  });
+
+  it('emite a categoria escolhida', () => {
+    const { f, el, saidas } = montar();
+    botao(el, 'Lazer').click();
+    f.detectChanges();
+    botao(el, 'Salvar').click();
+    expect(saidas).toEqual([{ escolha: 'lazer', regra: null }]);
+  });
+
+  it('emite a regra quando marcada, com o trecho editável', () => {
+    const { f, el, saidas } = montar();
+    botao(el, 'Mercado').click();
+    f.detectChanges();
+    const chk = el.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    chk.checked = true;
+    chk.dispatchEvent(new Event('change'));
+    f.detectChanges();
+    botao(el, 'Salvar').click();
+    expect(saidas).toEqual([
+      {
+        escolha: 'mercado',
+        regra: { pattern: 'PIX MERCADINHO SOUZA', categoryId: 'mercado' },
+      },
+    ]);
+  });
+
+  it('transferência não oferece regra', () => {
+    const { f, el, saidas } = montar();
+    botao(el, 'Transferência').click();
+    f.detectChanges();
+    expect(el.querySelector('input[type="checkbox"]')).toBeNull();
+    botao(el, 'Salvar').click();
+    expect(saidas).toEqual([{ escolha: TRANSFERENCIA, regra: null }]);
+  });
+});

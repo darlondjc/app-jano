@@ -1,4 +1,4 @@
-import { formatBRL, goalStatus, monthPace } from './engine';
+import { cumulativeSpend, formatBRL, goalStatus, monthPace } from './engine';
 
 describe('goalStatus', () => {
   it.each([
@@ -107,5 +107,21 @@ describe('tightestGoals', () => {
     const rows = [mk('a', 100, 10), mk('b', 100, 90)];
     tightestGoals(rows, 1);
     expect(rows[0].categoryId).toBe('a');
+  });
+});
+
+describe('cumulativeSpend', () => {
+  it('acumula só saídas fora de transferências', () => {
+    const r = cumulativeSpend(
+      [
+        { date: '2026-10-01', amountCents: -1000, isTransfer: false },
+        { date: '2026-10-03', amountCents: -500, isTransfer: false },
+        { date: '2026-10-03', amountCents: 9999, isTransfer: false },
+        { date: '2026-10-02', amountCents: -7000, isTransfer: true },
+        { date: '2026-10-09', amountCents: -1, isTransfer: false },
+      ],
+      4,
+    );
+    expect(r).toEqual([1000, 1000, 1500, 1500]);
   });
 });

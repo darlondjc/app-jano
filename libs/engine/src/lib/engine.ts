@@ -97,3 +97,21 @@ export function tightestGoals(rows: BudgetRow[], n: number): BudgetRow[] {
         : 0;
   return [...rows].sort((a, b) => ratio(b) - ratio(a)).slice(0, n);
 }
+
+/**
+ * Gasto acumulado dia a dia (centavos), do dia 1 até `upToDay`. Só saídas, sem transferências.
+ * Posição 0 = fim do dia 1.
+ */
+export function cumulativeSpend(
+  txs: { date: string; amountCents: Cents; isTransfer: boolean }[],
+  upToDay: number,
+): Cents[] {
+  const perDay = new Array<Cents>(Math.max(upToDay, 0)).fill(0);
+  for (const t of txs) {
+    if (t.isTransfer || t.amountCents >= 0) continue;
+    const day = Number(t.date.slice(8, 10));
+    if (day >= 1 && day <= upToDay) perDay[day - 1] += -t.amountCents;
+  }
+  let acc = 0;
+  return perDay.map((v) => (acc += v));
+}
