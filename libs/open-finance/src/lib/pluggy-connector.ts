@@ -62,12 +62,13 @@ export function toRawTransaction(
   const cents = toCents(t.amount);
   const meta = t.creditCardMetadata;
   const row: RawTransaction = {
-    // A data vem como meia-noite UTC; converter para São Paulo jogaria para o dia anterior.
-    date: t.date.slice(0, 10),
+    date: dataLocal(t.date),
     amountCents: kind === 'cartao' ? -cents : cents,
     description: t.descriptionRaw || t.description,
-    externalId: t.id,
   };
+  // Sem `providerId`, a chave sai de data + valor + descrição (mesmo critério da Pluggy).
+  // O `id` da Pluggy não serve: muda quando o lançamento do cartão é refeito no fechamento.
+  if (t.providerId) row.externalId = t.providerId;
   if (
     meta?.installmentNumber &&
     meta.totalInstallments &&
@@ -88,6 +89,20 @@ export function toRawTransaction(
     row.isTransfer = true;
   }
   return row;
+}
+
+const DATA_SP = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Sao_Paulo',
+});
+
+/**
+ * A Pluggy manda a data em UTC. Meia-noite UTC é só data (o banco não informou hora) e fica
+ * como está; com hora, converte para São Paulo (23h de dia 5 em Brasília é dia 6 em UTC).
+ */
+function dataLocal(iso: string): string {
+  if (iso.length === 10 || iso.endsWith('T00:00:00.000Z'))
+    return iso.slice(0, 10);
+  return DATA_SP.format(new Date(iso));
 }
 
 /** Reais (número da API) em centavos inteiros. */

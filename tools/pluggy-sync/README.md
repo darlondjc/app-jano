@@ -42,3 +42,10 @@ npm run pluggy -- sync --desde 2026-09-01         # período maior
 - O consentimento do Open Finance vence (em geral 12 meses). Quando a Pluggy parar de trazer
   dados, renove a autorização no Meu Pluggy.
 - Lançamentos pendentes ficam de fora até serem confirmados pelo banco.
+- **Reconectar um banco cria um item novo.** Troque o id antigo pelo novo em `"itemIds"`. Os
+  lançamentos não duplicam, porque a chave vem do id do próprio banco (`providerId`), não do
+  id da Pluggy.
+- **Lançamento refeito pelo banco.** No fechamento da fatura o banco pode reapresentar um
+  lançamento com outra data, valor ou descrição. Com `providerId` (sempre presente no Open
+  Finance) isso só atualiza a chave; sem ele, o lançamento pode aparecer duas vezes e você
+  apaga o antigo no app. O script não remove lançamentos que sumiram da Pluggy.

@@ -40,6 +40,11 @@ export interface PluggyTransaction {
   status: 'PENDING' | 'POSTED';
   category?: string | null;
   operationType?: string | null;
+  /**
+   * Id do lançamento na instituição; só vem em conectores Open Finance. É o único id estável:
+   * o `id` da Pluggy muda quando a fatura do cartão fecha e o lançamento é refeito.
+   */
+  providerId?: string | null;
   creditCardMetadata?: {
     installmentNumber?: number | null;
     totalInstallments?: number | null;

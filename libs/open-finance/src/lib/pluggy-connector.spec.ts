@@ -34,8 +34,22 @@ describe('toRawTransaction', () => {
       date: '2026-10-05',
       amountCents: -1250,
       description: 'PADARIA',
-      externalId: 't1',
     });
+  });
+
+  it('usa o providerId como id estável, nunca o id da Pluggy', () => {
+    expect(toRawTransaction(tx({}), 'conta').externalId).toBeUndefined();
+    expect(
+      toRawTransaction(tx({ providerId: 'bb-998' }), 'conta').externalId,
+    ).toBe('bb-998');
+  });
+
+  it('data com hora vira o dia em São Paulo; meia-noite UTC fica como está', () => {
+    const dia = (date: string) => toRawTransaction(tx({ date }), 'conta').date;
+    expect(dia('2026-10-06T01:30:00.000Z')).toBe('2026-10-05');
+    expect(dia('2026-10-05T18:00:00.000Z')).toBe('2026-10-05');
+    expect(dia('2026-10-05T00:00:00.000Z')).toBe('2026-10-05');
+    expect(dia('2026-10-05')).toBe('2026-10-05');
   });
 
   it('cartão: compra positiva vira saída; parcela e final do cartão', () => {
@@ -94,12 +108,12 @@ describe('PluggyConnector', () => {
         ],
       },
       '/v2/transactions?accountId=card&dateFrom=2026-10-01&dateTo=2026-10-31': {
-        results: [tx({ id: 'a', amount: 10 })],
+        results: [tx({ id: 'a', providerId: 'a', amount: 10 })],
         next: '?accountId=card&after=c1',
       },
       '/v2/transactions?accountId=card&after=c1': {
         results: [
-          tx({ id: 'b', amount: 20 }),
+          tx({ id: 'b', providerId: 'b', amount: 20 }),
           tx({ id: 'p', amount: 5, status: 'PENDING' }),
         ],
         next: null,
