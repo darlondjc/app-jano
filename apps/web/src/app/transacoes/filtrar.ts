@@ -1,4 +1,4 @@
-import { formatBRL } from '@jano/engine';
+import { ehEstorno, formatBRL } from '@jano/engine';
 
 export type TipoFiltro = 'gastos' | 'receitas' | 'transferencias';
 
@@ -68,12 +68,20 @@ export function filtrar<T extends Linha>(
   txs: T[],
   f: Filtros,
   nomeCategoria: (id: string | null) => string,
+  cartoes?: ReadonlySet<string>,
 ): T[] {
   return txs.filter((t) => {
     if (f.conta && t.accountId !== f.conta) return false;
-    if (f.tipo === 'gastos' && !(t.amountCents < 0 && !t.isTransfer))
+    const estorno = ehEstorno(t, cartoes);
+    if (
+      f.tipo === 'gastos' &&
+      !((t.amountCents < 0 || estorno) && !t.isTransfer)
+    )
       return false;
-    if (f.tipo === 'receitas' && !(t.amountCents > 0 && !t.isTransfer))
+    if (
+      f.tipo === 'receitas' &&
+      !(t.amountCents > 0 && !t.isTransfer && !estorno)
+    )
       return false;
     if (f.tipo === 'transferencias' && !t.isTransfer) return false;
     if (f.semCategoria && (t.categoryId !== null || t.isTransfer)) return false;

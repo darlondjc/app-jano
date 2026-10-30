@@ -64,3 +64,46 @@ describe('filtrar', () => {
       2,
     ));
 });
+
+describe('filtrar com estorno de cartão', () => {
+  const lista = [
+    {
+      accountId: 'c',
+      description: 'Loja',
+      descriptionNorm: 'LOJA',
+      amountCents: -1000,
+      categoryId: null,
+      isTransfer: false,
+    },
+    {
+      accountId: 'c',
+      description: 'Estorno',
+      descriptionNorm: 'ESTORNO',
+      amountCents: 500,
+      categoryId: null,
+      isTransfer: false,
+    },
+    {
+      accountId: 'cc',
+      description: 'Salário',
+      descriptionNorm: 'SALARIO',
+      amountCents: 9000,
+      categoryId: null,
+      isTransfer: false,
+    },
+  ];
+  const cartoes = new Set(['c']);
+  const nome = () => '';
+  it('estorno aparece em gastos e não em receitas', () => {
+    expect(
+      filtrar(lista, { ...SEM_FILTROS, tipo: 'gastos' }, nome, cartoes).map(
+        (t) => t.description,
+      ),
+    ).toEqual(['Loja', 'Estorno']);
+    expect(
+      filtrar(lista, { ...SEM_FILTROS, tipo: 'receitas' }, nome, cartoes).map(
+        (t) => t.description,
+      ),
+    ).toEqual(['Salário']);
+  });
+});

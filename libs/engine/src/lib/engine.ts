@@ -42,6 +42,23 @@ export interface SpendTx {
   categoryId: string | null;
   amountCents: Cents;
   isTransfer: boolean;
+  accountId?: string;
+}
+
+/**
+ * Crédito em conta de cartão (estorno, reembolso): não é receita, abate o gasto.
+ * `cartoes` = ids das contas do tipo cartão.
+ */
+export function ehEstorno(
+  t: { amountCents: Cents; isTransfer: boolean; accountId?: string },
+  cartoes?: ReadonlySet<string>,
+): boolean {
+  return (
+    !t.isTransfer &&
+    t.amountCents > 0 &&
+    !!t.accountId &&
+    !!cartoes?.has(t.accountId)
+  );
 }
 
 export interface MonthTotals {
@@ -54,13 +71,22 @@ export interface MonthTotals {
 }
 
 /** Soma do mês: transferências entre contas próprias ficam fora de gastos e receitas. */
-export function monthTotals(txs: SpendTx[]): MonthTotals {
+export function monthTotals(
+  txs: SpendTx[],
+  cartoes?: ReadonlySet<string>,
+): MonthTotals {
   const spentByCategory: Record<string, Cents> = {};
   let spent = 0;
   let income = 0;
   for (const t of txs) {
     if (t.isTransfer) continue;
-    if (t.amountCents < 0) {
+    if (ehEstorno(t, cartoes)) {
+      // Estorno abate o gasto da categoria (sem ficar negativo) e não conta como receita.
+      const key = t.categoryId ?? '';
+      const abate = Math.min(t.amountCents, spentByCategory[key] ?? 0);
+      spentByCategory[key] = (spentByCategory[key] ?? 0) - abate;
+      spent -= abate;
+    } else if (t.amountCents < 0) {
       const key = t.categoryId ?? '';
       spentByCategory[key] = (spentByCategory[key] ?? 0) + -t.amountCents;
       spent += -t.amountCents;
@@ -114,14 +140,22 @@ export function tightestGoals(rows: BudgetRow[], n: number): BudgetRow[] {
  * Posição 0 = fim do dia 1.
  */
 export function cumulativeSpend(
-  txs: { date: string; amountCents: Cents; isTransfer: boolean }[],
+  txs: {
+    date: string;
+    amountCents: Cents;
+    isTransfer: boolean;
+    accountId?: string;
+  }[],
   upToDay: number,
+  cartoes?: ReadonlySet<string>,
 ): Cents[] {
   const perDay = new Array<Cents>(Math.max(upToDay, 0)).fill(0);
   for (const t of txs) {
-    if (t.isTransfer || t.amountCents >= 0) continue;
+    if (t.isTransfer) continue;
+    const estorno = ehEstorno(t, cartoes);
+    if (t.amountCents >= 0 && !estorno) continue;
     const day = Number(t.date.slice(8, 10));
-    if (day >= 1 && day <= upToDay) perDay[day - 1] += -t.amountCents;
+    if (day >= 1 && day <= upToDay) perDay[day - 1] -= t.amountCents;
   }
   let acc = 0;
   return perDay.map((v) => (acc += v));

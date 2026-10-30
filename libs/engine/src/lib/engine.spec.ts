@@ -51,6 +51,45 @@ describe('monthTotals', () => {
     expect(t.income).toBe(635000);
     expect(t.net).toBe(564158);
   });
+  it('estorno em conta de cartão abate o gasto e não vira receita', () => {
+    const t = monthTotals(
+      [
+        {
+          categoryId: 'lazer',
+          amountCents: -10000,
+          isTransfer: false,
+          accountId: 'cartao',
+        },
+        {
+          categoryId: 'lazer',
+          amountCents: 550,
+          isTransfer: false,
+          accountId: 'cartao',
+        },
+        {
+          categoryId: null,
+          amountCents: 20000,
+          isTransfer: false,
+          accountId: 'conta',
+        },
+      ],
+      new Set(['cartao']),
+    );
+    expect(t.spentByCategory).toEqual({ lazer: 9450 });
+    expect(t.spent).toBe(9450);
+    expect(t.income).toBe(20000);
+  });
+  it('sem cartões informados, crédito segue como receita', () => {
+    const t = monthTotals([
+      {
+        categoryId: null,
+        amountCents: 550,
+        isTransfer: false,
+        accountId: 'cartao',
+      },
+    ]);
+    expect(t.income).toBe(550);
+  });
   it('mês vazio zera tudo', () => {
     expect(monthTotals([])).toEqual({
       spentByCategory: {},
@@ -123,5 +162,29 @@ describe('cumulativeSpend', () => {
       4,
     );
     expect(r).toEqual([1000, 1000, 1500, 1500]);
+  });
+});
+
+describe('cumulativeSpend com estorno', () => {
+  it('estorno reduz o acumulado do dia', () => {
+    const r = cumulativeSpend(
+      [
+        {
+          date: '2026-10-01',
+          amountCents: -1000,
+          isTransfer: false,
+          accountId: 'c',
+        },
+        {
+          date: '2026-10-02',
+          amountCents: 300,
+          isTransfer: false,
+          accountId: 'c',
+        },
+      ],
+      3,
+      new Set(['c']),
+    );
+    expect(r).toEqual([1000, 700, 700]);
   });
 });

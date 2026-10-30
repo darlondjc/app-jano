@@ -1074,13 +1074,29 @@ export class Transacoes {
     ),
   );
   protected readonly filtradas = computed(() =>
-    filtrar(this.txs(), this.filtros(), (id) => this.nomeCategoria2(id)),
+    filtrar(
+      this.txs(),
+      this.filtros(),
+      (id) => this.nomeCategoria2(id),
+      this.cartoes(),
+    ),
   );
   protected readonly visiveis = computed(() =>
     this.filtradas().slice(0, this.limite()),
   );
   protected readonly grupos = computed(() => agruparPorDia(this.visiveis()));
-  protected readonly gastos = computed(() => gastosDoMes(this.filtradas()));
+  /** Ids das contas de cartão: crédito nelas é estorno, não receita. */
+  protected readonly cartoes = computed(
+    () =>
+      new Set(
+        this.contas()
+          .filter((c) => c.type === 'cartao')
+          .map((c) => c.id),
+      ),
+  );
+  protected readonly gastos = computed(() =>
+    gastosDoMes(this.filtradas(), this.cartoes()),
+  );
   protected readonly semCategoriaN = computed(
     () => this.txs().filter((t) => !t.categoryId && !t.isTransfer).length,
   );

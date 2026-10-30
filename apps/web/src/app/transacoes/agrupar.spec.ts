@@ -57,3 +57,16 @@ describe('agrupar', () => {
     expect(rotuloMes('2026-10')).toBe('Outubro 2026');
   });
 });
+
+describe('gastosDoMes com estorno', () => {
+  it('estorno do cartão abate o gasto', () => {
+    const tx = (accountId: string, amountCents: number) =>
+      ({ accountId, amountCents, isTransfer: false }) as never;
+    expect(
+      gastosDoMes(
+        [tx('c', -10000), tx('c', 550), tx('cc', 20000)],
+        new Set(['c']),
+      ),
+    ).toBe(9450);
+  });
+});

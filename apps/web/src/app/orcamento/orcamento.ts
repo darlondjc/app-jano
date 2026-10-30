@@ -243,6 +243,7 @@ export class Orcamento {
   protected readonly month = signal(new Date().toISOString().slice(0, 7));
   protected readonly categorias = signal<CategoryDoc[]>([]);
   protected readonly budgets = signal<BudgetDoc[]>([]);
+  private cartoes: ReadonlySet<string> = new Set();
   protected readonly totais = signal(monthTotals([]));
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
@@ -297,10 +298,14 @@ export class Orcamento {
 
   private async iniciar(): Promise<void> {
     try {
-      const [cats, budgets] = await Promise.all([
+      const [cats, budgets, contas] = await Promise.all([
         this.catalog.categories(this.uid),
         this.budgetRepo.list(this.uid),
+        this.catalog.accounts(this.uid),
       ]);
+      this.cartoes = new Set(
+        contas.filter((c) => c.type === 'cartao').map((c) => c.id),
+      );
       this.categorias.set(cats);
       this.budgets.set(budgets);
       await this.carregarMes();
@@ -314,7 +319,10 @@ export class Orcamento {
     this.carregando.set(true);
     try {
       this.totais.set(
-        monthTotals(await this.txRepo.listMonth(this.uid, this.month())),
+        monthTotals(
+          await this.txRepo.listMonth(this.uid, this.month()),
+          this.cartoes,
+        ),
       );
     } catch (e) {
       this.falha(e);

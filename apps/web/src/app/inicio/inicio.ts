@@ -432,7 +432,10 @@ export class Inicio {
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
 
-  protected readonly totais = computed(() => monthTotals(this.txs()));
+  protected readonly cartoes = signal<ReadonlySet<string>>(new Set());
+  protected readonly totais = computed(() =>
+    monthTotals(this.txs(), this.cartoes()),
+  );
   protected readonly linhasMetas = computed(() =>
     budgetRows(this.budgets(), this.totais().spentByCategory),
   );
@@ -450,7 +453,7 @@ export class Inicio {
     () => this.totais().income - this.gastoProjetado(),
   );
   protected readonly serie = computed(() =>
-    cumulativeSpend(this.txs(), this.diaAtual),
+    cumulativeSpend(this.txs(), this.diaAtual, this.cartoes()),
   );
   protected readonly statusMeta = computed(() => {
     const limite = this.limiteTotal();
@@ -518,7 +521,7 @@ export class Inicio {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {
-      const [txs, budgets, cats] = await Promise.all([
+      const [txs, budgets, cats, contas] = await Promise.all([
         this.txRepo.listRange(
           uid,
           previousMonths(this.month, 3).at(-1) as string,
@@ -526,7 +529,11 @@ export class Inicio {
         ),
         this.budgetRepo.list(uid),
         this.catalog.categories(uid),
+        this.catalog.accounts(uid),
       ]);
+      this.cartoes.set(
+        new Set(contas.filter((c) => c.type === 'cartao').map((c) => c.id)),
+      );
       this.historico.set(
         (await marcarTransferencias(this.txRepo, uid, txs)).txs,
       );
