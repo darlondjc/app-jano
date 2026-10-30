@@ -9,3 +9,4 @@ export * from './lib/data/budgets.repository';
 export * from './lib/data/rules.repository';
 export * from './lib/data/conta.repository';
 export * from './lib/data/balances.repository';
+export * from './lib/data/connections.repository';

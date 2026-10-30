@@ -12,6 +12,7 @@ const vazio = (): DadosDoUsuario => ({
   scenarios: [],
   insights: [],
   balances: [],
+  connections: [],
 });
 
 describe('exportar', () => {

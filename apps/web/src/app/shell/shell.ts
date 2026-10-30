@@ -21,6 +21,7 @@ import { JanoBackToTop, JanoButton, JanoLogo, JanoProgressBar } from '@jano/ui';
 import { VERSAO_ATUAL } from '../versao/changelog';
 import { haNovidades } from '../versao/novidades';
 import { AvatarMenu } from './avatar-menu';
+import { AvisoConexaoBanner } from './aviso-conexao-banner';
 import { Progresso } from './progresso';
 
 interface Item {
@@ -85,6 +86,7 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
     RouterLinkActive,
     JanoLogo,
     AvatarMenu,
+    AvisoConexaoBanner,
     JanoProgressBar,
     JanoBackToTop,
   ],
@@ -301,6 +303,7 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
       <div class="topo-largo">
         <jano-avatar-menu [novidades]="novidades()" />
       </div>
+      <jano-aviso-conexao />
       <router-outlet />
     </main>
 

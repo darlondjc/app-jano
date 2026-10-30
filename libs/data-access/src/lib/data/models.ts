@@ -44,6 +44,24 @@ export interface BalanceDoc {
   syncedAt: string;
 }
 
+/** Estado de uma conexão Open Finance (um banco), gravado pela sincronização. */
+export interface ConnectionDoc {
+  id: string;
+  provider: 'pluggy';
+  /** Nome do conector, ex.: "MeuPluggy". */
+  name: string | null;
+  /** UPDATED, UPDATING, LOGIN_ERROR, OUTDATED... */
+  status: string;
+  /** Ex.: USER_AUTHORIZATION_EXPIRED. */
+  errorCode: string | null;
+  /** Quando a autorização vence (ISO 8601). */
+  consentExpiresAt: string | null;
+  /** Última atualização com o banco (ISO 8601). */
+  bankUpdatedAt: string | null;
+  /** Quando a sincronização rodou (ISO 8601). */
+  syncedAt: string;
+}
+
 export interface CategoryDoc {
   id: string;
   name: string;

@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { AuthService } from '@jano/data-access';
+import { AuthService, ConnectionsRepository } from '@jano/data-access';
 import { Shell } from './shell';
 
 describe('Shell', () => {
@@ -14,6 +14,10 @@ describe('Shell', () => {
         {
           provide: AuthService,
           useValue: { user: () => ({ displayName: 'Darlon Teste' }), signOut },
+        },
+        {
+          provide: ConnectionsRepository,
+          useValue: { list: vi.fn().mockResolvedValue([]) },
         },
       ],
     }).compileComponents();

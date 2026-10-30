@@ -53,6 +53,20 @@ export interface PluggyTransaction {
   } | null;
 }
 
+/** Uma conexão (um banco). No Meu Pluggy, espelha a autorização dada em meu.pluggy.ai. */
+export interface PluggyItem {
+  id: string;
+  connector?: { name?: string | null } | null;
+  /** UPDATED, UPDATING, LOGIN_ERROR, OUTDATED, WAITING_USER_INPUT... */
+  status: string;
+  executionStatus?: string | null;
+  /** Última atualização com o banco (ISO 8601). */
+  lastUpdatedAt?: string | null;
+  /** Quando a autorização vence (ISO 8601). */
+  consentExpiresAt?: string | null;
+  error?: { code?: string | null; message?: string | null } | null;
+}
+
 export class PluggyError extends Error {
   constructor(
     readonly status: number,
@@ -84,6 +98,10 @@ export class PluggyClient {
     this.fetchFn = options.fetch ?? fetch;
     this.baseUrl = options.baseUrl ?? PLUGGY_API;
     this.now = options.now ?? Date.now;
+  }
+
+  async getItem(itemId: string): Promise<PluggyItem> {
+    return this.get<PluggyItem>(`/items/${encodeURIComponent(itemId)}`);
   }
 
   /** Contas de um item (uma conexão com um banco). */

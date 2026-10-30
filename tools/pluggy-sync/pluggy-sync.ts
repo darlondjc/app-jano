@@ -240,7 +240,34 @@ async function sync(
       createdAt: new Date().toISOString(),
     });
   }
-  if (!seco) await gravarSaldos(db, base, contasPluggy, config);
+  if (!seco) {
+    await gravarSaldos(db, base, contasPluggy, config);
+    await gravarConexoes(db, base, connector);
+  }
+}
+
+/**
+ * Validade da autorização e última atualização de cada banco: o app avisa antes de vencer e
+ * quando a sincronização para. Autorização vencida não dá erro na Pluggy, só leituras vazias.
+ */
+async function gravarConexoes(
+  db: Firestore,
+  base: string,
+  connector: PluggyConnector,
+): Promise<void> {
+  const batch = db.batch();
+  const syncedAt = new Date().toISOString();
+  for (const item of await connector.listItems())
+    batch.set(db.doc(`${base}/connections/${item.id}`), {
+      provider: 'pluggy',
+      name: item.connector?.name ?? null,
+      status: item.status,
+      errorCode: item.error?.code ?? null,
+      consentExpiresAt: item.consentExpiresAt ?? null,
+      bankUpdatedAt: item.lastUpdatedAt ?? null,
+      syncedAt,
+    });
+  await batch.commit();
 }
 
 /**
@@ -272,8 +299,10 @@ async function gravarSaldos(
     });
   }
   // Reconectar o banco troca os ids das contas: some com o saldo das que não existem mais.
-  for (const d of (await col.get()).docs)
-    if (!ids.has(d.id)) batch.delete(d.ref);
+  // Lista vazia é autorização vencida, não conta encerrada: aí guarda o último saldo.
+  if (ids.size)
+    for (const d of (await col.get()).docs)
+      if (!ids.has(d.id)) batch.delete(d.ref);
   await batch.commit();
   console.log(`Saldos atualizados: ${ids.size} contas.`);
 }
