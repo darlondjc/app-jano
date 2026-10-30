@@ -10,6 +10,7 @@ import {
   AuthService,
   BudgetsRepository,
   CatalogRepository,
+  ContaRepository,
   TransactionsRepository,
   type BudgetDoc,
   type CategoryDoc,
@@ -42,6 +43,18 @@ import { marcarTransferencias } from '../transacoes/transferencias';
 import { montarAlertas } from './alertas';
 import { GraficoAcumulado } from './grafico-acumulado';
 import { Progresso } from '../shell/progresso';
+import { haQuantoTempo } from '../conta/tempo';
+import { deveLembrar } from './lembrete';
+
+const CHAVE_LEMBRETE = 'jano.lembreteImportacao';
+
+function lerDispensado(): string | null {
+  try {
+    return localStorage.getItem(CHAVE_LEMBRETE);
+  } catch {
+    return null;
+  }
+}
 
 @Component({
   selector: 'jano-inicio',
@@ -152,6 +165,32 @@ import { Progresso } from '../shell/progresso';
       <jano-banner tone="danger" title="Não consegui carregar seus dados.">{{
         erro()
       }}</jano-banner>
+    }
+
+    @if (lembrete(); as quando) {
+      <jano-banner
+        tone="info"
+        title="Hora de atualizar seus dados."
+        style="display: block; margin-top: 12px"
+      >
+        Última importação {{ quando }}.
+        <a
+          janoButton
+          variant="secondary"
+          [small]="true"
+          routerLink="/transacoes"
+          >Importar novo extrato</a
+        >
+        <button
+          janoButton
+          variant="ghost"
+          [small]="true"
+          type="button"
+          (click)="dispensarLembrete()"
+        >
+          Agora não
+        </button>
+      </jano-banner>
     }
 
     @if (carregando()) {
@@ -396,6 +435,7 @@ export class Inicio {
   private readonly txRepo = inject(TransactionsRepository);
   private readonly budgetRepo = inject(BudgetsRepository);
   private readonly catalog = inject(CatalogRepository);
+  private readonly contaRepo = inject(ContaRepository);
 
   protected readonly money = formatBRL;
   protected readonly classeValor = classeValor;
@@ -433,6 +473,14 @@ export class Inicio {
   protected readonly erro = signal('');
 
   protected readonly cartoes = signal<ReadonlySet<string>>(new Set());
+  private readonly ultimaImportacao = signal<string | null>(null);
+  private readonly dispensadoEm = signal<string | null>(lerDispensado());
+  protected readonly lembrete = computed(() => {
+    const ultima = this.ultimaImportacao();
+    return ultima && deveLembrar(ultima, new Date(), this.dispensadoEm())
+      ? haQuantoTempo(ultima)
+      : null;
+  });
   protected readonly totais = computed(() =>
     monthTotals(this.txs(), this.cartoes()),
   );
@@ -494,6 +542,16 @@ export class Inicio {
     void this.carregar();
   }
 
+  protected dispensarLembrete(): void {
+    const agora = new Date().toISOString();
+    this.dispensadoEm.set(agora);
+    try {
+      localStorage.setItem(CHAVE_LEMBRETE, agora);
+    } catch {
+      // Sem armazenamento: some só nesta visita.
+    }
+  }
+
   protected nome(): string {
     return this.auth.user()?.displayName?.split(' ')[0] ?? '';
   }
@@ -533,6 +591,13 @@ export class Inicio {
       ]);
       this.cartoes.set(
         new Set(contas.filter((c) => c.type === 'cartao').map((c) => c.id)),
+      );
+      // Só alimenta o lembrete: se falhar, o resto da tela segue normal.
+      this.ultimaImportacao.set(
+        await this.contaRepo
+          .ultimaImportacao(uid)
+          .then((r) => r?.createdAt ?? null)
+          .catch(() => null),
       );
       this.historico.set(
         (await marcarTransferencias(this.txRepo, uid, txs)).txs,

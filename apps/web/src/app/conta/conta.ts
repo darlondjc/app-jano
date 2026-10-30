@@ -13,16 +13,7 @@ import { AtualizacaoService } from '../versao/atualizacao.service';
 import { VERSAO_ATUAL } from '../versao/changelog';
 import { baixar, transacoesCsv } from './exportar';
 import { Preferencias } from './preferencias';
-
-/** "hoje", "ontem" ou "há N dias", a partir de um instante ISO. */
-export function haQuantoTempo(iso: string, agora = new Date()): string {
-  const dias = Math.floor(
-    (agora.getTime() - new Date(iso).getTime()) / 86_400_000,
-  );
-  if (dias <= 0) return 'hoje';
-  if (dias === 1) return 'ontem';
-  return `há ${dias} dias`;
-}
+import { haQuantoTempo } from './tempo';
 
 /** Conta e dados: importação, atualização do app, privacidade e dados pessoais. */
 @Component({
