@@ -9,7 +9,7 @@ const PADROES: RegExp[] = [
   /\b(FATURA|OUROCARD)\b.*\b(PAGAMENTO|PGTO|PAGTO)\b/,
   /^(FATURA|OUROCARD)\b/,
   // Aplicações e resgates (BB Rende Fácil, poupança, CDB, fundos).
-  /\bRENDE FACIL\b/,
+  /\bRENDE? FACIL\b/, // o extrato abrevia: "REND.FACIL"
   /\bAPLICACAO\b/,
   /\bRESGATE\b/,
   /\bPOUPANCA\b/,

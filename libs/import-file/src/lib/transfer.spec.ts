@@ -12,6 +12,7 @@ describe('isLikelyTransfer', () => {
   });
   it('reconhece aplicação e resgate', () => {
     expect(t('BB Rende Fácil')).toBe(true);
+    expect(t('REND.FACIL')).toBe(true);
     expect(t('Aplicação Financeira')).toBe(true);
     expect(t('Resgate CDB')).toBe(true);
     expect(t('Transferência para Poupança')).toBe(true);
