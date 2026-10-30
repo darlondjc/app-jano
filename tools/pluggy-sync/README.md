@@ -30,7 +30,7 @@ transferências. Rodar de novo não duplica nada.
 
 ```sh
 npm run pluggy -- sync --seco                     # mostra o que entraria, sem gravar
-npm run pluggy -- sync                            # últimos 30 dias
+npm run pluggy -- sync                            # últimos 45 dias
 npm run pluggy -- sync --desde 2026-09-01         # período maior
 ```
 
@@ -38,12 +38,15 @@ npm run pluggy -- sync --desde 2026-09-01         # período maior
 
 - **Não misture com arquivo no mesmo período.** A Pluggy e o OFX identificam o mesmo
   lançamento de jeitos diferentes, então a deduplicação não casa um com o outro. Use
-  `"inicio"` com o primeiro dia depois da última importação por arquivo.
+  `"inicio"` com o primeiro dia que ainda não veio por arquivo, uma data por conta:
+  `{ "conta-corrente": "2026-10-28", "cartao-de-credito": "2026-10-06" }`. No cartão é o dia
+  seguinte ao fechamento da última fatura importada, não a data de hoje.
 - **A autorização do Meu Pluggy vence em 1 ano.** Quando vence, a sincronização volta vazia,
   sem erro. Renove em Applications → sua aplicação → Demo → Connect Account → MeuPluggy e
   confira se o itemId mudou.
 - **Cartão só entra quando a fatura fecha.** Compras da fatura aberta vêm da Pluggy como
-  pendentes, e pendentes ficam de fora.
+  pendentes, e pendentes ficam de fora. Quando a fatura fecha, chegam todas de uma vez com a
+  data da compra; por isso a janela padrão é de 45 dias, um ciclo inteiro com folga.
 - **Como a deduplicação funciona.** O Meu Pluggy não repassa o id do banco (`providerId`),
   então a chave é data + valor + descrição. Ela sobrevive a reconectar o banco, quando a
   Pluggy troca todos os ids. Se o banco refizer um lançamento com outra data, valor ou

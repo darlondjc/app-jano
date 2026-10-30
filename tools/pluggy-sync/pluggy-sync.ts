@@ -22,7 +22,13 @@ import {
 } from '@jano/open-finance';
 
 const BATCH_LIMIT = 400; // Firestore aceita 500 operações por lote.
-const DIAS_PADRAO = 30;
+/**
+ * Janela padrão. O cartão manda; a conta corrente cabe folgada nela: as compras do cartão só
+ * chegam quando a fatura fecha (uns 30 dias de compras de uma vez, com a data original) e o
+ * Meu Pluggy atualiza uma vez por dia. 45 dias cobrem o ciclo inteiro com folga para alguns
+ * dias de banco fora do ar. O que já foi gravado é pulado, então a sobreposição não custa nada.
+ */
+const DIAS_PADRAO = 45;
 
 interface Config {
   /** Seu uid no Firebase Auth (Authentication → Users no console). */
@@ -31,8 +37,11 @@ interface Config {
   itemIds: string[];
   /** Conta da Pluggy → conta do Jano. Contas fora do mapa são ignoradas. */
   contas: Record<string, string>;
-  /** Nada antes desta data (AAAA-MM-DD): evita duplicar o que já veio por arquivo. */
-  inicio?: string;
+  /**
+   * Nada antes desta data (AAAA-MM-DD): evita duplicar o que já veio por arquivo. Uma data
+   * para todas as contas ou uma por conta do Jano, ex.: { "conta-corrente": "2026-10-28" }.
+   */
+  inicio?: string | Record<string, string>;
 }
 
 function lerConfig(): Config {
@@ -47,6 +56,13 @@ function lerConfig(): Config {
   }
   if (!config.uid || !config.itemIds?.length)
     throw new Error('pluggy.config.json precisa de "uid" e "itemIds".');
+  const inicios =
+    typeof config.inicio === 'string'
+      ? [config.inicio]
+      : Object.values(config.inicio ?? {});
+  for (const d of inicios)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d))
+      throw new Error(`"inicio" espera AAAA-MM-DD, veio "${d}".`);
   return { ...config, contas: config.contas ?? {} };
 }
 
@@ -109,10 +125,9 @@ async function sync(
   args: string[],
 ): Promise<void> {
   const seco = args.includes('--seco');
-  let desde = opcao(args, '--desde') ?? dataSp(DIAS_PADRAO);
+  const janela = opcao(args, '--desde') ?? dataSp(DIAS_PADRAO);
   const ate = opcao(args, '--ate') ?? dataSp();
-  if (config.inicio && desde < config.inicio) desde = config.inicio;
-  if (desde > ate) throw new Error(`Período vazio: ${desde} a ${ate}.`);
+  if (janela > ate) throw new Error(`Período vazio: ${janela} a ${ate}.`);
 
   const base = `users/${config.uid}`;
   const [contasJano, categorias, regras] = await Promise.all([
@@ -129,13 +144,22 @@ async function sync(
       );
 
   console.log(
-    `Período: ${desde} a ${ate}${seco ? ' (simulação, nada é gravado)' : ''}`,
+    `Período: ${janela} a ${ate}${seco ? ' (simulação, nada é gravado)' : ''}`,
   );
   const contasPluggy = await connector.listAccounts();
   for (const account of contasPluggy) {
     const accountId = config.contas[account.externalId];
     if (!accountId) {
       console.log(`- ${account.name}: sem mapeamento, ignorada.`);
+      continue;
+    }
+    const inicio =
+      typeof config.inicio === 'string'
+        ? config.inicio
+        : config.inicio?.[accountId];
+    const desde = inicio && inicio > janela ? inicio : janela;
+    if (desde > ate) {
+      console.log(`- ${account.name} → ${accountId}: começa em ${inicio}.`);
       continue;
     }
 
@@ -160,7 +184,8 @@ async function sync(
       (r) => !r.categoryId && !r.tx.isTransfer,
     ).length;
     console.log(
-      `- ${account.name} → ${accountId}: ${rows.length} novas, ` +
+      `- ${account.name} → ${accountId}${desde > janela ? ` (desde ${desde})` : ''}: ` +
+        `${rows.length} novas, ` +
         `${plan.duplicates.length} já existiam, ${semCategoria} sem categoria.`,
     );
     if (seco) {

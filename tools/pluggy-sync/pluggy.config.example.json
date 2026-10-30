@@ -4,5 +4,7 @@
   "contas": {
     "ID_DA_CONTA_NA_PLUGGY": "ID_DA_CONTA_NO_JANO"
   },
-  "inicio": "2026-11-01"
+  "inicio": {
+    "ID_DA_CONTA_NO_JANO": "2026-11-01"
+  }
 }
