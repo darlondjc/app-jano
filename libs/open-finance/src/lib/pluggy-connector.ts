@@ -41,12 +41,19 @@ export class PluggyConnector implements BankConnector {
   }
 }
 
+const SUBTIPOS: Record<string, string> = {
+  CHECKING_ACCOUNT: 'corrente',
+  SAVINGS_ACCOUNT: 'poupança',
+  CREDIT_CARD: 'cartão de crédito',
+};
+
 export function toConnectedAccount(a: PluggyAccount): ConnectedAccount {
   return {
     externalId: a.id,
     kind: a.type === 'CREDIT' ? 'cartao' : 'conta',
     name: a.marketingName || a.name,
     number: a.number ?? undefined,
+    detail: SUBTIPOS[a.subtype] ?? a.subtype,
     balanceCents: a.balance == null ? undefined : toCents(a.balance),
   };
 }

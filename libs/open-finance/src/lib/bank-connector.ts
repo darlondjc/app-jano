@@ -9,6 +9,8 @@ export interface ConnectedAccount {
   name: string;
   /** Agência/conta ou final do cartão, quando o provedor informa. */
   number?: string;
+  /** Tipo informado pelo provedor, ex.: corrente ou poupança. */
+  detail?: string;
   balanceCents?: number;
 }
 

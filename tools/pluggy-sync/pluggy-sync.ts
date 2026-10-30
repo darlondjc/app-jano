@@ -91,6 +91,7 @@ async function contas(
     const destino = config.contas[a.externalId];
     console.log(
       `  ${a.externalId}  ${a.kind.padEnd(6)} ${a.name}${a.number ? ` (${a.number})` : ''}` +
+        (a.detail ? ` [${a.detail}]` : '') +
         (destino ? `  → ${destino}` : '  (sem mapeamento)'),
     );
   }

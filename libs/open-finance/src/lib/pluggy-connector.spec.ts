@@ -130,6 +130,7 @@ describe('PluggyConnector', () => {
       kind: 'cartao',
       name: 'Cartão',
       number: 'xxxx8670',
+      detail: 'cartão de crédito',
       balanceCents: 120950,
     });
 
