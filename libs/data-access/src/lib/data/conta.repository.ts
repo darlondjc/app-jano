@@ -23,6 +23,7 @@ const COLECOES = [
   'recurrences',
   'scenarios',
   'insights',
+  'balances',
 ] as const;
 
 export type NomeColecao = (typeof COLECOES)[number];

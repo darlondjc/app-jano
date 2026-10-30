@@ -57,3 +57,8 @@ vitest.config.*.timestamp*
 
 # Gerado no deploy
 apps/web/public/version.json
+
+# Sincronização Open Finance (tools/pluggy-sync): segredos e ids pessoais
+.env.pluggy
+pluggy.config.json
+*service-account*.json

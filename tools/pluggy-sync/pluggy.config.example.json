@@ -1,0 +1,10 @@
+{
+  "uid": "SEU_UID_NO_FIREBASE",
+  "itemIds": ["ITEM_ID_DO_BANCO_1"],
+  "contas": {
+    "ID_DA_CONTA_NA_PLUGGY": "ID_DA_CONTA_NO_JANO"
+  },
+  "inicio": {
+    "ID_DA_CONTA_NO_JANO": "2026-11-01"
+  }
+}

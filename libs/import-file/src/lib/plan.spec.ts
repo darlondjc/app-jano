@@ -47,6 +47,12 @@ describe('suggestCategory', () => {
   it('usa o dicionário padrão', () => {
     expect(suggestCategory('ATACADAO 22', DEFAULT_RULES)).toBe('Mercado');
     expect(suggestCategory('POSTO IPIRANGA', DEFAULT_RULES)).toBe('Transporte');
+    expect(
+      suggestCategory('COMPRA C CARTAO MATEUS SUPERMERCADOS', DEFAULT_RULES),
+    ).toBe('Mercado');
+    expect(suggestCategory('RESTAURANTE ALENC', DEFAULT_RULES)).toBe(
+      'Restaurantes',
+    );
   });
   it('regra do usuário com prioridade vence o dicionário', () => {
     const rules = [
