@@ -14,6 +14,7 @@ const vazio = (): DadosDoUsuario => ({
   balances: [],
   connections: [],
   meta: [],
+  goals: [],
 });
 
 describe('exportar', () => {

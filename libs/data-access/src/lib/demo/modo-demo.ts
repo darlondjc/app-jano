@@ -24,6 +24,7 @@ import {
   type CenariosDoc,
 } from '../data/scenarios.repository';
 import { TransactionsRepository } from '../data/transactions.repository';
+import { GoalsRepository, type GoalDoc } from '../data/goals.repository';
 import {
   monthBounds,
   slugify,
@@ -61,6 +62,7 @@ export class LojaDemo {
   regras: RuleDoc[] = [];
   dispensados = new Map<string, string[]>();
   cenarios: CenariosDoc | null = null;
+  objetivos: GoalDoc[] = objetivosDemo();
 
   alterar(ids: Iterable<string>, mudanca: Partial<TransactionDoc>): void {
     const alvo = new Set(ids);
@@ -343,6 +345,48 @@ class CenariosDemo {
   }
 }
 
+/** Exemplo: reserva de emergência na poupança, com prazo daqui a um ano. */
+function objetivosDemo(): GoalDoc[] {
+  const d = new Date();
+  const prazo = `${d.getFullYear() + 1}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return [
+    {
+      id: 'demo-reserva',
+      nome: 'Reserva de emergência',
+      alvoCents: 3_000_000,
+      prazo,
+      fonte: 'poupanca',
+      guardadoCents: 0,
+      criadoEm: d.toISOString(),
+    },
+  ];
+}
+
+class ObjetivosDemo {
+  private readonly loja = inject(LojaDemo);
+  async list(): Promise<GoalDoc[]> {
+    return copia(this.loja.objetivos);
+  }
+  async save(
+    _uid: string,
+    g: Omit<GoalDoc, 'id' | 'criadoEm'> & { id?: string; criadoEm?: string },
+  ): Promise<GoalDoc> {
+    const novo: GoalDoc = {
+      ...g,
+      id: g.id ?? `demo-${Date.now()}`,
+      criadoEm: g.criadoEm ?? new Date().toISOString(),
+    };
+    this.loja.objetivos = [
+      ...this.loja.objetivos.filter((o) => o.id !== novo.id),
+      novo,
+    ].sort((a, b) => a.prazo.localeCompare(b.prazo));
+    return copia(novo);
+  }
+  async remove(_uid: string, id: string): Promise<void> {
+    this.loja.objetivos = this.loja.objetivos.filter((o) => o.id !== id);
+  }
+}
+
 class ContaDemo {
   private readonly loja = inject(LojaDemo);
   async ultimaImportacao(): Promise<RegistroImportacao | null> {
@@ -375,6 +419,7 @@ class ContaDemo {
       balances: d.balances,
       connections: d.connections,
       meta: [],
+      goals: this.loja.objetivos,
     }) as unknown as DadosDoUsuario;
   }
   async apagarTudo(): Promise<number> {
@@ -400,5 +445,6 @@ export function provideModoDemo(): Provider[] {
     { provide: InsightsRepository, useClass: InsightsDemo },
     { provide: ScenariosRepository, useClass: CenariosDemo },
     { provide: ContaRepository, useClass: ContaDemo },
+    { provide: GoalsRepository, useClass: ObjetivosDemo },
   ];
 }

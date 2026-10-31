@@ -20,4 +20,6 @@ export const paths = {
    * Meses fechados ficam no aparelho e só são relidos quando mudam (ver TransactionsRepository).
    */
   meta: (uid: string) => `users/${uid}/meta`,
+  /** Objetivos de economia (reserva, viagem...). */
+  goals: (uid: string) => `users/${uid}/goals`,
 } as const;

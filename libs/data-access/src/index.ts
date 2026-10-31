@@ -15,3 +15,4 @@ export * from './lib/data/insights.repository';
 export * from './lib/data/scenarios.repository';
 export * from './lib/demo/dados-demo';
 export * from './lib/demo/modo-demo';
+export * from './lib/data/goals.repository';
