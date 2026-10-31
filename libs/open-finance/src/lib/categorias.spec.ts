@@ -156,6 +156,43 @@ describe('categorias da Pluggy e MCC', () => {
   });
 });
 
+describe('categorizar: regras suas primeiro', () => {
+  const cats = [
+    { id: 'mercado', name: 'Mercado' },
+    { id: 'restaurantes', name: 'Restaurantes' },
+    { id: 'moradia', name: 'Moradia' },
+  ];
+  it('regra vence o dicionário e a detecção de transferência; sem regra, o automático', () => {
+    const rows = addDedupeKeys('cc', [
+      {
+        date: '2026-10-05',
+        amountCents: -1000,
+        description: 'COMPRA C/CARTAO 05/10 10:00 PADARIA BOA VISTA',
+      },
+      {
+        date: '2026-10-05',
+        amountCents: -340000,
+        description: 'PIX - ENVIADO 05/10 09:00 JULIO BEZERRA',
+        isTransfer: true,
+      },
+      {
+        date: '2026-10-05',
+        amountCents: -2000,
+        description: 'PADARIA CENTRAL',
+      },
+    ]);
+    const r = categorizar(rows, cats, [
+      { pattern: 'PADARIA BOA VISTA', categoryId: 'mercado' },
+      { pattern: 'JULIO BEZERRA', categoryId: 'moradia' },
+    ]);
+    expect(r.map((x) => [x.categoryId, x.tx.isTransfer])).toEqual([
+      ['mercado', false],
+      ['moradia', false],
+      ['restaurantes', false],
+    ]);
+  });
+});
+
 describe('inferirPeloHistorico', () => {
   const cats = [
     { id: 'mercado', name: 'Mercado' },

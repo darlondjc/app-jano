@@ -53,7 +53,6 @@ import { saldoAtual, type SaldoAtual } from './saldo';
 import { podeGastar, type PodeGastar } from './pode-gastar';
 import { comparacaoNoDia, variacao } from './comparacao';
 import { faturaDoCartao, type FaturaCartao } from './fatura';
-import { inicioParaRevisar, precisaRevisar } from '../transacoes/filtrar';
 
 function hojeIso(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -523,17 +522,6 @@ function lerDispensado(): string | null {
                   <div>
                     <div class="j-insight__title">{{ a.titulo }}</div>
                     <div class="j-insight__text">{{ a.texto }}</div>
-                    @if (a.id === 'revisar' && a.acao; as ac) {
-                      <a
-                        janoButton
-                        variant="secondary"
-                        [small]="true"
-                        [routerLink]="ac.rota"
-                        [queryParams]="ac.queryParams"
-                        style="margin-top: 8px"
-                        >{{ ac.rotulo }}</a
-                      >
-                    }
                   </div>
                 </div>
               }
@@ -793,9 +781,6 @@ export class Inicio {
       nomeCategoria: (id) => this.nomeCategoria(id),
       moeda: formatBRL,
       dispensados: this.dispensados(),
-      paraRevisar: this.historico().filter((t) =>
-        precisaRevisar(t, inicioParaRevisar(this.hoje)),
-      ).length,
     }),
   );
 

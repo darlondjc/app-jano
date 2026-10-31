@@ -1,10 +1,4 @@
-import {
-  filtrar,
-  precisaRevisar,
-  SEM_FILTROS,
-  totalDeFiltros,
-  type Filtros,
-} from './filtrar';
+import { filtrar, SEM_FILTROS, totalDeFiltros, type Filtros } from './filtrar';
 
 const base = {
   accountId: 'conta',
@@ -111,21 +105,5 @@ describe('filtrar com estorno de cartão', () => {
         (t) => t.description,
       ),
     ).toEqual(['Salário']);
-  });
-});
-
-describe('precisaRevisar', () => {
-  const t = (date: string, categoryIsManual = false, isTransfer = false) => ({
-    date,
-    categoryIsManual,
-    isTransfer,
-  });
-  it('automática e recente: revisar; confirmada, transferência ou antiga: não', () => {
-    expect(precisaRevisar(t('2026-10-20'), '2026-10-01')).toBe(true);
-    expect(precisaRevisar(t('2026-10-20', true), '2026-10-01')).toBe(false);
-    expect(precisaRevisar(t('2026-10-20', false, true), '2026-10-01')).toBe(
-      false,
-    );
-    expect(precisaRevisar(t('2026-09-20'), '2026-10-01')).toBe(false);
   });
 });

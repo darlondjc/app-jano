@@ -23,14 +23,14 @@ export const CHANGELOG: Versao[] = [
           'Fatura do cartão no Início: o valor em aberto com o vencimento previsto e quanto a próxima já tem garantido (parcelas e assinaturas).',
       },
       {
-        tipo: 'novo',
-        texto:
-          'Para revisar: as transações que chegaram categorizadas sozinhas nos últimos 30 dias aparecem num filtro próprio, com um toque para confirmar cada uma ou todas. O Início avisa quantas há.',
-      },
-      {
         tipo: 'melhoria',
         texto:
           'Gastos variáveis que se repetem no cartão (delivery, cinema) deixam de contar como conta fixa na renda comprometida de Projeções.',
+      },
+      {
+        tipo: 'correcao',
+        texto:
+          'Suas regras valem antes de tudo nas transações novas, inclusive quando o app achava que era transferência. E nada que já tem categoria é alterado: nem a sincronização nem a marcação automática de transferências mexem nela.',
       },
     ],
   },

@@ -5,8 +5,9 @@ import {
 import { isLikelyTransfer } from '@jano/import-file';
 
 /**
- * Lançamentos já gravados que parecem transferência (pagar fatura, aplicar/resgatar) e ainda
- * não foram marcados. Escolha manual do usuário nunca é desfeita.
+ * Lançamentos já gravados que parecem transferência (pagar fatura, aplicar/resgatar), ainda
+ * não foram marcados e estão sem categoria. O que já tem categoria (sua ou automática) nunca
+ * muda.
  */
 export function pendentesDeTransferencia(txs: TransactionDoc[]): string[] {
   return txs
@@ -14,6 +15,7 @@ export function pendentesDeTransferencia(txs: TransactionDoc[]): string[] {
       (t) =>
         !t.isTransfer &&
         !t.categoryIsManual &&
+        !t.categoryId &&
         isLikelyTransfer(t.descriptionNorm),
     )
     .map((t) => t.id);

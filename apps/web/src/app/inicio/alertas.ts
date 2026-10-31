@@ -40,8 +40,6 @@ export interface EntradaAlertas {
   max?: number;
   /** Ids dispensados neste mês: saem e abrem espaço para o próximo. */
   dispensados?: ReadonlySet<string>;
-  /** Lançamentos dos últimos 30 dias com categoria automática ainda não confirmada. */
-  paraRevisar?: number;
 }
 
 const MAX = 4;
@@ -85,23 +83,6 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
           },
     );
   }
-
-  if (e.paraRevisar)
-    out.push({
-      id: 'revisar',
-      tom: 'info',
-      titulo:
-        e.paraRevisar === 1
-          ? '1 transação para revisar'
-          : `${e.paraRevisar} transações para revisar`,
-      texto:
-        'Chegaram sozinhas nos últimos 30 dias. Confira a categoria e confirme com um toque.',
-      acao: {
-        rotulo: 'Revisar',
-        rota: '/transacoes',
-        queryParams: { revisar: '1' },
-      },
-    });
 
   const acima = categoriesAboveNormal(e.txs, e.month)[0];
   if (acima)

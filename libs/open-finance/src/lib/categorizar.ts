@@ -26,9 +26,10 @@ export interface LancamentoPronto {
 }
 
 /**
- * Mesma decisão da prévia de importação da tela Transações: transferência fica sem categoria;
- * senão regra do usuário, dicionário padrão, grupo do banco e por fim a sugestão da fonte
- * (Pluggy ou ramo do estabelecimento). Só aceita categoria que existe na conta.
+ * Categoria de um lançamento novo. Regra sua vem antes de tudo, inclusive da detecção
+ * automática de transferência. Sem regra: transferência fica sem categoria; senão dicionário
+ * padrão, grupo do banco e por fim a sugestão da fonte (Pluggy ou ramo do estabelecimento).
+ * Só aceita categoria que existe na conta.
  */
 export function categorizar(
   rows: KeyedTransaction[],
@@ -36,19 +37,21 @@ export function categorizar(
   regras: RegraRef[],
 ): LancamentoPronto[] {
   const catIds = new Set(categorias.map((c) => c.id));
-  const nomePorId = new Map(categorias.map((c) => [c.id, c.name]));
   return rows.map((raw) => {
+    const regra = regraQueCasa(raw.descriptionNorm, regras);
+    if (regra && catIds.has(regra.categoryId))
+      return {
+        tx: { ...raw, isTransfer: false },
+        categoryId: regra.categoryId,
+      };
     const tx = {
       ...raw,
       isTransfer: raw.isTransfer || isLikelyTransfer(raw.descriptionNorm),
     };
     if (tx.isTransfer) return { tx, categoryId: null };
-    const regra = regraQueCasa(tx.descriptionNorm, regras);
-    const nomeDaRegra = regra && nomePorId.get(regra.categoryId);
     // Em ordem de confiança; vale a primeira cuja categoria existe na conta (quem apagou
     // "Transporte" ainda recebe "Combustível" pelo ramo da loja).
     const candidatos = [
-      nomeDaRegra,
       suggestCategory(tx.descriptionNorm, DEFAULT_RULES),
       bankCategoryToName(tx.bankCategory),
       tx.suggestedCategory,

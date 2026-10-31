@@ -99,13 +99,4 @@ describe('montarAlertas', () => {
       queryParams: { tx: 'abc' },
     });
   });
-
-  it('transações para revisar levam a Transações já filtrada', () => {
-    const r = montarAlertas({ ...base, paraRevisar: 7 });
-    expect(r[0]).toMatchObject({
-      id: 'revisar',
-      titulo: '7 transações para revisar',
-      acao: { rota: '/transacoes', queryParams: { revisar: '1' } },
-    });
-  });
 });
