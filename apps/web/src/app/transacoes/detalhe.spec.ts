@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import type { CategoryDoc, TransactionDoc } from '@jano/data-access';
-import { DetalheTransacao, TRANSFERENCIA } from './detalhe';
+import { DetalheTransacao, TRANSFERENCIA, avisoDoSalvar } from './detalhe';
 
 const tx: TransactionDoc = {
   id: 't1',
@@ -67,42 +67,110 @@ describe('DetalheTransacao', () => {
     expect(saidas).toEqual([{ escolha: 'lazer', regra: null }]);
   });
 
-  it('emite a regra quando marcada, com o trecho editável', () => {
+  const marcar = (f: { detectChanges(): void }, el: HTMLElement, n: number) => {
+    const chk = el.querySelectorAll('input[type="checkbox"]')[
+      n
+    ] as HTMLInputElement;
+    chk.checked = true;
+    chk.dispatchEvent(new Event('change'));
+    f.detectChanges();
+  };
+  const trecho = (el: HTMLElement) =>
+    el.querySelector('[aria-label="Trecho do nome"]') as HTMLInputElement;
+
+  it('passadas e futuras com o trecho do nome', () => {
     const { f, el, saidas } = montar();
     botao(el, 'Mercado').click();
     f.detectChanges();
-    const chk = el.querySelector('input[type="checkbox"]') as HTMLInputElement;
-    chk.checked = true;
-    chk.dispatchEvent(new Event('change'));
+    expect(trecho(el)).toBeNull();
+    marcar(f, el, 0);
+    marcar(f, el, 1);
+    expect(trecho(el).value).toBe('PIX MERCADINHO SOUZA');
+    botao(el, 'Salvar').click();
+    expect(saidas).toEqual([
+      {
+        escolha: 'mercado',
+        regra: {
+          pattern: 'PIX MERCADINHO SOUZA',
+          categoryId: 'mercado',
+          passadas: true,
+          futuras: true,
+        },
+      },
+    ]);
+  });
+
+  it('só as passadas, com trecho digitado à mão e normalizado', () => {
+    const { f, el, saidas } = montar();
+    botao(el, 'Mercado').click();
+    f.detectChanges();
+    marcar(f, el, 0);
+    (
+      el.querySelector('[aria-label="Limpar trecho"]') as HTMLButtonElement
+    ).click();
+    f.detectChanges();
+    expect(trecho(el).value).toBe('');
+    expect(botao(el, 'Salvar').disabled).toBe(true);
+    trecho(el).value = 'Mercadinho Souzá';
+    trecho(el).dispatchEvent(new Event('input'));
     f.detectChanges();
     botao(el, 'Salvar').click();
     expect(saidas).toEqual([
       {
         escolha: 'mercado',
-        regra: { pattern: 'PIX MERCADINHO SOUZA', categoryId: 'mercado' },
+        regra: {
+          pattern: 'MERCADINHO SOUZA',
+          categoryId: 'mercado',
+          passadas: true,
+          futuras: false,
+        },
       },
     ]);
   });
 
-  it('na compra no débito, a regra proposta é a loja, sem prefixo nem hora', () => {
-    const { f, el, saidas } = montar({
+  it('na compra no débito, o trecho é a loja; só o prefixo não deixa salvar', () => {
+    const { f, el } = montar({
       ...tx,
       description: 'COMPRA C/CARTAO 27/10 17:15 MATEUS SUPERM SAO LUIS',
       descriptionNorm: 'COMPRA C CARTAO 17 15 MATEUS SUPERM SAO LUIS',
     });
     botao(el, 'Mercado').click();
     f.detectChanges();
-    const chk = el.querySelector('input[type="checkbox"]') as HTMLInputElement;
-    chk.checked = true;
-    chk.dispatchEvent(new Event('change'));
+    marcar(f, el, 1);
+    expect(trecho(el).value).toBe('MATEUS SUPERM SAO LUIS');
+    trecho(el).value = 'COMPRA C/CARTAO';
+    trecho(el).dispatchEvent(new Event('input'));
     f.detectChanges();
-    botao(el, 'Salvar').click();
-    expect(saidas).toEqual([
-      {
-        escolha: 'mercado',
-        regra: { pattern: 'MATEUS SUPERM SAO', categoryId: 'mercado' },
-      },
-    ]);
+    expect(el.textContent).toContain('Inclua o nome da loja');
+    expect(botao(el, 'Salvar').disabled).toBe(true);
+  });
+
+  it('copia o nome da transação', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    });
+    const { f, el } = montar();
+    (
+      el.querySelector('[aria-label="Copiar nome"]') as HTMLButtonElement
+    ).click();
+    await vi.waitFor(() => {
+      f.detectChanges();
+      expect(el.querySelector('[aria-label="Nome copiado"]')).not.toBeNull();
+    });
+    expect(writeText).toHaveBeenCalledWith('Pix · Mercadinho Souza');
+  });
+
+  it('aviso conta as passadas alteradas', () => {
+    const r = { pattern: 'X', categoryId: 'c', passadas: true, futuras: true };
+    expect(avisoDoSalvar(r, 3)).toBe(
+      'Salvo: 3 transações passadas alteradas; as próximas com esse nome já chegam assim.',
+    );
+    expect(avisoDoSalvar({ ...r, futuras: false }, 1)).toBe(
+      'Salvo: 1 transação passada alterada.',
+    );
+    expect(avisoDoSalvar(null, 0)).toBe('Salvo.');
   });
 
   it('transferência não oferece regra', () => {

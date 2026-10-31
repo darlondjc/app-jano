@@ -27,6 +27,7 @@ import {
   JanoButton,
   JanoGoalBar,
   JanoKpiCard,
+  JanoMonthNav,
   JanoSkeletonGoals,
   JanoSkeletonGroup,
   JanoSkeletonKpi,
@@ -40,6 +41,7 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
     JanoBanner,
     JanoGoalBar,
     JanoKpiCard,
+    JanoMonthNav,
     JanoSkeletonGoals,
     JanoSkeletonGroup,
     JanoSkeletonKpi,
@@ -57,15 +59,12 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
       font: 600 28px/36px var(--font-sans);
     }
     .mes {
-      display: flex;
-      align-items: center;
-      gap: 8px;
       margin: 16px 0;
     }
-    .mes strong {
-      min-width: 140px;
-      text-align: center;
-      font: 600 16px/24px var(--font-sans);
+    @media (max-width: 599px) {
+      .mes {
+        max-width: none;
+      }
     }
     .metas {
       display: flex;
@@ -126,27 +125,12 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
   `,
   template: `
     <h1>Orçamento</h1>
-    <div class="mes">
-      <button
-        janoButton
-        variant="ghost"
-        type="button"
-        aria-label="Mês anterior"
-        (click)="mudarMes(-1)"
-      >
-        ‹
-      </button>
-      <strong>{{ rotulo() }}</strong>
-      <button
-        janoButton
-        variant="ghost"
-        type="button"
-        aria-label="Próximo mês"
-        (click)="mudarMes(1)"
-      >
-        ›
-      </button>
-    </div>
+    <jano-month-nav
+      class="mes"
+      [rotulo]="rotulo()"
+      (anterior)="mudarMes(-1)"
+      (proximo)="mudarMes(1)"
+    />
 
     @if (erro()) {
       <jano-banner tone="danger" title="Algo deu errado.">{{

@@ -3,6 +3,7 @@ import {
   bankCategoryToName,
   estabelecimento,
   isLikelyTransfer,
+  regraQueCasa,
   suggestCategory,
   type KeyedTransaction,
 } from '@jano/import-file';
@@ -16,6 +17,7 @@ export interface CategoriaRef {
 export interface RegraRef {
   pattern: string;
   categoryId: string;
+  createdAt?: string;
 }
 
 export interface LancamentoPronto {
@@ -41,7 +43,7 @@ export function categorizar(
       isTransfer: raw.isTransfer || isLikelyTransfer(raw.descriptionNorm),
     };
     if (tx.isTransfer) return { tx, categoryId: null };
-    const regra = regras.find((r) => tx.descriptionNorm.includes(r.pattern));
+    const regra = regraQueCasa(tx.descriptionNorm, regras);
     const nomeDaRegra = regra && nomePorId.get(regra.categoryId);
     // Em ordem de confiança; vale a primeira cuja categoria existe na conta (quem apagou
     // "Transporte" ainda recebe "Combustível" pelo ramo da loja).
@@ -78,29 +80,6 @@ export interface LancamentoGravado {
   categoryIsManual: boolean;
   isTransfer: boolean;
   splits?: unknown[];
-}
-
-/**
- * Regras do usuário sobre o histórico inteiro: categoria automática (Pluggy, dicionário,
- * ramo da loja ou nenhuma) que diverge da regra passa a ser a da regra. Escolha manual,
- * divisão e transferência ficam como estão. Mesma ordem do app: vale a primeira regra que
- * casa, e só se a categoria existe na conta.
- */
-export function reaplicarRegras(
-  lancamentos: LancamentoGravado[],
-  regras: RegraRef[],
-  categorias: CategoriaRef[],
-): { id: string; categoryId: string }[] {
-  const catIds = new Set(categorias.map((c) => c.id));
-  const out: { id: string; categoryId: string }[] = [];
-  for (const t of lancamentos) {
-    if (t.categoryIsManual || t.isTransfer || t.splits?.length) continue;
-    const regra = regras.find((r) => t.descriptionNorm.includes(r.pattern));
-    if (!regra || !catIds.has(regra.categoryId)) continue;
-    if (t.categoryId !== regra.categoryId)
-      out.push({ id: t.id, categoryId: regra.categoryId });
-  }
-  return out;
 }
 
 /**

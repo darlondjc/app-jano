@@ -30,11 +30,13 @@ import {
   suggestCategory,
   type FaturaResult,
   type ImportPlan,
+  regraQueCasa,
 } from '@jano/import-file';
 import {
   JanoBanner,
   JanoButton,
   JanoCategoryBadge,
+  JanoMonthNav,
   JanoSkeleton,
   JanoSkeletonGroup,
   JanoSkeletonRows,
@@ -48,7 +50,12 @@ import {
   mesSeguinte,
   rotuloMes,
 } from './agrupar';
-import { DetalheTransacao, TRANSFERENCIA, type SalvarDetalhe } from './detalhe';
+import {
+  DetalheTransacao,
+  TRANSFERENCIA,
+  avisoDoSalvar,
+  type SalvarDetalhe,
+} from './detalhe';
 import {
   filtrar,
   SEM_FILTROS,
@@ -75,6 +82,7 @@ interface Previa {
     JanoButton,
     JanoBanner,
     JanoCategoryBadge,
+    JanoMonthNav,
     JanoSkeleton,
     JanoSkeletonGroup,
     JanoSkeletonRows,
@@ -164,62 +172,13 @@ interface Previa {
       font-weight: 600;
       box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
     }
-    .segmentos button:focus-visible,
-    .nav-mes button:focus-visible {
+    .segmentos button:focus-visible {
       outline: 2px solid var(--focus);
       outline-offset: 2px;
     }
-    /* Mês centralizado entre as setas; no período de 3 meses as setas somem sem mexer nele. */
-    .nav-mes {
-      display: grid;
-      grid-template-columns: 40px minmax(0, 1fr) 40px;
-      align-items: center;
-      width: 100%;
-      max-width: 360px;
-      height: 44px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-    }
-    .nav-mes button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      margin: 0 2px;
-      border: 0;
-      border-radius: var(--radius-sm);
-      background: transparent;
-      color: var(--text-2);
-      cursor: pointer;
-    }
-    .nav-mes button:hover {
-      background: var(--surface-2);
-      color: var(--text);
-    }
-    .nav-mes.fixo button {
-      visibility: hidden;
-    }
-    .nav-mes svg {
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .rotulo-mes {
-      text-align: center;
-      font: 600 16px/24px var(--font-sans);
-      letter-spacing: -0.01em;
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
     @media (max-width: 599px) {
       .segmentos,
-      .nav-mes {
+      jano-month-nav {
         width: 100%;
         max-width: none;
       }
@@ -374,7 +333,7 @@ interface Previa {
     }
     .linha-m.j-tx {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
       column-gap: 12px;
       padding: 12px 16px;
@@ -627,29 +586,12 @@ interface Previa {
             3 meses
           </button>
         </div>
-        <div class="nav-mes" [class.fixo]="periodo().tipo !== 'mes'">
-          <button
-            type="button"
-            aria-label="Mês anterior"
-            [disabled]="periodo().tipo !== 'mes'"
-            (click)="mudarMes(-1)"
-          >
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
-          </button>
-          <span class="rotulo-mes" aria-live="polite">{{ rotulo() }}</span>
-          <button
-            type="button"
-            aria-label="Próximo mês"
-            [disabled]="periodo().tipo !== 'mes'"
-            (click)="mudarMes(1)"
-          >
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-              <path d="M9 18l6-6-6-6" />
-            </svg>
-          </button>
-        </div>
+        <jano-month-nav
+          [rotulo]="rotulo()"
+          [navegavel]="periodo().tipo === 'mes'"
+          (anterior)="mudarMes(-1)"
+          (proximo)="mudarMes(1)"
+        />
       </div>
     </div>
 
@@ -1042,9 +984,15 @@ interface Previa {
               [small]="true"
               type="button"
               [disabled]="ocupado()"
-              (click)="aplicarLote(transferenciaId)"
+              (click)="
+                aplicarLote(selecaoSoTransferencias() ? '' : transferenciaId)
+              "
             >
-              Marcar transferência
+              {{
+                selecaoSoTransferencias()
+                  ? 'Resetar categoria'
+                  : 'Marcar transferência'
+              }}
             </button>
             <button
               janoButton
@@ -1161,6 +1109,11 @@ export class Transacoes {
   protected readonly detalhe = computed(
     () => this.txs().find((t) => t.id === this.detalheId()) ?? null,
   );
+  /** Todas as selecionadas já são transferência: o botão desfaz em vez de marcar. */
+  protected readonly selecaoSoTransferencias = computed(() => {
+    const sel = this.txs().filter((t) => this.selecionadas().has(t.id));
+    return sel.length > 0 && sel.every((t) => t.isTransfer);
+  });
   protected readonly totalSelecionado = computed(() =>
     this.txs()
       .filter((t) => this.selecionadas().has(t.id))
@@ -1312,14 +1265,19 @@ export class Transacoes {
     });
   }
 
+  /**
+   * Categoria (id), transferência (TRANSFERENCIA) ou '' para resetar: tira a transferência e
+   * deixa sem categoria. Tudo fica como escolha manual, que a sincronização não troca.
+   */
   protected async aplicarLote(escolha: string): Promise<void> {
     const ids = [...this.selecionadas()];
     if (!ids.length) return;
     const transferencia = escolha === TRANSFERENCIA;
+    const categoryId = transferencia || !escolha ? null : escolha;
     this.ocupado.set(true);
     try {
       await this.repo.bulkUpdate(this.uid, ids, {
-        categoryId: transferencia ? null : escolha,
+        categoryId,
         categoryIsManual: true,
         isTransfer: transferencia,
       });
@@ -1329,7 +1287,7 @@ export class Transacoes {
           set.has(t.id)
             ? {
                 ...t,
-                categoryId: transferencia ? null : escolha,
+                categoryId,
                 categoryIsManual: true,
                 isTransfer: transferencia,
                 splits: undefined,
@@ -1384,7 +1342,7 @@ export class Transacoes {
       if (transferencia) await this.repo.setTransfer(this.uid, t.id);
       else await this.repo.setCategory(this.uid, t.id, categoryId);
       let outras: string[] = [];
-      if (ev.regra) {
+      if (ev.regra?.futuras) {
         const regra = await this.rulesRepo.save(
           this.uid,
           ev.regra.pattern,
@@ -1394,22 +1352,15 @@ export class Transacoes {
           ...r.filter((x) => x.id !== regra.id),
           regra,
         ]);
-        outras = this.txs()
-          .filter(
-            (x) =>
-              x.id !== t.id &&
-              !x.categoryIsManual &&
-              !x.isTransfer &&
-              x.descriptionNorm.includes(regra.pattern),
-          )
-          .map((x) => x.id);
-        if (outras.length)
-          await this.repo.bulkUpdate(this.uid, outras, {
-            categoryId: ev.regra.categoryId,
-            categoryIsManual: false,
-            isTransfer: false,
-          });
       }
+      if (ev.regra?.passadas)
+        outras = (
+          await this.repo.aplicarAsPassadas(
+            this.uid,
+            ev.regra.pattern,
+            ev.regra.categoryId,
+          )
+        ).filter((id) => id !== t.id);
       const extra = new Set(outras);
       this.txs.update((l) =>
         l.map((x) =>
@@ -1422,15 +1373,11 @@ export class Transacoes {
                 splits: undefined,
               }
             : extra.has(x.id)
-              ? { ...x, categoryId: regraCat }
+              ? { ...x, categoryId: regraCat, categoryIsManual: true }
               : x,
         ),
       );
-      this.aviso.set(
-        ev.regra
-          ? `Regra criada. ${outras.length} outros lançamentos deste período foram atualizados.`
-          : 'Salvo.',
-      );
+      this.aviso.set(avisoDoSalvar(ev.regra, outras.length));
       this.detalheId.set(null);
     } catch (e) {
       this.falha(e);
@@ -1440,9 +1387,7 @@ export class Transacoes {
   }
 
   private nomeDaRegra(descriptionNorm: string): string | null {
-    const regra = this.regras().find((r) =>
-      descriptionNorm.includes(r.pattern),
-    );
+    const regra = regraQueCasa(descriptionNorm, this.regras());
     return regra ? (this.cat(regra.categoryId)?.name ?? null) : null;
   }
 
