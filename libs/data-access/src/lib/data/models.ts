@@ -1,3 +1,4 @@
+import type { CreditoCartao, ResumoFatura } from '@jano/open-finance';
 export interface TransactionDoc {
   id: string;
   accountId: string;
@@ -39,6 +40,8 @@ export interface BalanceDoc {
   kind: 'conta' | 'cartao';
   /** "corrente", "poupança", "cartão de crédito"... */
   detail: string | null;
+  /** Agência/conta ou final do cartão, quando o banco informa. */
+  number?: string | null;
   /** Conta do Jano ligada a ela, se houver. */
   accountId: string | null;
   /** Centavos. No cartão é o valor devido. */
@@ -47,6 +50,10 @@ export interface BalanceDoc {
   bankUpdatedAt: string | null;
   /** Quando a sincronização gravou (ISO 8601). */
   syncedAt: string;
+  /** Só cartões: limite, datas da fatura e mínimo, quando o banco informa. */
+  credito?: CreditoCartao | null;
+  /** Só cartões: resumo da fatura aberta, com as compras ainda pendentes. */
+  faturaAberta?: ResumoFatura | null;
 }
 
 /** Estado de uma conexão Open Finance (um banco), gravado pela sincronização. */

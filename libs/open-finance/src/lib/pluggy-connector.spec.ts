@@ -1,5 +1,9 @@
 import { PluggyClient, type PluggyTransaction } from './pluggy-client';
-import { PluggyConnector, toRawTransaction } from './pluggy-connector';
+import {
+  PluggyConnector,
+  toConnectedAccount,
+  toRawTransaction,
+} from './pluggy-connector';
 
 function tx(over: Partial<PluggyTransaction>): PluggyTransaction {
   return {
@@ -159,6 +163,38 @@ describe('PluggyConnector', () => {
       name: 'PluggyError',
       status: 401,
       codeDescription: 'CLIENT_KEYS_UNAUTHORIZED',
+    });
+  });
+});
+
+describe('toConnectedAccount: cartão', () => {
+  it('lê limite, disponível, datas, mínimo e bandeira', () => {
+    const c = toConnectedAccount({
+      id: 'c1',
+      type: 'CREDIT',
+      subtype: 'CREDIT_CARD',
+      name: 'Ourocard',
+      number: '8670',
+      balance: 3095.11,
+      currencyCode: 'BRL',
+      itemId: 'i',
+      creditData: {
+        brand: 'MASTERCARD',
+        level: 'BLACK',
+        balanceCloseDate: '2026-10-27T00:00:00.000Z',
+        balanceDueDate: '2026-11-07T00:00:00.000Z',
+        creditLimit: 8000,
+        availableCreditLimit: 4904.89,
+        minimumPayment: 464.27,
+      },
+    });
+    expect(c.credito).toEqual({
+      limiteCents: 800000,
+      disponivelCents: 490489,
+      fechamento: '2026-10-27',
+      vencimento: '2026-11-07',
+      minimoCents: 46427,
+      bandeira: 'Mastercard Black',
     });
   });
 });

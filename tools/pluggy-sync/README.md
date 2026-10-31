@@ -79,6 +79,12 @@ A cada sincronização o saldo de todas as contas do banco (inclusive as sem map
 poupança) vai para `users/{uid}/balances`, com a data da atualização. No cartão, o saldo é o
 valor da fatura em aberto.
 
+Nos cartões, o mesmo documento guarda também `credito` (limite, disponível, fechamento,
+vencimento, mínimo e bandeira, quando o banco informa) e `faturaAberta`: um resumo das compras
+desde o último fechamento, inclusive as pendentes, por categoria (com as suas regras) e as
+maiores. As pendentes nunca viram transação: a Pluggy troca o id delas no fechamento. O log só
+mostra quantos cartões foram resumidos, nunca valores.
+
 ## Categorias automáticas
 
 Cada lançamento recebe a primeira categoria encontrada nesta ordem, desde que ela exista na

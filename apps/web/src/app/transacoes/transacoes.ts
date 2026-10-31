@@ -9,6 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { categorizar } from '@jano/open-finance';
 import {
   AuthService,
   CatalogRepository,
@@ -1062,6 +1063,8 @@ export class Transacoes {
 
   /** `?tx=<id>`: abre no mês do lançamento e rola até ele, com destaque (vindo dos insights). */
   readonly tx = input<string>();
+  /** `?conta=<id>` ("Ver compras do cartão"): abre filtrada nessa conta. */
+  readonly conta = input<string>();
   /** Lançamento piscando depois de chegar por `?tx=`. */
   protected readonly destaque = signal<string | null>(null);
 
@@ -1205,6 +1208,8 @@ export class Transacoes {
         this.periodo.set({ tipo: 'mes', mes: lancamento.date.slice(0, 7) });
         this.filtros.set(SEM_FILTROS);
       }
+      const conta = this.conta();
+      if (conta && contas.some((c) => c.id === conta)) this.mudar({ conta });
       await this.carregar();
       if (lancamento) this.irParaLancamento(lancamento.id);
     } catch (e) {
@@ -1594,9 +1599,11 @@ export class Transacoes {
     bankCategory?: string;
     isTransfer?: boolean;
   }): string | null {
+    // Regra sua vence até a detecção de transferência (como em `categorizar`).
+    const daRegra = this.nomeDaRegra(tx.descriptionNorm);
+    if (daRegra) return daRegra;
     if (tx.isTransfer) return null;
     return (
-      this.nomeDaRegra(tx.descriptionNorm) ??
       suggestCategory(tx.descriptionNorm, DEFAULT_RULES) ??
       bankCategoryToName(tx.bankCategory)
     );
@@ -1615,22 +1622,8 @@ export class Transacoes {
     if (!p) return;
     this.ocupado.set(true);
     try {
-      const catIds = new Set(this.categorias().map((c) => c.id));
-      const rows = p.plan.fresh.map((raw) => {
-        const tx = {
-          ...raw,
-          isTransfer: raw.isTransfer || isLikelyTransfer(raw.descriptionNorm),
-        };
-        const nome = this.nomeCategoria(tx);
-        const id = nome
-          ? (this.categorias().find((c) => c.name === nome)?.id ??
-            slugify(nome))
-          : null;
-        return {
-          tx,
-          categoryId: !tx.isTransfer && id && catIds.has(id) ? id : null,
-        };
-      });
+      // Mesma decisão da sincronização: regra sua primeiro, depois o automático.
+      const rows = categorizar(p.plan.fresh, this.categorias(), this.regras());
       const importId = crypto.randomUUID();
       await this.repo.commitImport(this.uid, p.accountId, importId, rows);
       await this.catalog.saveImportRecord(this.uid, importId, {

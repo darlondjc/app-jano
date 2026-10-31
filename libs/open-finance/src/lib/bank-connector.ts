@@ -15,6 +15,38 @@ export interface ConnectedAccount {
   balanceCents?: number;
   /** Quando o provedor atualizou a conta pela última vez (ISO 8601). */
   updatedAt?: string;
+  /** Só em cartões, quando o provedor informa. */
+  credito?: CreditoCartao;
+}
+
+/** Dados do cartão de crédito. Datas em AAAA-MM-DD; valores em centavos. */
+export interface CreditoCartao {
+  limiteCents: number | null;
+  disponivelCents: number | null;
+  /** Fechamento da fatura atual. */
+  fechamento: string | null;
+  /** Vencimento da fatura atual. */
+  vencimento: string | null;
+  minimoCents: number | null;
+  /** Ex.: "Mastercard Black". */
+  bandeira: string | null;
+}
+
+/** Resumo da fatura aberta, com as compras ainda pendentes. Nunca vira transação. */
+export interface ResumoFatura {
+  /** Primeiro dia considerado (AAAA-MM-DD). */
+  desde: string;
+  totalCents: number;
+  compras: number;
+  /** Por categoria (null = sem categoria), do maior para o menor. */
+  porCategoria: { categoryId: string | null; cents: number }[];
+  /** As maiores compras do período. */
+  maiores: {
+    nome: string;
+    cents: number;
+    date: string;
+    categoryId: string | null;
+  }[];
 }
 
 export interface FetchRange {

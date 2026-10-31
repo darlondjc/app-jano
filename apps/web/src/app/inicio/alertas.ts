@@ -72,7 +72,13 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
             id: `meta-perto:${m.categoryId}`,
             tom: 'warn',
             titulo: `${nome} está em ${pct}% da meta`,
-            texto: `${e.moeda(m.spent)} de ${e.moeda(m.limitCents)}, faltando ${e.daysLeft} ${e.daysLeft === 1 ? 'dia' : 'dias'}.`,
+            texto: `${e.moeda(m.spent)} de ${e.moeda(m.limitCents)}, ${
+              e.daysLeft === 0
+                ? 'no último dia do mês'
+                : e.daysLeft === 1
+                  ? 'faltando 1 dia'
+                  : `faltando ${e.daysLeft} dias`
+            }.`,
             acao: { rotulo: 'Ajustar meta', rota: '/orcamento' },
           },
     );

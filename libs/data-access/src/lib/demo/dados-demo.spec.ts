@@ -31,11 +31,22 @@ describe('gerarDadosDemo', () => {
     );
   });
 
-  it('o cartão deve a soma das compras do mês', () => {
-    const doMes = d.transactions
-      .filter((t) => t.accountId === 'cartao-de-credito' && t.date >= '2026-10')
-      .reduce((s, t) => s - t.amountCents, 0);
+  it('cartão: fecha dia 27, vence dia 7; deve a fatura fechada e resume a aberta', () => {
     const cartao = d.balances.find((b) => b.kind === 'cartao');
-    expect(cartao?.balanceCents).toBe(doMes);
+    expect(cartao?.credito).toMatchObject({
+      fechamento: '2026-10-27',
+      vencimento: '2026-11-07',
+    });
+    const fechada = d.transactions
+      .filter(
+        (t) =>
+          t.accountId === 'cartao-de-credito' &&
+          t.date > '2026-09-27' &&
+          t.date <= '2026-10-27',
+      )
+      .reduce((s, t) => s - t.amountCents, 0);
+    expect(cartao?.balanceCents).toBe(fechada);
+    expect(cartao?.faturaAberta?.desde).toBe('2026-10-28');
+    expect(cartao?.faturaAberta?.compras).toBeGreaterThan(0);
   });
 });

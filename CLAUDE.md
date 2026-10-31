@@ -5,6 +5,10 @@
 
 Antes de criar ou mudar tela, componente, ícone, logo ou texto de interface, consulte `docs/design/` (comece pelo `README.md` de lá). É a cópia local dos protótipos, do design system e dos documentos aprovados no Claude Design. Se algo não estiver lá, busque o artefato no Claude Design e baixe para essa pasta.
 
+## Critério para funcionalidades
+
+Toda funcionalidade nova precisa ser útil de verdade, sem exagero nem texto prolixo. Use os dados reais que já existem (ou que o banco já entrega) para responder a pergunta que a pessoa tem naquela tela, com números concretos: valor, data, prazo, comparação. Evite blocos genéricos, explicações longas e informação que não leva a uma decisão. Referência: o cartão da fatura do Início (`apps/web/src/app/inicio/fatura-cartao.ts`).
+
 ## Estados de carregamento
 
 Toda tela ou componente que busca dados mostra **skeleton** enquanto carrega, nunca texto como "Carregando...". Use os componentes de `@jano/ui` (`JanoSkeletonGroup`, `JanoSkeleton`, `JanoSkeletonKpi`, `JanoSkeletonCard`, `JanoSkeletonRows`, `JanoSkeletonGoals`): o esqueleto tem a forma do conteúdo real, fica dentro de um `jano-skeleton-group` (`aria-busy` e texto para leitores de tela) e não tem animação. Carregamentos de dados também passam por `Progresso.acompanhar` (barra de progresso no topo).

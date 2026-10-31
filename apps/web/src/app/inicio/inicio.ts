@@ -14,6 +14,7 @@ import {
   ContaRepository,
   InsightsRepository,
   TransactionsRepository,
+  type BalanceDoc,
   type BudgetDoc,
   type CategoryDoc,
   type TransactionDoc,
@@ -52,6 +53,8 @@ import { deveLembrar } from './lembrete';
 import { saldoAtual, type SaldoAtual } from './saldo';
 import { podeGastar, type PodeGastar } from './pode-gastar';
 import { comparacaoNoDia, variacao } from './comparacao';
+import { cartaoDaFatura } from './fatura';
+import { FaturaCartaoCard } from './fatura-cartao';
 
 function hojeIso(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -81,6 +84,7 @@ function lerDispensado(): string | null {
     JanoSkeletonKpi,
     JanoSkeletonRows,
     GraficoAcumulado,
+    FaturaCartaoCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -402,6 +406,9 @@ function lerDispensado(): string | null {
         </div>
 
         <div class="lateral">
+          @if (faturaCartao(); as fc) {
+            <jano-fatura-cartao [fatura]="fc" [categorias]="categorias()" />
+          }
           @if (alertas().length) {
             <section class="alertas" aria-label="Alertas">
               <h2>Para ver hoje</h2>
@@ -557,7 +564,7 @@ export class Inicio {
     this.historico().filter((t) => t.date.startsWith(this.month)),
   );
   private readonly budgets = signal<BudgetDoc[]>([]);
-  private readonly categorias = signal<CategoryDoc[]>([]);
+  protected readonly categorias = signal<CategoryDoc[]>([]);
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
   /** Saldo do banco (Open Finance); sem sincronização, o primeiro KPI volta a ser a sobra do mês. */
@@ -577,6 +584,15 @@ export class Inicio {
       hoje: hojeIso(this.hoje),
     });
   });
+  private readonly saldos = signal<BalanceDoc[]>([]);
+  protected readonly faturaCartao = computed(() =>
+    cartaoDaFatura({
+      saldos: this.saldos(),
+      txs: this.historico(),
+      cartoes: this.cartoes(),
+      hoje: hojeIso(this.hoje),
+    }),
+  );
   protected readonly comparacao = computed(() =>
     comparacaoNoDia(
       this.historico(),
@@ -765,6 +781,7 @@ export class Inicio {
         ]);
       this.dispensados.set(new Set(dispensados));
       this.saldo.set(saldoAtual(saldos));
+      this.saldos.set(saldos);
       this.fatura.set(
         saldos
           .filter((b) => b.kind === 'cartao')

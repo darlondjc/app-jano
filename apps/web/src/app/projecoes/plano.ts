@@ -90,8 +90,18 @@ function proxima(s: RecurringSeries, txs: TxRec[], hoje: string): string {
   return proximaCobranca(s.day, `${somarMeses(hoje.slice(0, 7), 1)}-01`);
 }
 
+/** Séries de valor fixo (até 2% de variação): assinaturas e seguros, não consumo. */
+export function cobrancasFixas<T extends { s: RecurringSeries }>(
+  lista: T[],
+): T[] {
+  return lista.filter(
+    ({ s }) =>
+      Math.abs(s.amountCents - s.previousCents) <= s.previousCents * 0.02,
+  );
+}
+
 /** Séries agrupadas pela loja (sem prefixo nem hora), com o nome da última ocorrência. */
-function series(txs: TxRec[], tipo: 'gasto' | 'entrada') {
+export function series(txs: TxRec[], tipo: 'gasto' | 'entrada') {
   const porLoja = txs.map((t) => ({
     ...t,
     descriptionNorm: estabelecimento(t.descriptionNorm),
@@ -172,11 +182,16 @@ export function planoDoMes(e: EntradaPlano): PlanoDoMes {
   }
 
   const rendaCents = entradas.reduce((t, { s }) => t + s.amountCents, 0);
-  // Contas fixas de qualquer conta, cartão incluído (assinaturas); parcelas à parte.
-  const fixasCents = series(semParcelas, 'gasto').reduce(
-    (t, { s }) => t + s.amountCents,
-    0,
-  );
+  // Contas fixas das contas e, do cartão, só cobranças de valor fixo (assinaturas); gasto
+  // variável que se repete no cartão (delivery, cinema) não é compromisso. Parcelas à parte.
+  const fixasCents =
+    fixasDaConta.reduce((t, { s }) => t + s.amountCents, 0) +
+    cobrancasFixas(
+      series(
+        semParcelas.filter((t) => e.cartoes.has(t.accountId)),
+        'gasto',
+      ),
+    ).reduce((t, { s }) => t + s.amountCents, 0);
   const parcelas = parcelamentos(e.txs, e.hoje);
   const comprometido: MesComprometido[] = [];
   for (let i = 1; i <= meses; i++) {

@@ -22,6 +22,9 @@ import {
   PluggyConnector,
   categorizar,
   inferirPeloHistorico,
+  inicioDaFaturaAberta,
+  resumirFatura,
+  type ResumoFatura,
   type CategoriaRef,
   type LancamentoGravado,
   type LancamentoPronto,
@@ -308,8 +311,17 @@ async function sync(
   ))
     alterados.add(m);
   if (!seco) await gravarMesesAlterados(db, base, alterados);
+  const faturas = await resumirFaturas(
+    connector,
+    contasPluggy,
+    config,
+    categorias,
+    regras,
+    ate,
+  );
+  console.log(`Faturas abertas resumidas: ${faturas.size} cartões.`);
   if (!seco) {
-    await gravarSaldos(db, base, contasPluggy, config);
+    await gravarSaldos(db, base, contasPluggy, config, faturas);
     await gravarConexoes(db, base, connector);
   }
 }
@@ -428,11 +440,40 @@ async function gravarConexoes(
  * Saldo de cada conta do banco, inclusive as sem mapeamento (a poupança entra no "Saldo
  * atual" do Início). Nunca vai para o log: no GitHub Actions ele é público.
  */
+/**
+ * Resumo da fatura aberta de cada cartão: compras do período, inclusive as pendentes, com as
+ * regras do usuário. Vai só para o documento de saldo; nenhuma pendente vira transação.
+ */
+async function resumirFaturas(
+  connector: PluggyConnector,
+  contas: ConnectedAccount[],
+  config: Config,
+  categorias: CategoriaRef[],
+  regras: RegraRef[],
+  hoje: string,
+): Promise<Map<string, ResumoFatura>> {
+  const out = new Map<string, ResumoFatura>();
+  for (const a of contas) {
+    if (a.kind !== 'cartao') continue;
+    const desde = inicioDaFaturaAberta(a.credito?.fechamento ?? null, hoje);
+    const raw = await connector.fetchFaturaAberta(a, { from: desde, to: hoje });
+    const noPeriodo = raw.filter((t) => t.date >= desde && t.date <= hoje);
+    const prontos = categorizar(
+      addDedupeKeys(config.contas[a.externalId] ?? a.externalId, noPeriodo),
+      categorias,
+      regras,
+    );
+    out.set(a.externalId, resumirFatura(prontos, desde));
+  }
+  return out;
+}
+
 async function gravarSaldos(
   db: Firestore,
   base: string,
   contas: ConnectedAccount[],
   config: Config,
+  faturas: Map<string, ResumoFatura>,
 ): Promise<void> {
   const col = db.collection(`${base}/balances`);
   const batch = db.batch();
@@ -450,6 +491,12 @@ async function gravarSaldos(
       balanceCents: a.balanceCents,
       bankUpdatedAt: a.updatedAt ?? null,
       syncedAt,
+      ...(a.kind === 'cartao'
+        ? {
+            credito: a.credito ?? null,
+            faturaAberta: faturas.get(a.externalId) ?? null,
+          }
+        : {}),
     });
   }
   // Reconectar o banco troca os ids das contas: some com o saldo das que não existem mais.

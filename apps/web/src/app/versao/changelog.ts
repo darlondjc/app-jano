@@ -14,6 +14,27 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.13.0',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Fatura do cartão no Início: situação (fecha ou vence em quantos dias), valor, vencimento e pagamento mínimo do banco, limite usado, para onde foi o dinheiro por categoria, as maiores compras, o que já entrou na próxima fatura (inclusive compras pendentes) e o que cai no cartão todo mês. "Ver compras do cartão" abre Transações filtrada no cartão.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Gastos variáveis que se repetem no cartão (delivery, cinema) deixam de contar como conta fixa na renda comprometida de Projeções.',
+      },
+      {
+        tipo: 'correcao',
+        texto:
+          'Suas regras valem antes de tudo nas transações novas, inclusive quando o app achava que era transferência. E nada que já tem categoria é alterado: nem a sincronização nem a marcação automática de transferências mexem nela.',
+      },
+    ],
+  },
+  {
     version: '0.12.0',
     date: '2026-10-31',
     items: [
