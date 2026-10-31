@@ -92,4 +92,66 @@ describe('DetalheTransacao', () => {
     botao(el, 'Salvar').click();
     expect(saidas).toEqual([{ escolha: TRANSFERENCIA, regra: null }]);
   });
+
+  describe('dividir em categorias', () => {
+    const campo = (el: HTMLElement, rotulo: string) =>
+      el.querySelector(`[aria-label="${rotulo}"]`) as
+        HTMLInputElement | HTMLSelectElement;
+    const digitar = (
+      f: ReturnType<typeof montar>['f'],
+      c: HTMLInputElement | HTMLSelectElement,
+      v: string,
+    ) => {
+      c.value = v;
+      c.dispatchEvent(
+        new Event(c instanceof HTMLSelectElement ? 'change' : 'input'),
+      );
+      f.detectChanges();
+    };
+
+    it('só salva quando as partes fecham o total, e mostra quanto falta', () => {
+      const { f, el, saidas } = montar({ ...tx, categoryId: 'mercado' });
+      botao(el, 'Dividir em categorias').click();
+      f.detectChanges();
+      digitar(f, campo(el, 'Valor 1'), '30,00');
+      digitar(f, campo(el, 'Categoria 2'), 'lazer');
+      expect(el.textContent).toMatch(/Faltam R\$\s12,00/);
+      expect(botao(el, 'Salvar').disabled).toBe(true);
+      digitar(f, campo(el, 'Valor 2'), '12,00');
+      expect(el.textContent).toContain('As partes fecham o total.');
+      botao(el, 'Salvar').click();
+      expect(saidas).toEqual([
+        {
+          escolha: null,
+          regra: null,
+          divisao: [
+            { categoryId: 'mercado', amountCents: -3000 },
+            { categoryId: 'lazer', amountCents: -1200 },
+          ],
+        },
+      ]);
+    });
+
+    it('entrada não pode ser dividida', () => {
+      const { el } = montar({ ...tx, amountCents: 5000 });
+      expect(botao(el, 'Dividir em categorias')).toBeUndefined();
+    });
+
+    it('lançamento dividido abre com as partes e pode desfazer', () => {
+      const { f, el, saidas } = montar({
+        ...tx,
+        categoryId: 'mercado',
+        categoryIsManual: true,
+        splits: [
+          { categoryId: 'mercado', amountCents: -3000 },
+          { categoryId: 'lazer', amountCents: -1200 },
+        ],
+      });
+      expect((campo(el, 'Valor 2') as HTMLInputElement).value).toBe('12,00');
+      botao(el, 'Desfazer divisão').click();
+      f.detectChanges();
+      botao(el, 'Salvar').click();
+      expect(saidas).toEqual([{ escolha: 'mercado', regra: null }]);
+    });
+  });
 });

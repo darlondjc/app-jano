@@ -7,6 +7,7 @@ import type {
 import type {
   PluggyAccount,
   PluggyClient,
+  PluggyItem,
   PluggyTransaction,
 } from './pluggy-client';
 
@@ -28,6 +29,11 @@ export class PluggyConnector implements BankConnector {
       this.itemIds.map((id) => this.client.listAccounts(id)),
     );
     return perItem.flat().map(toConnectedAccount);
+  }
+
+  /** Estado de cada conexão: validade da autorização e última atualização com o banco. */
+  listItems(): Promise<PluggyItem[]> {
+    return Promise.all(this.itemIds.map((id) => this.client.getItem(id)));
   }
 
   async fetchTransactions(

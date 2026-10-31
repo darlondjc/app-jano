@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import {
   collection,
+  deleteField,
   doc,
   getDocs,
   orderBy,
@@ -11,6 +12,7 @@ import {
 } from 'firebase/firestore/lite';
 import { hashKey, type KeyedTransaction } from '@jano/import-file';
 import { paths } from '../firebase/paths';
+import { CacheLocal } from '../cache/cache-local';
 import { FirebaseService } from '../firebase/firebase.service';
 import { monthBounds, type TransactionDoc } from './models';
 
@@ -19,8 +21,18 @@ const BATCH_LIMIT = 400; // Firestore aceita 500 operações por lote.
 @Injectable({ providedIn: 'root' })
 export class TransactionsRepository {
   private readonly db = inject(FirebaseService).db;
+  private readonly cache = inject(CacheLocal);
 
-  async listMonth(uid: string, month: string): Promise<TransactionDoc[]> {
+  listMonth(uid: string, month: string): Promise<TransactionDoc[]> {
+    return this.cache.ler(`${uid}|tx|${month}`, () =>
+      this.listMonthDoServidor(uid, month),
+    );
+  }
+
+  private async listMonthDoServidor(
+    uid: string,
+    month: string,
+  ): Promise<TransactionDoc[]> {
     const { from, toExclusive } = monthBounds(month);
     const snap = await getDocs(
       query(
@@ -37,7 +49,17 @@ export class TransactionsRepository {
   }
 
   /** Do primeiro dia de `fromMonth` ao último de `toMonth` (AAAA-MM). */
-  async listRange(
+  listRange(
+    uid: string,
+    fromMonth: string,
+    toMonth: string,
+  ): Promise<TransactionDoc[]> {
+    return this.cache.ler(`${uid}|tx|${fromMonth}|${toMonth}`, () =>
+      this.listRangeDoServidor(uid, fromMonth, toMonth),
+    );
+  }
+
+  private async listRangeDoServidor(
     uid: string,
     fromMonth: string,
     toMonth: string,
@@ -68,7 +90,11 @@ export class TransactionsRepository {
     for (let i = 0; i < ids.length; i += BATCH_LIMIT) {
       const batch = writeBatch(this.db);
       for (const id of ids.slice(i, i + BATCH_LIMIT)) {
-        batch.update(doc(this.db, paths.transactions(uid), id), { ...patch });
+        // Escolher uma categoria (ou transferência) desfaz a divisão.
+        batch.update(doc(this.db, paths.transactions(uid), id), {
+          ...patch,
+          splits: deleteField(),
+        });
       }
       await batch.commit();
     }
@@ -130,7 +156,29 @@ export class TransactionsRepository {
       categoryId,
       categoryIsManual: true,
       isTransfer: false,
+      splits: deleteField(),
     });
+  }
+
+  /**
+   * Divide em categorias (partes já validadas por `validarDivisao`). A categoria principal
+   * vira a da maior parte, para listas e filtros que mostram uma só.
+   */
+  async setSplits(
+    uid: string,
+    id: string,
+    splits: { categoryId: string; amountCents: number }[],
+  ): Promise<string> {
+    const principal = [...splits].sort(
+      (a, b) => a.amountCents - b.amountCents,
+    )[0].categoryId;
+    await updateDoc(doc(this.db, paths.transactions(uid), id), {
+      splits,
+      categoryId: principal,
+      categoryIsManual: true,
+      isTransfer: false,
+    });
+    return principal;
   }
 
   /** Marca à mão como transferência (fora dos totais). */
@@ -139,6 +187,7 @@ export class TransactionsRepository {
       categoryId: null,
       categoryIsManual: true,
       isTransfer: true,
+      splits: deleteField(),
     });
   }
 

@@ -13,4 +13,6 @@ export const paths = {
   insights: (uid: string) => `users/${uid}/insights`,
   /** Saldo de cada conta no banco, gravado pela sincronização Open Finance (tools/pluggy-sync). */
   balances: (uid: string) => `users/${uid}/balances`,
+  /** Estado de cada conexão Open Finance (autorização, última atualização), gravado pela sincronização. */
+  connections: (uid: string) => `users/${uid}/connections`,
 } as const;

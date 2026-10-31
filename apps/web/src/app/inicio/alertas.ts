@@ -8,6 +8,8 @@ import {
 } from '@jano/engine';
 
 export interface Alerta {
+  /** Estável no mês (não muda com os números): é o que se guarda ao dispensar. */
+  id: string;
   tom: 'warn' | 'info' | 'good';
   titulo: string;
   texto: string;
@@ -30,6 +32,8 @@ export interface EntradaAlertas {
   moeda: (cents: number) => string;
   /** Quantos alertas devolver (padrão 4). */
   max?: number;
+  /** Ids dispensados neste mês: saem e abrem espaço para o próximo. */
+  dispensados?: ReadonlySet<string>;
 }
 
 const MAX = 4;
@@ -52,12 +56,14 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
     out.push(
       pct >= 100
         ? {
+            id: `meta-passou:${m.categoryId}`,
             tom: 'warn',
             titulo: `${nome} passou da meta (${pct}%)`,
             texto: `${e.moeda(m.spent)} de ${e.moeda(m.limitCents)}.`,
             acao: { rotulo: 'Ajustar meta', rota: '/orcamento' },
           }
         : {
+            id: `meta-perto:${m.categoryId}`,
             tom: 'warn',
             titulo: `${nome} está em ${pct}% da meta`,
             texto: `${e.moeda(m.spent)} de ${e.moeda(m.limitCents)}, faltando ${e.daysLeft} ${e.daysLeft === 1 ? 'dia' : 'dias'}.`,
@@ -69,6 +75,7 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
   const acima = categoriesAboveNormal(e.txs, e.month)[0];
   if (acima)
     out.push({
+      id: `acima:${acima.categoryId}`,
       tom: 'warn',
       titulo: `${e.nomeCategoria(acima.categoryId)} está ${acima.pct}% acima da média`,
       texto: `${e.moeda(acima.spentCents)} contra ${e.moeda(acima.avgCents)} nos meses anteriores.`,
@@ -78,6 +85,7 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
   const incomum = unusualTransactions(e.txs, e.month)[0];
   if (incomum)
     out.push({
+      id: `incomum:${incomum.date}:${incomum.description}`,
       tom: 'info',
       titulo: `Gasto fora do padrão: ${incomum.description}`,
       texto: `${e.moeda(incomum.amountCents)}, cerca de ${incomum.times.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} vezes o normal da categoria.`,
@@ -88,6 +96,7 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
     const nova = newSubscriptions(e.txs, e.assinaturasId, e.today)[0];
     if (nova)
       out.push({
+        id: `assinatura:${nova.description}`,
         tom: 'info',
         titulo: `Assinatura nova de ${e.moeda(nova.amountCents)}`,
         texto: `${nova.description} apareceu em ${nova.firstSeen.slice(8)}/${nova.firstSeen.slice(5, 7)}. Confirme se é sua.`,
@@ -98,11 +107,12 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
   const reajuste = repricedRecurrences(detectRecurrences(e.txs))[0];
   if (reajuste)
     out.push({
+      id: `reajuste:${reajuste.description}:${reajuste.toCents}`,
       tom: 'info',
       titulo: `${reajuste.description} subiu ${reajuste.pct.toLocaleString('pt-BR')}%`,
       texto: `De ${e.moeda(reajuste.fromCents)} para ${e.moeda(reajuste.toCents)} por mês.`,
       acao: { rotulo: 'Ver transações', rota: '/transacoes' },
     });
 
-  return out.slice(0, e.max ?? MAX);
+  return out.filter((a) => !e.dispensados?.has(a.id)).slice(0, e.max ?? MAX);
 }

@@ -14,6 +14,42 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.10.0',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Dividir um lançamento em várias categorias: no detalhe da transação, cada parte conta na sua categoria nas metas e nas avaliações.',
+      },
+      {
+        tipo: 'novo',
+        texto:
+          'O app abre sem internet e mostra os últimos dados vistos, com o aviso de quando são. Importar e editar voltam com a conexão.',
+      },
+      {
+        tipo: 'novo',
+        texto:
+          'Aviso no topo quando a autorização do Open Finance está para vencer (15 dias antes), venceu ou a sincronização parou.',
+      },
+      {
+        tipo: 'novo',
+        texto:
+          'Metas podem levar a sobra para o mês seguinte: o que não for gasto soma ao limite do próximo mês.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Insights podem ser dispensados nas Avaliações; somem também do Início até o fim do mês.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Os cenários "e se" das Projeções ficam salvos como você deixou, em qualquer aparelho.',
+      },
+    ],
+  },
+  {
     version: '0.9.0',
     date: '2026-10-30',
     items: [

@@ -46,4 +46,25 @@ describe('montarAlertas', () => {
     expect(r.length).toBeLessThanOrEqual(4);
     expect(r).toHaveLength(2);
   });
+
+  it('dispensado sai e os ids não dependem dos números', () => {
+    const entrada = {
+      ...base,
+      budgets: [
+        { categoryId: 'mercado', limitCents: 90000 },
+        { categoryId: 'lazer', limitCents: 35000 },
+      ],
+      spentByCategory: { mercado: 82800, lazer: 43400 },
+    };
+    expect(montarAlertas(entrada).map((a) => a.id)).toEqual([
+      'meta-passou:lazer',
+      'meta-perto:mercado',
+    ]);
+    const r = montarAlertas({
+      ...entrada,
+      spentByCategory: { mercado: 85000, lazer: 43400 },
+      dispensados: new Set(['meta-passou:lazer']),
+    });
+    expect(r.map((a) => a.titulo)).toEqual(['MERCADO está em 94% da meta']);
+  });
 });

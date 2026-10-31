@@ -1,4 +1,4 @@
-import { ehEstorno, formatBRL } from '@jano/engine';
+import { ehEstorno, formatBRL, partes } from '@jano/engine';
 
 export type TipoFiltro = 'gastos' | 'receitas' | 'transferencias';
 
@@ -28,6 +28,7 @@ interface Linha {
   amountCents: number;
   categoryId: string | null;
   isTransfer: boolean;
+  splits?: { categoryId: string | null; amountCents: number }[];
 }
 
 const simples = (s: string): string =>
@@ -85,7 +86,11 @@ export function filtrar<T extends Linha>(
       return false;
     if (f.tipo === 'transferencias' && !t.isTransfer) return false;
     if (f.semCategoria && (t.categoryId !== null || t.isTransfer)) return false;
-    if (f.categorias.length && !f.categorias.includes(t.categoryId ?? ''))
+    // Lançamento dividido aparece no filtro de qualquer categoria das suas partes.
+    if (
+      f.categorias.length &&
+      !partes(t).some((p) => f.categorias.includes(p.categoryId ?? ''))
+    )
       return false;
     return casaBusca(t, f.busca, nomeCategoria);
   });

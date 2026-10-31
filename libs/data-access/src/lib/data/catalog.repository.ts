@@ -10,6 +10,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore/lite';
+import { CacheLocal } from '../cache/cache-local';
 import { FirebaseService } from '../firebase/firebase.service';
 import { paths } from '../firebase/paths';
 import {
@@ -52,8 +53,15 @@ export function missingDefaults(
 @Injectable({ providedIn: 'root' })
 export class CatalogRepository {
   private readonly db = inject(FirebaseService).db;
+  private readonly cache = inject(CacheLocal);
 
-  async accounts(uid: string): Promise<AccountDoc[]> {
+  accounts(uid: string): Promise<AccountDoc[]> {
+    return this.cache.ler(`${uid}|accounts`, () =>
+      this.accountsDoServidor(uid),
+    );
+  }
+
+  private async accountsDoServidor(uid: string): Promise<AccountDoc[]> {
     const col = collection(this.db, paths.accounts(uid));
     let snap = await getDocs(col);
     if (snap.empty) {
@@ -69,7 +77,13 @@ export class CatalogRepository {
     }));
   }
 
-  async categories(uid: string): Promise<CategoryDoc[]> {
+  categories(uid: string): Promise<CategoryDoc[]> {
+    return this.cache.ler(`${uid}|categories`, () =>
+      this.categoriesDoServidor(uid),
+    );
+  }
+
+  private async categoriesDoServidor(uid: string): Promise<CategoryDoc[]> {
     const col = collection(this.db, paths.categories(uid));
     let snap = await getDocs(col);
     if (snap.empty) {
@@ -162,6 +176,31 @@ export class CatalogRepository {
       for (const d of txSnap.docs.slice(i, i + BATCH_LIMIT)) {
         batch.update(d.ref, { categoryId: null, categoryIsManual: true });
       }
+      await batch.commit();
+    }
+    // Partes de divisões nessa categoria ficam sem categoria; o resto da divisão continua.
+    const divididas = await getDocs(
+      query(
+        collection(this.db, paths.transactions(uid)),
+        where('splits', '!=', null),
+      ),
+    );
+    const afetadas = divididas.docs.filter((d) =>
+      (d.get('splits') as { categoryId: string | null }[]).some(
+        (p) => p.categoryId === id,
+      ),
+    );
+    for (let i = 0; i < afetadas.length; i += BATCH_LIMIT) {
+      const batch = writeBatch(this.db);
+      for (const d of afetadas.slice(i, i + BATCH_LIMIT))
+        batch.update(d.ref, {
+          splits: (
+            d.get('splits') as {
+              categoryId: string | null;
+              amountCents: number;
+            }[]
+          ).map((p) => (p.categoryId === id ? { ...p, categoryId: null } : p)),
+        });
       await batch.commit();
     }
     await deleteDoc(doc(this.db, paths.budgets(uid), id));

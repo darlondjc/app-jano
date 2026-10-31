@@ -8,6 +8,7 @@ import {
   writeBatch,
 } from 'firebase/firestore/lite';
 import { paths } from '../firebase/paths';
+import { CacheLocal } from '../cache/cache-local';
 import { FirebaseService } from '../firebase/firebase.service';
 
 const BATCH_LIMIT = 400; // Firestore aceita 500 operações por lote.
@@ -24,6 +25,7 @@ const COLECOES = [
   'scenarios',
   'insights',
   'balances',
+  'connections',
 ] as const;
 
 export type NomeColecao = (typeof COLECOES)[number];
@@ -44,8 +46,17 @@ export interface RegistroImportacao {
 @Injectable({ providedIn: 'root' })
 export class ContaRepository {
   private readonly db = inject(FirebaseService).db;
+  private readonly cache = inject(CacheLocal);
 
-  async ultimaImportacao(uid: string): Promise<RegistroImportacao | null> {
+  ultimaImportacao(uid: string): Promise<RegistroImportacao | null> {
+    return this.cache.ler(`${uid}|ultimaImportacao`, () =>
+      this.ultimaImportacaoDoServidor(uid),
+    );
+  }
+
+  private async ultimaImportacaoDoServidor(
+    uid: string,
+  ): Promise<RegistroImportacao | null> {
     const snap = await getDocs(
       query(
         collection(this.db, paths.imports(uid)),
@@ -70,6 +81,7 @@ export class ContaRepository {
 
   /** Apaga tudo o que está sob users/{uid}; a conta de login continua existindo. */
   async apagarTudo(uid: string): Promise<number> {
+    await this.cache.limpar();
     let total = 0;
     for (const nome of COLECOES) {
       const snap = await getDocs(collection(this.db, paths[nome](uid)));

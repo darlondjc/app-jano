@@ -7,6 +7,7 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
+import { CacheLocal } from '../cache/cache-local';
 import { FirebaseService } from './firebase.service';
 
 export type AuthState = 'carregando' | 'deslogado' | 'logado';
@@ -14,6 +15,7 @@ export type AuthState = 'carregando' | 'deslogado' | 'logado';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly auth = inject(FirebaseService).auth;
+  private readonly cache = inject(CacheLocal);
   private readonly _user = signal<User | null>(null);
   private readonly _ready = signal(false);
 
@@ -38,7 +40,9 @@ export class AuthService {
     await signInWithPopup(this.auth, new GoogleAuthProvider());
   }
 
-  signOut(): Promise<void> {
-    return signOut(this.auth);
+  /** Sai e apaga do aparelho os dados guardados para uso offline. */
+  async signOut(): Promise<void> {
+    await this.cache.limpar();
+    await signOut(this.auth);
   }
 }

@@ -1,4 +1,4 @@
-import type { Cents } from './engine';
+import { partes, type Cents, type Parte } from './engine';
 
 /** Transação como o motor a enxerga. Gasto = valor negativo. */
 export interface HistTx {
@@ -8,6 +8,8 @@ export interface HistTx {
   categoryId: string | null;
   descriptionNorm: string;
   isTransfer: boolean;
+  /** Divisão em categorias (ver `partes`). */
+  splits?: Parte[];
 }
 
 export interface CategoryAbove {
@@ -72,9 +74,11 @@ function spentByMonthAndCategory(
   const out = new Map<string, Map<string, Cents>>();
   for (const t of spends(txs)) {
     const month = monthOf(t.date);
-    const cat = t.categoryId ?? '';
     const byCat = out.get(month) ?? out.set(month, new Map()).get(month)!;
-    byCat.set(cat, (byCat.get(cat) ?? 0) + -t.amountCents);
+    for (const p of partes(t)) {
+      const cat = p.categoryId ?? '';
+      byCat.set(cat, (byCat.get(cat) ?? 0) + -p.amountCents);
+    }
   }
   return out;
 }
@@ -128,29 +132,36 @@ export function unusualTransactions(
   month: string,
 ): UnusualSpend[] {
   const history = new Map<string, number[]>();
+  // Lançamento dividido entra em cada categoria pela sua parte.
   for (const t of spends(txs)) {
-    if (monthOf(t.date) < month && t.categoryId) {
-      (
-        history.get(t.categoryId) ??
-        history.set(t.categoryId, []).get(t.categoryId)!
-      ).push(-t.amountCents);
-    }
+    if (monthOf(t.date) >= month) continue;
+    for (const p of partes(t))
+      if (p.categoryId)
+        (
+          history.get(p.categoryId) ??
+          history.set(p.categoryId, []).get(p.categoryId)!
+        ).push(-p.amountCents);
   }
   const out: UnusualSpend[] = [];
   for (const t of spends(txs)) {
-    const h = t.categoryId ? history.get(t.categoryId) : undefined;
-    if (monthOf(t.date) !== month || !h || h.length < 5) continue;
-    const mean = h.reduce((s, x) => s + x, 0) / h.length;
-    const sd = Math.sqrt(h.reduce((s, x) => s + (x - mean) ** 2, 0) / h.length);
-    const value = -t.amountCents;
-    if (value > mean + 2.5 * sd && value >= mean * 2) {
-      out.push({
-        kind: 'gasto-incomum',
-        description: t.descriptionNorm,
-        date: t.date,
-        amountCents: value,
-        times: Math.round((value / mean) * 10) / 10,
-      });
+    if (monthOf(t.date) !== month) continue;
+    for (const p of partes(t)) {
+      const h = p.categoryId ? history.get(p.categoryId) : undefined;
+      if (!h || h.length < 5) continue;
+      const mean = h.reduce((s, x) => s + x, 0) / h.length;
+      const sd = Math.sqrt(
+        h.reduce((s, x) => s + (x - mean) ** 2, 0) / h.length,
+      );
+      const value = -p.amountCents;
+      if (value > mean + 2.5 * sd && value >= mean * 2) {
+        out.push({
+          kind: 'gasto-incomum',
+          description: t.descriptionNorm,
+          date: t.date,
+          amountCents: value,
+          times: Math.round((value / mean) * 10) / 10,
+        });
+      }
     }
   }
   return out.sort((a, b) => b.amountCents - a.amountCents);

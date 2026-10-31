@@ -43,6 +43,61 @@ export interface SpendTx {
   amountCents: Cents;
   isTransfer: boolean;
   accountId?: string;
+  /** Divisão em categorias; a soma das partes é igual a `amountCents`. */
+  splits?: Parte[];
+}
+
+/** Uma parte de um lançamento dividido em categorias. Mesmo sinal do lançamento. */
+export interface Parte {
+  categoryId: string | null;
+  amountCents: Cents;
+}
+
+/** Partes de um lançamento: as da divisão ou, sem divisão, ele inteiro na sua categoria. */
+export function partes(t: {
+  categoryId: string | null;
+  amountCents: Cents;
+  splits?: Parte[];
+}): Parte[] {
+  return t.splits?.length
+    ? t.splits
+    : [{ categoryId: t.categoryId, amountCents: t.amountCents }];
+}
+
+export type ResultadoDivisao =
+  { ok: true } | { ok: false; motivo: string; faltaCents?: Cents };
+
+/**
+ * Confere uma divisão antes de gravar: só saídas, duas partes ou mais, cada uma com categoria
+ * própria e valor, e a soma fechando o total. `faltaCents` positivo = falta distribuir;
+ * negativo = passou do total.
+ */
+export function validarDivisao(
+  amountCents: Cents,
+  divisao: Parte[],
+): ResultadoDivisao {
+  if (amountCents >= 0)
+    return { ok: false, motivo: 'Só dá para dividir uma saída.' };
+  if (divisao.length < 2)
+    return { ok: false, motivo: 'Divida em pelo menos duas categorias.' };
+  if (divisao.some((p) => !p.categoryId))
+    return { ok: false, motivo: 'Escolha a categoria de cada parte.' };
+  if (new Set(divisao.map((p) => p.categoryId)).size < divisao.length)
+    return { ok: false, motivo: 'Cada categoria aparece uma vez só.' };
+  // A soma vem antes: "faltam R$ X" ajuda mais enquanto a pessoa digita.
+  const falta = divisao.reduce((s, p) => s + p.amountCents, 0) - amountCents;
+  if (falta !== 0)
+    return {
+      ok: false,
+      motivo:
+        falta > 0
+          ? 'Falta distribuir uma parte.'
+          : 'As partes passam do total.',
+      faltaCents: falta,
+    };
+  if (divisao.some((p) => p.amountCents >= 0))
+    return { ok: false, motivo: 'Cada parte precisa ter um valor.' };
+  return { ok: true };
 }
 
 /**
@@ -87,14 +142,36 @@ export function monthTotals(
       spentByCategory[key] = (spentByCategory[key] ?? 0) - abate;
       spent -= abate;
     } else if (t.amountCents < 0) {
-      const key = t.categoryId ?? '';
-      spentByCategory[key] = (spentByCategory[key] ?? 0) + -t.amountCents;
+      for (const p of partes(t)) {
+        const key = p.categoryId ?? '';
+        spentByCategory[key] = (spentByCategory[key] ?? 0) + -p.amountCents;
+      }
       spent += -t.amountCents;
     } else {
       income += t.amountCents;
     }
   }
   return { spentByCategory, spent, income, net: income - spent };
+}
+
+/**
+ * Rollover: meta com `rollover` ganha de folga o que sobrou no mês anterior (limite menos
+ * gasto, nunca negativo). Só um mês: a sobra não se acumula sem fim, e estouro não passa.
+ * `null` = mês anterior sem dados (nada importado): sem folga, para não inventar sobra.
+ */
+export function limitesComSobra<
+  B extends { categoryId: string; limitCents: Cents; rollover?: boolean },
+>(
+  budgets: B[],
+  gastoMesAnterior: Record<string, Cents> | null,
+): (B & { sobraCents: Cents })[] {
+  return budgets.map((b) => {
+    const sobraCents =
+      b.rollover && gastoMesAnterior
+        ? Math.max(0, b.limitCents - (gastoMesAnterior[b.categoryId] ?? 0))
+        : 0;
+    return { ...b, limitCents: b.limitCents + sobraCents, sobraCents };
+  });
 }
 
 export interface BudgetRow {

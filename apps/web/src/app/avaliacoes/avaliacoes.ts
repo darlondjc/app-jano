@@ -10,6 +10,7 @@ import {
   AuthService,
   BudgetsRepository,
   CatalogRepository,
+  InsightsRepository,
   TransactionsRepository,
   type BudgetDoc,
   type CategoryDoc,
@@ -166,6 +167,18 @@ const CIRC = 2 * Math.PI * RAIO;
     }
     .acao:hover {
       text-decoration: underline;
+    }
+    .acoes {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .dispensar {
+      border: 0;
+      background: none;
+      padding: 0;
+      cursor: pointer;
+      color: var(--text-2);
     }
     .vazio {
       color: var(--text-2);
@@ -368,9 +381,21 @@ const CIRC = 2 * Math.PI * RAIO;
                   <div>
                     <div class="j-insight__title">{{ a.titulo }}</div>
                     <p class="j-insight__text">{{ a.texto }}</p>
-                    @if (a.acao; as ac) {
-                      <a class="acao" [routerLink]="ac.rota">{{ ac.rotulo }}</a>
-                    }
+                    <div class="acoes">
+                      @if (a.acao; as ac) {
+                        <a class="acao" [routerLink]="ac.rota">{{
+                          ac.rotulo
+                        }}</a>
+                      }
+                      <button
+                        type="button"
+                        class="acao dispensar"
+                        [attr.aria-label]="'Dispensar: ' + a.titulo"
+                        (click)="dispensar(a)"
+                      >
+                        Dispensar
+                      </button>
+                    </div>
                   </div>
                 </div>
               } @empty {
@@ -504,8 +529,11 @@ export class Avaliacoes {
   private readonly txRepo = inject(TransactionsRepository);
   private readonly budgetRepo = inject(BudgetsRepository);
   private readonly catalog = inject(CatalogRepository);
+  private readonly insightsRepo = inject(InsightsRepository);
 
   protected readonly money = formatBRL;
+  /** Insights dispensados neste mês. */
+  private readonly dispensados = signal<ReadonlySet<string>>(new Set());
   protected readonly g = GRAF;
   protected readonly raio = RAIO;
 
@@ -596,18 +624,21 @@ export class Avaliacoes {
       nomeCategoria: (id) => this.nomeCat(id),
       moeda: formatBRL,
       max: 6,
+      dispensados: this.dispensados(),
     });
     const sequencias: Alerta[] = goalStreaks(
       this.historico(),
       this.budgets(),
       this.month,
     )
-      .slice(0, 2)
-      .map((s) => ({
+      .map((s): Alerta => ({
+        id: `sequencia:${s.categoryId}`,
         tom: 'good',
         titulo: `${this.nomeCat(s.categoryId)} dentro da meta há ${s.months} meses`,
         texto: 'Sem ultrapassar o limite nos meses fechados.',
-      }));
+      }))
+      .filter((a) => !this.dispensados().has(a.id))
+      .slice(0, 2);
     return [...base, ...sequencias].slice(0, 6);
   });
 
@@ -738,16 +769,37 @@ export class Avaliacoes {
     return this.progresso.acompanhar(this.carregarDados());
   }
 
+  /** Some na hora; grava para não voltar neste mês. */
+  protected async dispensar(a: Alerta): Promise<void> {
+    const uid = this.auth.user()?.uid;
+    if (!uid) return;
+    const antes = this.dispensados();
+    this.dispensados.set(new Set([...antes, a.id]));
+    try {
+      await this.insightsRepo.dispensar(uid, this.month, a.id);
+    } catch (e) {
+      this.dispensados.set(antes);
+      this.erro.set(
+        e instanceof Error
+          ? e.message
+          : 'Não consegui dispensar. Tente de novo.',
+      );
+    }
+  }
+
   private async carregarDados(): Promise<void> {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {
-      const [txs, budgets, cats, contas] = await Promise.all([
+      const [txs, budgets, cats, contas, dispensados] = await Promise.all([
         this.txRepo.listRange(uid, this.meses[0], this.month),
         this.budgetRepo.list(uid),
         this.catalog.categories(uid),
         this.catalog.accounts(uid),
+        // Complemento: se falhar, os insights aparecem todos.
+        this.insightsRepo.dispensados(uid, this.month).catch(() => []),
       ]);
+      this.dispensados.set(new Set(dispensados));
       this.cartoes.set(
         new Set(contas.filter((c) => c.type === 'cartao').map((c) => c.id)),
       );

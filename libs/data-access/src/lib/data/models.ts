@@ -18,6 +18,11 @@ export interface TransactionDoc {
   holder?: string;
   /** Parcela "n de total". */
   installment?: { n: number; total: number };
+  /**
+   * Divisão em categorias, com o mesmo sinal do lançamento e soma igual a `amountCents`.
+   * Quem tem divisão fica com `categoryIsManual`; `categoryId` aponta para a maior parte.
+   */
+  splits?: { categoryId: string | null; amountCents: number }[];
 }
 
 export interface AccountDoc {
@@ -41,6 +46,24 @@ export interface BalanceDoc {
   /** Última atualização no banco, quando o provedor informa (ISO 8601). */
   bankUpdatedAt: string | null;
   /** Quando a sincronização gravou (ISO 8601). */
+  syncedAt: string;
+}
+
+/** Estado de uma conexão Open Finance (um banco), gravado pela sincronização. */
+export interface ConnectionDoc {
+  id: string;
+  provider: 'pluggy';
+  /** Nome do conector, ex.: "MeuPluggy". */
+  name: string | null;
+  /** UPDATED, UPDATING, LOGIN_ERROR, OUTDATED... */
+  status: string;
+  /** Ex.: USER_AUTHORIZATION_EXPIRED. */
+  errorCode: string | null;
+  /** Quando a autorização vence (ISO 8601). */
+  consentExpiresAt: string | null;
+  /** Última atualização com o banco (ISO 8601). */
+  bankUpdatedAt: string | null;
+  /** Quando a sincronização rodou (ISO 8601). */
   syncedAt: string;
 }
 
