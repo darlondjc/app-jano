@@ -67,4 +67,36 @@ describe('montarAlertas', () => {
     });
     expect(r.map((a) => a.titulo)).toEqual(['MERCADO está em 94% da meta']);
   });
+
+  it('gasto fora do padrão leva direto à transação, com o nome sem o prefixo do PIX', () => {
+    const tx = (date: string, reais: number, extra = {}) => ({
+      date,
+      amountCents: -reais * 100,
+      categoryId: 'moradia',
+      descriptionNorm: 'X',
+      isTransfer: false,
+      ...extra,
+    });
+    const historico = [3, 4, 5, 6, 7, 8].map((m) =>
+      tx(`2026-0${m}-10`, 10 + m),
+    );
+    const r = montarAlertas({
+      ...base,
+      txs: [
+        ...historico,
+        tx('2026-10-09', 3460, {
+          id: 'abc',
+          description: 'PIX - ENVIADO 09/10 11:59 JULIO BEZERRA',
+          descriptionNorm: 'PIX ENVIADO 11 59 JULIO BEZERRA',
+        }),
+      ],
+    });
+    const incomum = r.find((a) => a.id.startsWith('incomum:'));
+    expect(incomum?.titulo).toBe('Gasto fora do padrão: JULIO BEZERRA');
+    expect(incomum?.acao).toEqual({
+      rotulo: 'Ver transação',
+      rota: '/transacoes',
+      queryParams: { tx: 'abc' },
+    });
+  });
 });

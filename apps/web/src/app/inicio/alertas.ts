@@ -6,6 +6,7 @@ import {
   unusualTransactions,
   type HistTx,
 } from '@jano/engine';
+import { nomeSemPrefixo } from '@jano/import-file';
 
 export interface Alerta {
   /** Estável no mês (não muda com os números): é o que se guarda ao dispensar. */
@@ -14,7 +15,12 @@ export interface Alerta {
   titulo: string;
   texto: string;
   /** Link de ação do cartão (usado na tela Avaliações). */
-  acao?: { rotulo: string; rota: string };
+  acao?: {
+    rotulo: string;
+    rota: string;
+    /** `tx` leva Transações direto ao lançamento (ver `Transacoes.irParaLancamento`). */
+    queryParams?: Record<string, string>;
+  };
 }
 
 export interface EntradaAlertas {
@@ -87,9 +93,9 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
     out.push({
       id: `incomum:${incomum.date}:${incomum.description}`,
       tom: 'info',
-      titulo: `Gasto fora do padrão: ${incomum.description}`,
+      titulo: `Gasto fora do padrão: ${exibir(incomum)}`,
       texto: `${e.moeda(incomum.amountCents)}, cerca de ${incomum.times.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} vezes o normal da categoria.`,
-      acao: { rotulo: 'Ver transações', rota: '/transacoes' },
+      acao: verTransacao(incomum.txId),
     });
 
   if (e.assinaturasId) {
@@ -99,8 +105,8 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
         id: `assinatura:${nova.description}`,
         tom: 'info',
         titulo: `Assinatura nova de ${e.moeda(nova.amountCents)}`,
-        texto: `${nova.description} apareceu em ${nova.firstSeen.slice(8)}/${nova.firstSeen.slice(5, 7)}. Confirme se é sua.`,
-        acao: { rotulo: 'Ver transações', rota: '/transacoes' },
+        texto: `${exibir(nova)} apareceu em ${nova.firstSeen.slice(8)}/${nova.firstSeen.slice(5, 7)}. Confirme se é sua.`,
+        acao: verTransacao(nova.txId),
       });
   }
 
@@ -115,4 +121,20 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
     });
 
   return out.filter((a) => !e.dispensados?.has(a.id)).slice(0, e.max ?? MAX);
+}
+
+/** Nome do insight como o banco escreveu, sem "PIX - ENVIADO 09/10 11:59". */
+function exibir(i: { description: string; nome?: string }): string {
+  return i.nome ? nomeSemPrefixo(i.nome) : i.description;
+}
+
+/** Com o id, leva direto ao lançamento; sem ele, à lista. */
+function verTransacao(txId?: string): Alerta['acao'] {
+  return txId
+    ? {
+        rotulo: 'Ver transação',
+        rota: '/transacoes',
+        queryParams: { tx: txId },
+      }
+    : { rotulo: 'Ver transações', rota: '/transacoes' };
 }

@@ -123,6 +123,12 @@ describe('estabelecimento', () => {
     expect(estabelecimento('COMPRA C CARTAO 99 POP')).toBe('99 POP');
     expect(estabelecimento('PADARIA 24 HORAS')).toBe('PADARIA 24 HORAS');
   });
+  it('PIX para a mesma pessoa em horas diferentes fica igual', () => {
+    const a = normalizeDescription('PIX - ENVIADO 14/10 08:43 LILA BARBOSA');
+    const b = normalizeDescription('PIX - ENVIADO 15/10 09:45 LILA BARBOSA');
+    expect(estabelecimento(a)).toBe('LILA BARBOSA');
+    expect(estabelecimento(b)).toBe('LILA BARBOSA');
+  });
   it('sem nada depois do prefixo, devolve como veio', () => {
     expect(estabelecimento('COMPRA C CARTAO')).toBe('COMPRA C CARTAO');
   });
