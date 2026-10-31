@@ -3,6 +3,7 @@ import {
   collection,
   deleteField,
   doc,
+  getDoc,
   getDocs,
   orderBy,
   query,
@@ -46,6 +47,14 @@ export class TransactionsRepository {
       id: d.id,
       ...(d.data() as Omit<TransactionDoc, 'id'>),
     }));
+  }
+
+  /** Um lançamento pelo id; `null` se não existe mais. */
+  async get(uid: string, id: string): Promise<TransactionDoc | null> {
+    const d = await getDoc(doc(this.db, paths.transactions(uid), id));
+    return d.exists()
+      ? { id: d.id, ...(d.data() as Omit<TransactionDoc, 'id'>) }
+      : null;
   }
 
   /** Do primeiro dia de `fromMonth` ao último de `toMonth` (AAAA-MM). */

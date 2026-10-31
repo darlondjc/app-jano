@@ -14,6 +14,27 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.10.7',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Avaliações: "Ver transação" num gasto fora do padrão ou numa assinatura nova abre Transações no mês certo, rola até o lançamento e faz ele piscar.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Maiores estabelecimentos com mais espaço para o nome: a colocação virou um selo sobre o ícone da categoria.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'PIX para a mesma pessoa conta como um só estabelecimento e aparece só com o nome dela, sem "PIX - ENVIADO 14/10 08:43".',
+      },
+    ],
+  },
+  {
     version: '0.10.6',
     date: '2026-10-31',
     items: [

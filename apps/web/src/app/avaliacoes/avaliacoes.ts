@@ -192,7 +192,7 @@ const CIRC = 2 * Math.PI * RAIO;
     }
     li.est {
       display: grid;
-      grid-template-columns: 24px auto 1fr auto;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       gap: 12px;
       align-items: center;
       padding: 10px 0;
@@ -201,9 +201,32 @@ const CIRC = 2 * Math.PI * RAIO;
     li.est:last-child {
       border-bottom: 0;
     }
+    /* A colocação fica num selo sobre o ícone da categoria, sem coluna própria. */
+    .icone {
+      position: relative;
+      display: inline-flex;
+    }
     .pos {
-      font: 600 14px/20px var(--font-sans);
-      color: var(--text-2);
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 4px;
+      box-sizing: border-box;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: var(--text);
+      color: var(--surface);
+      font: 600 11px/1 var(--font-sans);
+      box-shadow: 0 0 0 2px var(--surface);
+    }
+    .est .nome {
+      overflow-wrap: anywhere;
+    }
+    .est .j-num {
+      white-space: nowrap;
     }
     .sub {
       font: 400 12px/16px var(--font-sans);
@@ -383,9 +406,12 @@ const CIRC = 2 * Math.PI * RAIO;
                     <p class="j-insight__text">{{ a.texto }}</p>
                     <div class="acoes">
                       @if (a.acao; as ac) {
-                        <a class="acao" [routerLink]="ac.rota">{{
-                          ac.rotulo
-                        }}</a>
+                        <a
+                          class="acao"
+                          [routerLink]="ac.rota"
+                          [queryParams]="ac.queryParams"
+                          >{{ ac.rotulo }}</a
+                        >
                       }
                       <button
                         type="button"
@@ -412,13 +438,17 @@ const CIRC = 2 * Math.PI * RAIO;
             <ol>
               @for (e of estabelecimentos(); track e.nome; let i = $index) {
                 <li class="est">
-                  <span class="pos">{{ i + 1 }}</span>
-                  <jano-category-badge
-                    [icon]="cat(e.categoryId)?.icon ?? 'etiqueta'"
-                    [colorToken]="cat(e.categoryId)?.color ?? 'cat-1'"
-                    [size]="32"
-                  />
-                  <div>
+                  <span class="icone">
+                    <jano-category-badge
+                      [icon]="cat(e.categoryId)?.icon ?? 'etiqueta'"
+                      [colorToken]="cat(e.categoryId)?.color ?? 'cat-1'"
+                      [size]="36"
+                    />
+                    <span class="pos" [attr.aria-label]="i + 1 + 'º'">{{
+                      i + 1
+                    }}</span>
+                  </span>
+                  <div class="nome">
                     <div>{{ e.nome }}</div>
                     <div class="sub">
                       {{ nomeCat(e.categoryId) }} · {{ e.compras }}

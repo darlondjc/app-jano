@@ -1,11 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import type { CategoryDoc, TransactionDoc } from '@jano/data-access';
-import {
-  DetalheTransacao,
-  TRANSFERENCIA,
-  avisoDoSalvar,
-  nomeSemPrefixo,
-} from './detalhe';
+import { DetalheTransacao, TRANSFERENCIA, avisoDoSalvar } from './detalhe';
+import { nomeSemPrefixo } from '@jano/import-file';
 
 const tx: TransactionDoc = {
   id: 't1',

@@ -21,10 +21,11 @@ export function normalizeDescription(raw: string): string {
 /**
  * Prefixos de operação que o banco põe antes do nome da loja, já normalizados. A compra no
  * débito do BB vem como "COMPRA C/CARTAO 27/10 17:15 LOJA": a data some na normalização, mas
- * "C/" e a hora ficam ("COMPRA C CARTAO 17 15 LOJA").
+ * "C/" e a hora ficam ("COMPRA C CARTAO 17 15 LOJA"). O PIX vem como "PIX - ENVIADO 14/10
+ * 08:43 FULANO" ("PIX ENVIADO 08 43 FULANO").
  */
 const PREFIXO_OPERACAO =
-  /^(COMPRA (C |COM )?CARTAO|COMPRA NO DEBITO|PAGAMENTO (COM )?CARTAO)( \d{2} \d{2}(?= ))?\s+/;
+  /^(COMPRA (C |COM )?CARTAO|COMPRA NO DEBITO|PAGAMENTO (COM )?CARTAO|PIX (ENVIADO|RECEBIDO))( \d{2} \d{2}(?= ))?\s+/;
 
 /**
  * Só o estabelecimento, sem o prefixo da operação nem a hora. Serve para agrupar compras da
@@ -35,4 +36,16 @@ export function estabelecimento(descriptionNorm: string): string {
   return (
     descriptionNorm.replace(PREFIXO_OPERACAO, '').trim() || descriptionNorm
   );
+}
+
+/**
+ * Prefixo de operação, data e hora que o banco põe antes do nome, na descrição como veio
+ * ("COMPRA C/CARTAO 30/10 14:26 MO A MO", "PIX - ENVIADO 30/10 11:59 Fulano").
+ */
+const PREFIXO_DO_BANCO =
+  /^(COMPRA (C\/|COM )?CARTAO|COMPRA NO DEBITO|PAGAMENTO (COM )?CARTAO|PIX\s*-\s*(ENVIADO|RECEBIDO))\s+(\d{2}\/\d{2}(\/\d{2,4})?\s+)?(\d{2}:\d{2}\s+)?/i;
+
+/** Nome para exibir: a descrição como veio, sem o prefixo da operação, a data e a hora. */
+export function nomeSemPrefixo(description: string): string {
+  return description.replace(PREFIXO_DO_BANCO, '').trim() || description;
 }

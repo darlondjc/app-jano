@@ -93,13 +93,22 @@ describe('unusualTransactions', () => {
   );
   it('R$ 480 contra compras de ~R$ 100 é incomum (4,8x)', () => {
     const r = unusualTransactions(
-      [...base, tx('2026-10-22', 480, 'mercado', 'ATACADAO')],
+      [
+        ...base,
+        {
+          ...tx('2026-10-22', 480, 'mercado', 'ATACADAO'),
+          id: 't9',
+          description: 'Atacadão',
+        },
+      ],
       '2026-10',
     );
     expect(r).toHaveLength(1);
     expect(r[0]).toMatchObject({
       kind: 'gasto-incomum',
       description: 'ATACADAO',
+      txId: 't9',
+      nome: 'Atacadão',
       amountCents: 48000,
       times: 4.8,
     });

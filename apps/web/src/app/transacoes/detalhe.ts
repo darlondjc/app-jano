@@ -11,6 +11,7 @@ import type { CategoryDoc, TransactionDoc } from '@jano/data-access';
 import { formatBRL, validarDivisao } from '@jano/engine';
 import {
   estabelecimento,
+  nomeSemPrefixo,
   normalizeDescription,
   parseAmountToCents,
   regraGenerica,
@@ -59,17 +60,6 @@ interface LinhaDivisao {
   categoryId: string | null;
   /** Valor como digitado, sem sinal ("420,00"). */
   texto: string;
-}
-
-/**
- * Prefixo de operação, data e hora que o banco põe antes do nome ("COMPRA C/CARTAO 30/10 14:26
- * MO A MO", "PIX - ENVIADO 30/10 11:59 Fulano"). O título mostra só o nome.
- */
-const PREFIXO_DO_BANCO =
-  /^(COMPRA (C\/|COM )?CARTAO|COMPRA NO DEBITO|PAGAMENTO (COM )?CARTAO|PIX\s*-\s*(ENVIADO|RECEBIDO))\s+(\d{2}\/\d{2}(\/\d{2,4})?\s+)?(\d{2}:\d{2}\s+)?/i;
-
-export function nomeSemPrefixo(description: string): string {
-  return description.replace(PREFIXO_DO_BANCO, '').trim() || description;
 }
 
 const emReais = (cents: number): string =>

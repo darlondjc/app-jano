@@ -1,10 +1,14 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  afterNextRender,
   computed,
   inject,
+  input,
+  Injector,
   signal,
 } from '@angular/core';
+import { Router } from '@angular/router';
 import {
   AuthService,
   CatalogRepository,
@@ -338,6 +342,31 @@ interface Previa {
       padding: 12px 16px;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
+    }
+    /* Chegou por um insight: pisca duas vezes e some. */
+    .destaque {
+      animation: destacar 2.4s ease-out;
+    }
+    @keyframes destacar {
+      0%,
+      20%,
+      45% {
+        background: var(--primary-soft);
+        box-shadow: inset 4px 0 0 var(--primary);
+      }
+      32% {
+        background: var(--surface);
+      }
+      100% {
+        background: var(--surface);
+        box-shadow: inset 4px 0 0 transparent;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .destaque {
+        animation: none;
+        background: var(--primary-soft);
+      }
     }
     .linha-m.sel {
       background: var(--primary-soft);
@@ -834,6 +863,8 @@ interface Previa {
               <tbody>
                 @for (t of visiveis(); track t.id) {
                   <tr
+                    [attr.data-tx]="t.id"
+                    [class.destaque]="destaque() === t.id"
                     [class.sel]="
                       selecionadas().has(t.id) || detalhe()?.id === t.id
                     "
@@ -896,6 +927,8 @@ interface Previa {
                   <button
                     type="button"
                     class="j-tx linha-m"
+                    [attr.data-tx]="t.id"
+                    [class.destaque]="destaque() === t.id"
                     [class.sel]="selecionadas().has(t.id)"
                     (click)="selecionando() ? marcar(t.id) : abrir(t)"
                   >
@@ -1024,6 +1057,13 @@ export class Transacoes {
   private readonly repo = inject(TransactionsRepository);
   private readonly catalog = inject(CatalogRepository);
   private readonly rulesRepo = inject(RulesRepository);
+  private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
+
+  /** `?tx=<id>`: abre no mês do lançamento e rola até ele, com destaque (vindo dos insights). */
+  readonly tx = input<string>();
+  /** Lançamento piscando depois de chegar por `?tx=`. */
+  protected readonly destaque = signal<string | null>(null);
 
   protected readonly money = formatBRL;
   protected readonly classeValor = classeValor;
@@ -1158,7 +1198,15 @@ export class Transacoes {
       this.contas.set(contas);
       this.categorias.set(categorias);
       this.regras.set(regras);
+      // O router já entregou `?tx=` aqui: as leituras acima rodaram depois do construtor.
+      const alvo = this.tx();
+      const lancamento = alvo ? await this.repo.get(this.uid, alvo) : null;
+      if (lancamento) {
+        this.periodo.set({ tipo: 'mes', mes: lancamento.date.slice(0, 7) });
+        this.filtros.set(SEM_FILTROS);
+      }
       await this.carregar();
+      if (lancamento) this.irParaLancamento(lancamento.id);
     } catch (e) {
       this.falha(e);
     }
@@ -1194,6 +1242,30 @@ export class Transacoes {
     } finally {
       this.carregando.set(false);
     }
+  }
+
+  /** Mostra o lançamento na lista, rola até ele e faz ele piscar. */
+  private irParaLancamento(id: string): void {
+    const i = this.filtradas().findIndex((t) => t.id === id);
+    if (i < 0) return;
+    if (i >= this.limite()) this.limite.set(i + 1);
+    this.destaque.set(id);
+    void this.router.navigate([], {
+      queryParams: { tx: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+    afterNextRender(
+      () => {
+        // Tabela (computador) e lista (celular) existem juntas; vale a que está visível.
+        const el = [
+          ...document.querySelectorAll<HTMLElement>(`[data-tx="${id}"]`),
+        ].find((e) => e.offsetParent !== null);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => this.destaque.set(null), 3000);
+      },
+      { injector: this.injector },
+    );
   }
 
   protected irPara(mes: string): void {

@@ -10,6 +10,10 @@ export interface HistTx {
   isTransfer: boolean;
   /** Divisão em categorias (ver `partes`). */
   splits?: Parte[];
+  /** Id do lançamento, para o insight levar direto a ele. */
+  id?: string;
+  /** Descrição como veio do banco, para exibir. */
+  description?: string;
 }
 
 export interface CategoryAbove {
@@ -22,6 +26,9 @@ export interface CategoryAbove {
 export interface UnusualSpend {
   kind: 'gasto-incomum';
   description: string;
+  /** Lançamento que gerou o insight e a descrição dele como veio. */
+  txId?: string;
+  nome?: string;
   date: string;
   amountCents: Cents;
   times: number;
@@ -36,6 +43,8 @@ export interface Repriced {
 export interface NewSubscription {
   kind: 'nova-assinatura';
   description: string;
+  txId?: string;
+  nome?: string;
   amountCents: Cents;
   firstSeen: string;
 }
@@ -157,6 +166,8 @@ export function unusualTransactions(
         out.push({
           kind: 'gasto-incomum',
           description: t.descriptionNorm,
+          txId: t.id,
+          nome: t.description,
           date: t.date,
           amountCents: value,
           times: Math.round((value / mean) * 10) / 10,
@@ -265,6 +276,8 @@ export function newSubscriptions(
     .map((t) => ({
       kind: 'nova-assinatura' as const,
       description: t.descriptionNorm,
+      txId: t.id,
+      nome: t.description,
       amountCents: -t.amountCents,
       firstSeen: t.date,
     }));
