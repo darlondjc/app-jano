@@ -380,7 +380,7 @@ interface Previa {
     }
     .linha-m.j-tx {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
       column-gap: 12px;
       padding: 12px 16px;
