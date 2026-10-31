@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.10.3',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Recorrências: cada grupo abre e fecha, mostra quantos itens tem e o total do mês, e o app lembra quais você deixou fechados.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'YouTube, Apple, HBO, Prime Video, Globoplay, Deezer, Claude, ChatGPT e outros streamings passam a ser reconhecidos como assinaturas.',
+      },
+    ],
+  },
+  {
     version: '0.10.2',
     date: '2026-10-31',
     items: [
