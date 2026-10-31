@@ -984,9 +984,15 @@ interface Previa {
               [small]="true"
               type="button"
               [disabled]="ocupado()"
-              (click)="aplicarLote(transferenciaId)"
+              (click)="
+                aplicarLote(selecaoSoTransferencias() ? '' : transferenciaId)
+              "
             >
-              Marcar transferência
+              {{
+                selecaoSoTransferencias()
+                  ? 'Resetar categoria'
+                  : 'Marcar transferência'
+              }}
             </button>
             <button
               janoButton
@@ -1103,6 +1109,11 @@ export class Transacoes {
   protected readonly detalhe = computed(
     () => this.txs().find((t) => t.id === this.detalheId()) ?? null,
   );
+  /** Todas as selecionadas já são transferência: o botão desfaz em vez de marcar. */
+  protected readonly selecaoSoTransferencias = computed(() => {
+    const sel = this.txs().filter((t) => this.selecionadas().has(t.id));
+    return sel.length > 0 && sel.every((t) => t.isTransfer);
+  });
   protected readonly totalSelecionado = computed(() =>
     this.txs()
       .filter((t) => this.selecionadas().has(t.id))
@@ -1254,14 +1265,19 @@ export class Transacoes {
     });
   }
 
+  /**
+   * Categoria (id), transferência (TRANSFERENCIA) ou '' para resetar: tira a transferência e
+   * deixa sem categoria. Tudo fica como escolha manual, que a sincronização não troca.
+   */
   protected async aplicarLote(escolha: string): Promise<void> {
     const ids = [...this.selecionadas()];
     if (!ids.length) return;
     const transferencia = escolha === TRANSFERENCIA;
+    const categoryId = transferencia || !escolha ? null : escolha;
     this.ocupado.set(true);
     try {
       await this.repo.bulkUpdate(this.uid, ids, {
-        categoryId: transferencia ? null : escolha,
+        categoryId,
         categoryIsManual: true,
         isTransfer: transferencia,
       });
@@ -1271,7 +1287,7 @@ export class Transacoes {
           set.has(t.id)
             ? {
                 ...t,
-                categoryId: transferencia ? null : escolha,
+                categoryId,
                 categoryIsManual: true,
                 isTransfer: transferencia,
                 splits: undefined,

@@ -38,6 +38,11 @@ export const CHANGELOG: Versao[] = [
           'Orçamento ganhou o mesmo seletor de mês de Transações: mês centralizado entre as setas.',
       },
       {
+        tipo: 'melhoria',
+        texto:
+          'Na seleção de transações, se todas já são transferência, o botão vira "Resetar categoria": deixam de ser transferência e ficam sem categoria.',
+      },
+      {
         tipo: 'correcao',
         texto:
           'A sincronização diária não troca mais categorias que já existem: só preenche as que estão vazias. Regras genéricas como "COMPRA C CARTAO" são ignoradas e, quando duas regras valem, vence a mais específica.',
