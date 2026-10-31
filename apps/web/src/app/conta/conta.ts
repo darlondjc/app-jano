@@ -145,8 +145,17 @@ import { haQuantoTempo } from './tempo';
       }
       <div class="acoes">
         @if (atualizacao.disponivel()) {
-          <button janoButton type="button" (click)="atualizacao.atualizar()">
-            Atualizar agora
+          <button
+            janoButton
+            type="button"
+            [disabled]="atualizacao.estado() === 'aplicando'"
+            (click)="atualizacao.atualizar()"
+          >
+            {{
+              atualizacao.estado() === 'aplicando'
+                ? 'Atualizando…'
+                : 'Atualizar agora'
+            }}
           </button>
         } @else {
           <button

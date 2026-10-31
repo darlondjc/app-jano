@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.13.1',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Atualizar o app ficou mais rápido: a versão nova já é baixada assim que aparece o aviso, e o botão mostra "Atualizando…" na hora do toque. O aviso ganhou a principal novidade da versão e um "Depois" para dispensar.',
+      },
+    ],
+  },
+  {
     version: '0.13.0',
     date: '2026-10-31',
     items: [
