@@ -1,47 +1,72 @@
 import { describe, expect, it } from 'vitest';
 import { gerarDadosDemo } from '@jano/data-access';
-import { faturaDoCartao } from './fatura';
+import { cartaoDaFatura } from './fatura';
 
 const dados = gerarDadosDemo(new Date(2026, 9, 31, 10));
 const cartoes = new Set(['cartao-de-credito']);
+const entrada = {
+  saldos: dados.balances,
+  txs: dados.transactions,
+  cartoes,
+  hoje: '2026-10-31',
+};
 
-describe('faturaDoCartao', () => {
-  it('em aberto com vencimento e a próxima com parcelas e assinaturas', () => {
-    const f = faturaDoCartao({
-      faturaCents: 309_511,
-      txs: dados.transactions,
-      cartoes,
-      hoje: '2026-10-31',
-    });
-    expect(f).toMatchObject({
-      abertaCents: 309_511,
-      vence: '2026-11-07',
-      parcelasCents: 34_990,
-      nParcelas: 1,
-    });
-    // Netflix e Spotify todo mês (o YouTube é novo: ainda não é recorrente).
-    expect(f?.assinaturasCents).toBe(5_590 + 2_190);
-    expect(f?.proximaCents).toBe(34_990 + 5_590 + 2_190);
+describe('cartaoDaFatura', () => {
+  const f = cartaoDaFatura(entrada)!;
+
+  it('fatura fechada: valor do banco, vencimento, mínimo e situação', () => {
+    expect(f.fase).toBe('fechada');
+    expect(f.valorCents).toBe(
+      dados.balances.find((b) => b.kind === 'cartao')!.balanceCents,
+    );
+    expect(f.vence).toBe('2026-11-07');
+    expect(f.situacao).toBe('vence em 7 dias');
+    expect(f.minimoCents).toBe(Math.round(f.valorCents * 0.15));
+    expect(f.final).toBe('8670');
+    expect(f.bandeira).toBe('Mastercard Black');
+  });
+
+  it('para onde foi: categorias da fatura fechada, somando o valor, com "Outras"', () => {
+    const soma = f.composicao.reduce((s, p) => s + p.cents, 0);
+    expect(soma).toBe(f.valorCents);
+    expect(f.composicao.length).toBeLessThanOrEqual(5);
+    expect(f.composicao[0].categoryId).toBe('mercado');
+    expect(f.maiores).toHaveLength(3);
+  });
+
+  it('limite usado e o que já entrou na próxima', () => {
+    expect(f.limite?.limiteCents).toBe(800000);
+    expect(f.limite?.usadoCents).toBe(
+      f.valorCents + (f.seguinte?.totalCents ?? 0),
+    );
+    expect(f.seguinte?.desde).toBe('2026-10-28');
+  });
+
+  it('todo mês no cartão: parcela com a próxima e assinaturas com nome', () => {
+    expect(f.todoMes.itens.map((i) => `${i.nome} · ${i.detalhe}`)).toEqual([
+      'MAGAZINE LUIZA · parcela 6 de 10',
+      'NETFLIX.COM · todo mês',
+      'SPOTIFY · todo mês',
+    ]);
+  });
+
+  it('fatura aberta usa o resumo da sincronização, com pendentes', () => {
+    const saldos = dados.balances.map((b) =>
+      b.kind === 'cartao'
+        ? { ...b, credito: { ...b.credito!, fechamento: '2026-11-27' } }
+        : b,
+    );
+    const a = cartaoDaFatura({ ...entrada, saldos })!;
+    expect(a.fase).toBe('aberta');
+    expect(a.situacao).toBe('fecha em 27 dias');
+    expect(a.valorCents).toBe(
+      saldos.find((b) => b.kind === 'cartao')!.faturaAberta!.totalCents,
+    );
   });
 
   it('sem cartão, nada', () => {
     expect(
-      faturaDoCartao({
-        faturaCents: 0,
-        txs: dados.transactions,
-        cartoes: new Set(),
-        hoje: '2026-10-31',
-      }),
+      cartaoDaFatura({ ...entrada, saldos: [], cartoes: new Set() }),
     ).toBeNull();
-  });
-
-  it('sem pagamento anterior, sem vencimento previsto', () => {
-    const f = faturaDoCartao({
-      faturaCents: 10_000,
-      txs: dados.transactions.filter((t) => !t.isTransfer),
-      cartoes,
-      hoje: '2026-10-31',
-    });
-    expect(f?.vence).toBeNull();
   });
 });

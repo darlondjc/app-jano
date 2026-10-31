@@ -18,5 +18,12 @@ describe('Início no modo demonstração', () => {
     expect(texto).toContain('17.680'); // conta corrente e poupança
     expect(texto).toContain('Pode gastar até o salário');
     expect(texto).toContain('Gasto no mês');
+    const fatura =
+      (f.nativeElement as HTMLElement).querySelector('jano-fatura-cartao')
+        ?.textContent ?? '';
+    expect(fatura).toContain('Fatura fechada');
+    expect(fatura).toContain('Limite usado');
+    expect(fatura).toContain('Para onde foi');
+    expect(fatura).toContain('Todo mês no cartão');
   });
 });

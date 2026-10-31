@@ -1,4 +1,5 @@
-import { normalizeDescription } from '@jano/import-file';
+import { normalizeDescription, type KeyedTransaction } from '@jano/import-file';
+import { resumirFatura } from '@jano/open-finance';
 import type { BudgetDoc } from '../data/budgets.repository';
 import {
   DEFAULT_CATEGORIES,
@@ -189,6 +190,7 @@ export function gerarDadosDemo(hoje = new Date()): DadosDemo {
   }
 
   transactions.sort((a, b) => b.date.localeCompare(a.date));
+  const fatura = faturaDemo(transactions, hoje);
   const syncedAt = new Date(
     hoje.getFullYear(),
     hoje.getMonth(),
@@ -241,10 +243,13 @@ export function gerarDadosDemo(hoje = new Date()): DadosDemo {
         name: 'Ourocard',
         kind: 'cartao',
         detail: 'cartão de crédito',
+        number: '8670',
         accountId: CARTAO,
-        balanceCents: Math.round(faturaAnterior * 100),
+        balanceCents: fatura.fechadaCents,
         bankUpdatedAt: syncedAt,
         syncedAt,
+        credito: fatura.credito,
+        faturaAberta: fatura.aberta,
       },
     ],
     connections: [
@@ -259,5 +264,56 @@ export function gerarDadosDemo(hoje = new Date()): DadosDemo {
         syncedAt,
       },
     ],
+  };
+}
+
+/** Dia em que a fatura de demonstração fecha; vence no dia 7 do mês seguinte. */
+const DIA_FECHAMENTO = 27;
+
+/**
+ * Cartão da demonstração: fecha dia 27 e vence dia 7. A fatura fechada é o saldo devido; o que
+ * veio depois do fechamento forma o resumo da fatura aberta, como a sincronização grava.
+ */
+function faturaDemo(transactions: TransactionDoc[], hoje: Date) {
+  const iso = (a: number, m: number, d: number) => isoLocal(new Date(a, m, d));
+  const a = hoje.getFullYear();
+  const m = hoje.getMonth();
+  const fechou = hoje.getDate() > DIA_FECHAMENTO;
+  const fechamento = fechou
+    ? iso(a, m, DIA_FECHAMENTO)
+    : iso(a, m - 1, DIA_FECHAMENTO);
+  const anterior = fechou
+    ? iso(a, m - 1, DIA_FECHAMENTO)
+    : iso(a, m - 2, DIA_FECHAMENTO);
+  const vencimento = fechou ? iso(a, m + 1, 7) : iso(a, m, 7);
+  const doCartao = transactions.filter(
+    (t) => t.accountId === CARTAO && !t.isTransfer,
+  );
+  const fechadaCents = -doCartao
+    .filter((t) => t.date > anterior && t.date <= fechamento)
+    .reduce((s, t) => s + t.amountCents, 0);
+  // A fatura aberta começa no dia seguinte ao fechamento.
+  const desde = fechou
+    ? iso(a, m, DIA_FECHAMENTO + 1)
+    : iso(a, m - 1, DIA_FECHAMENTO + 1);
+  const aberta = resumirFatura(
+    doCartao.map((t) => ({
+      tx: { ...t, dedupeKey: t.dedupeKey } as unknown as KeyedTransaction,
+      categoryId: t.categoryId,
+    })),
+    desde,
+  );
+  const limiteCents = 800000;
+  return {
+    fechadaCents,
+    aberta,
+    credito: {
+      limiteCents,
+      disponivelCents: limiteCents - fechadaCents - aberta.totalCents,
+      fechamento,
+      vencimento,
+      minimoCents: Math.round(fechadaCents * 0.15),
+      bandeira: 'Mastercard Black',
+    },
   };
 }

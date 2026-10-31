@@ -1063,6 +1063,8 @@ export class Transacoes {
 
   /** `?tx=<id>`: abre no mês do lançamento e rola até ele, com destaque (vindo dos insights). */
   readonly tx = input<string>();
+  /** `?conta=<id>` ("Ver compras do cartão"): abre filtrada nessa conta. */
+  readonly conta = input<string>();
   /** Lançamento piscando depois de chegar por `?tx=`. */
   protected readonly destaque = signal<string | null>(null);
 
@@ -1206,6 +1208,8 @@ export class Transacoes {
         this.periodo.set({ tipo: 'mes', mes: lancamento.date.slice(0, 7) });
         this.filtros.set(SEM_FILTROS);
       }
+      const conta = this.conta();
+      if (conta && contas.some((c) => c.id === conta)) this.mudar({ conta });
       await this.carregar();
       if (lancamento) this.irParaLancamento(lancamento.id);
     } catch (e) {

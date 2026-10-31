@@ -3,6 +3,7 @@ import { deCategoriaPluggy, deMcc } from './categorias';
 import type {
   BankConnector,
   ConnectedAccount,
+  CreditoCartao,
   FetchRange,
 } from './bank-connector';
 import type {
@@ -46,6 +47,18 @@ export class PluggyConnector implements BankConnector {
       .filter((t) => t.status === 'POSTED')
       .map((t) => toRawTransaction(t, account.kind));
   }
+
+  /**
+   * Compras do cartão no período, inclusive as pendentes da fatura aberta. Só para resumir a
+   * fatura: pendentes mudam de id no fechamento e nunca são gravadas como transação.
+   */
+  async fetchFaturaAberta(
+    account: ConnectedAccount,
+    range: FetchRange,
+  ): Promise<RawTransaction[]> {
+    const rows = await this.client.listTransactions(account.externalId, range);
+    return rows.map((t) => toRawTransaction(t, account.kind));
+  }
 }
 
 const SUBTIPOS: Record<string, string> = {
@@ -63,6 +76,26 @@ export function toConnectedAccount(a: PluggyAccount): ConnectedAccount {
     detail: SUBTIPOS[a.subtype] ?? a.subtype,
     balanceCents: a.balance == null ? undefined : toCents(a.balance),
     updatedAt: a.updatedAt,
+    ...(a.type === 'CREDIT' && a.creditData
+      ? { credito: toCredito(a.creditData) }
+      : {}),
+  };
+}
+
+function toCredito(c: NonNullable<PluggyAccount['creditData']>): CreditoCartao {
+  const cents = (v?: number | null) => (v == null ? null : toCents(v));
+  const dia = (v?: string | null) => (v ? dataLocal(v) : null);
+  const bandeira = [c.brand, c.level]
+    .filter(Boolean)
+    .map((p) => String(p).charAt(0) + String(p).slice(1).toLowerCase())
+    .join(' ');
+  return {
+    limiteCents: cents(c.creditLimit),
+    disponivelCents: cents(c.availableCreditLimit),
+    fechamento: dia(c.balanceCloseDate),
+    vencimento: dia(c.balanceDueDate),
+    minimoCents: cents(c.minimumPayment),
+    bandeira: bandeira || null,
   };
 }
 

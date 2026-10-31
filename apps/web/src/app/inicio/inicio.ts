@@ -14,6 +14,7 @@ import {
   ContaRepository,
   InsightsRepository,
   TransactionsRepository,
+  type BalanceDoc,
   type BudgetDoc,
   type CategoryDoc,
   type TransactionDoc,
@@ -52,7 +53,8 @@ import { deveLembrar } from './lembrete';
 import { saldoAtual, type SaldoAtual } from './saldo';
 import { podeGastar, type PodeGastar } from './pode-gastar';
 import { comparacaoNoDia, variacao } from './comparacao';
-import { faturaDoCartao, type FaturaCartao } from './fatura';
+import { cartaoDaFatura } from './fatura';
+import { FaturaCartaoCard } from './fatura-cartao';
 
 function hojeIso(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -82,6 +84,7 @@ function lerDispensado(): string | null {
     JanoSkeletonKpi,
     JanoSkeletonRows,
     GraficoAcumulado,
+    FaturaCartaoCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -114,27 +117,6 @@ function lerDispensado(): string | null {
     }
     .destaque {
       margin-top: 20px;
-    }
-    .fatura {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .fatura h2 {
-      margin: 0;
-    }
-    .fatura-linha {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 12px;
-    }
-    .fatura-linha + .fatura-linha {
-      padding-top: 12px;
-      border-top: 1px solid var(--border);
-    }
-    .fatura-valor {
-      font: 600 22px/28px var(--font-sans);
     }
     /* Celular, em duas colunas: com número ímpar de indicadores, o último ocupa a linha. */
     @media (max-width: 599px) {
@@ -425,38 +407,7 @@ function lerDispensado(): string | null {
 
         <div class="lateral">
           @if (faturaCartao(); as fc) {
-            <section class="j-card fatura" aria-label="Fatura do cartão">
-              <h2>Fatura do cartão</h2>
-              <div class="fatura-linha">
-                <div>
-                  <div class="j-sub">Em aberto</div>
-                  <div class="fatura-valor j-num">
-                    {{ money(fc.abertaCents) }}
-                  </div>
-                </div>
-                <span class="j-cap">
-                  @if (fc.vence) {
-                    vence {{ diaMes(fc.vence) }}
-                  } @else {
-                    vencimento a confirmar
-                  }
-                </span>
-              </div>
-              @if (fc.proximaCents) {
-                <div class="fatura-linha">
-                  <div>
-                    <div class="j-sub">Próxima, já garantida</div>
-                    <div class="fatura-valor j-num">
-                      {{ money(fc.proximaCents) }}
-                    </div>
-                  </div>
-                </div>
-                <p class="j-cap" style="margin: -4px 0 0">
-                  {{ composicaoFatura(fc) }}, mais o que você comprar no cartão
-                  até o fechamento.
-                </p>
-              }
-            </section>
+            <jano-fatura-cartao [fatura]="fc" [categorias]="categorias()" />
           }
           @if (alertas().length) {
             <section class="alertas" aria-label="Alertas">
@@ -613,7 +564,7 @@ export class Inicio {
     this.historico().filter((t) => t.date.startsWith(this.month)),
   );
   private readonly budgets = signal<BudgetDoc[]>([]);
-  private readonly categorias = signal<CategoryDoc[]>([]);
+  protected readonly categorias = signal<CategoryDoc[]>([]);
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
   /** Saldo do banco (Open Finance); sem sincronização, o primeiro KPI volta a ser a sobra do mês. */
@@ -633,9 +584,10 @@ export class Inicio {
       hoje: hojeIso(this.hoje),
     });
   });
+  private readonly saldos = signal<BalanceDoc[]>([]);
   protected readonly faturaCartao = computed(() =>
-    faturaDoCartao({
-      faturaCents: this.fatura(),
+    cartaoDaFatura({
+      saldos: this.saldos(),
       txs: this.historico(),
       cartoes: this.cartoes(),
       hoje: hojeIso(this.hoje),
@@ -686,18 +638,6 @@ export class Inicio {
     return g.livreCents > 0
       ? `Saldo menos ${lista}.`
       : `${lista[0].toUpperCase()}${lista.slice(1)} passam do saldo em ${formatBRL(-g.livreCents)}.`;
-  }
-  protected composicaoFatura(fc: FaturaCartao): string {
-    const partes = [
-      fc.parcelasCents
-        ? `${fc.nParcelas === 1 ? '1 parcela' : `${fc.nParcelas} parcelas`} (${formatBRL(fc.parcelasCents)})`
-        : '',
-      fc.assinaturasCents
-        ? `assinaturas (${formatBRL(fc.assinaturasCents)})`
-        : '',
-    ].filter(Boolean);
-    const texto = partes.join(' e ');
-    return texto.charAt(0).toUpperCase() + texto.slice(1);
   }
   protected diaMes(iso: string): string {
     return `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
@@ -841,6 +781,7 @@ export class Inicio {
         ]);
       this.dispensados.set(new Set(dispensados));
       this.saldo.set(saldoAtual(saldos));
+      this.saldos.set(saldos);
       this.fatura.set(
         saldos
           .filter((b) => b.kind === 'cartao')

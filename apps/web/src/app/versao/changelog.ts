@@ -20,7 +20,7 @@ export const CHANGELOG: Versao[] = [
       {
         tipo: 'novo',
         texto:
-          'Fatura do cartão no Início: o valor em aberto com o vencimento previsto e quanto a próxima já tem garantido (parcelas e assinaturas).',
+          'Fatura do cartão no Início: situação (fecha ou vence em quantos dias), valor, vencimento e pagamento mínimo do banco, limite usado, para onde foi o dinheiro por categoria, as maiores compras, o que já entrou na próxima fatura (inclusive compras pendentes) e o que cai no cartão todo mês. "Ver compras do cartão" abre Transações filtrada no cartão.',
       },
       {
         tipo: 'melhoria',

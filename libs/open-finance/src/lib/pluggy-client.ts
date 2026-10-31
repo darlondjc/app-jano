@@ -25,6 +25,18 @@ export interface PluggyAccount {
   updatedAt?: string;
   currencyCode: string;
   itemId: string;
+  /** Só em cartões: limite, datas da fatura atual e pagamento mínimo. */
+  creditData?: {
+    level?: string | null;
+    brand?: string | null;
+    /** Fechamento da fatura atual (ISO 8601). */
+    balanceCloseDate?: string | null;
+    /** Vencimento da fatura atual (ISO 8601). */
+    balanceDueDate?: string | null;
+    availableCreditLimit?: number | null;
+    creditLimit?: number | null;
+    minimumPayment?: number | null;
+  } | null;
 }
 
 export interface PluggyTransaction {
