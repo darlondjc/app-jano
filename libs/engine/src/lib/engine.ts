@@ -154,6 +154,26 @@ export function monthTotals(
   return { spentByCategory, spent, income, net: income - spent };
 }
 
+/**
+ * Rollover: meta com `rollover` ganha de folga o que sobrou no mês anterior (limite menos
+ * gasto, nunca negativo). Só um mês: a sobra não se acumula sem fim, e estouro não passa.
+ * `null` = mês anterior sem dados (nada importado): sem folga, para não inventar sobra.
+ */
+export function limitesComSobra<
+  B extends { categoryId: string; limitCents: Cents; rollover?: boolean },
+>(
+  budgets: B[],
+  gastoMesAnterior: Record<string, Cents> | null,
+): (B & { sobraCents: Cents })[] {
+  return budgets.map((b) => {
+    const sobraCents =
+      b.rollover && gastoMesAnterior
+        ? Math.max(0, b.limitCents - (gastoMesAnterior[b.categoryId] ?? 0))
+        : 0;
+    return { ...b, limitCents: b.limitCents + sobraCents, sobraCents };
+  });
+}
+
 export interface BudgetRow {
   categoryId: string;
   limitCents: Cents;

@@ -14,6 +14,8 @@ export interface BudgetDoc {
   /** Igual ao id da categoria: uma meta mensal por categoria. */
   categoryId: string;
   limitCents: number;
+  /** O que sobrar no mês soma ao limite do mês seguinte. */
+  rollover?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -30,6 +32,7 @@ export class BudgetsRepository {
     return snap.docs.map((d) => ({
       categoryId: d.id,
       limitCents: d.get('limitCents') as number,
+      rollover: d.get('rollover') === true,
     }));
   }
 
@@ -37,10 +40,14 @@ export class BudgetsRepository {
     uid: string,
     categoryId: string,
     limitCents: number,
+    rollover = false,
   ): Promise<void> {
     if (!Number.isInteger(limitCents) || limitCents < 0)
       throw new Error('Limite inválido.');
-    await setDoc(doc(this.db, paths.budgets(uid), categoryId), { limitCents });
+    await setDoc(doc(this.db, paths.budgets(uid), categoryId), {
+      limitCents,
+      rollover,
+    });
   }
 
   async remove(uid: string, categoryId: string): Promise<void> {

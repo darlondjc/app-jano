@@ -12,6 +12,7 @@ import {
   BudgetsRepository,
   CatalogRepository,
   ContaRepository,
+  InsightsRepository,
   TransactionsRepository,
   type BudgetDoc,
   type CategoryDoc,
@@ -22,6 +23,7 @@ import {
   cumulativeSpend,
   daysLeftInMonth,
   formatBRL,
+  limitesComSobra,
   monthPace,
   monthTotals,
   previousMonths,
@@ -457,6 +459,9 @@ export class Inicio {
   private readonly catalog = inject(CatalogRepository);
   private readonly contaRepo = inject(ContaRepository);
   private readonly balancesRepo = inject(BalancesRepository);
+  private readonly insightsRepo = inject(InsightsRepository);
+  /** Insights dispensados nas Avaliações neste mês. */
+  private readonly dispensados = signal<ReadonlySet<string>>(new Set());
 
   protected readonly money = formatBRL;
   protected readonly classeValor = classeValor;
@@ -508,14 +513,27 @@ export class Inicio {
   protected readonly totais = computed(() =>
     monthTotals(this.txs(), this.cartoes()),
   );
+  /** Metas com a sobra do mês anterior (rollover); sem dados do mês anterior, sem folga. */
+  private readonly metas = computed(() => {
+    const anterior = previousMonths(this.month, 1)[0];
+    const doAnterior = this.historico().filter((t) =>
+      t.date.startsWith(anterior),
+    );
+    return limitesComSobra(
+      this.budgets(),
+      doAnterior.length
+        ? monthTotals(doAnterior, this.cartoes()).spentByCategory
+        : null,
+    );
+  });
   protected readonly linhasMetas = computed(() =>
-    budgetRows(this.budgets(), this.totais().spentByCategory),
+    budgetRows(this.metas(), this.totais().spentByCategory),
   );
   protected readonly apertadas = computed(() =>
     tightestGoals(this.linhasMetas(), 4),
   );
   protected readonly limiteTotal = computed(() => {
-    const soma = this.budgets().reduce((s, b) => s + b.limitCents, 0);
+    const soma = this.metas().reduce((s, b) => s + b.limitCents, 0);
     return soma > 0 ? soma : null;
   });
   protected readonly gastoProjetado = computed(() =>
@@ -553,12 +571,13 @@ export class Inicio {
       txs: this.historico(),
       month: this.month,
       today: `${this.month}-${String(this.diaAtual).padStart(2, '0')}`,
-      budgets: this.budgets(),
+      budgets: this.metas(),
       spentByCategory: this.totais().spentByCategory,
       daysLeft: this.diasRestantes,
       assinaturasId: this.cat('assinaturas')?.id ?? null,
       nomeCategoria: (id) => this.nomeCategoria(id),
       moeda: formatBRL,
+      dispensados: this.dispensados(),
     }),
   );
 
@@ -603,18 +622,21 @@ export class Inicio {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {
-      const [txs, budgets, cats, contas, saldos] = await Promise.all([
-        this.txRepo.listRange(
-          uid,
-          previousMonths(this.month, 3).at(-1) as string,
-          this.month,
-        ),
-        this.budgetRepo.list(uid),
-        this.catalog.categories(uid),
-        this.catalog.accounts(uid),
-        // Só alimenta o KPI de saldo: se falhar, o resto da tela segue normal.
-        this.balancesRepo.list(uid).catch(() => []),
-      ]);
+      const [txs, budgets, cats, contas, saldos, dispensados] =
+        await Promise.all([
+          this.txRepo.listRange(
+            uid,
+            previousMonths(this.month, 3).at(-1) as string,
+            this.month,
+          ),
+          this.budgetRepo.list(uid),
+          this.catalog.categories(uid),
+          this.catalog.accounts(uid),
+          // Só alimenta o KPI de saldo: se falhar, o resto da tela segue normal.
+          this.balancesRepo.list(uid).catch(() => []),
+          this.insightsRepo.dispensados(uid, this.month).catch(() => []),
+        ]);
+      this.dispensados.set(new Set(dispensados));
       this.saldo.set(saldoAtual(saldos));
       this.cartoes.set(
         new Set(contas.filter((c) => c.type === 'cartao').map((c) => c.id)),

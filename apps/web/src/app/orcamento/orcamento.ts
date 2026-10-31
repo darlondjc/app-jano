@@ -16,6 +16,7 @@ import {
 import {
   budgetRows,
   daysLeftInMonth,
+  limitesComSobra,
   formatBRL,
   monthPace,
   monthTotals,
@@ -85,6 +86,26 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
     }
     .edicao .j-input {
       width: 140px;
+    }
+    .sobra {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .sobra label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-height: 44px;
+      cursor: pointer;
+    }
+    .sobra input[type='checkbox'] {
+      accent-color: var(--primary);
+      width: 18px;
+      height: 18px;
+      margin-top: 3px;
     }
     .nova {
       margin-top: 24px;
@@ -169,6 +190,32 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
               [pace]="pace()"
               [daysLeft]="daysLeft()"
             />
+            <div class="sobra">
+              <label>
+                <input
+                  type="checkbox"
+                  [checked]="meta(l.categoryId)?.rollover"
+                  (change)="
+                    mudarSobra(l.categoryId, $any($event.target).checked)
+                  "
+                />
+                <span>
+                  <span class="j-field__label"
+                    >Levar a sobra para o mês seguinte</span
+                  >
+                  <span class="j-field__hint" style="display: block"
+                    >O que não for gasto soma ao limite de
+                    {{ proximoMes() }}.</span
+                  >
+                </span>
+              </label>
+              @if (sobraDe(l.categoryId); as sobra) {
+                <span class="j-cap"
+                  >Inclui {{ money(sobra) }} que sobraram em
+                  {{ mesPassado() }}.</span
+                >
+              }
+            </div>
             <div class="edicao">
               <label class="j-sr" [for]="'lim-' + l.categoryId"
                 >Limite de {{ nome(l.categoryId) }}</label
@@ -177,7 +224,7 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
                 <span class="j-input__prefix">R$</span>
                 <input
                   [id]="'lim-' + l.categoryId"
-                  [value]="paraTexto(l.limitCents)"
+                  [value]="paraTexto(meta(l.categoryId)?.limitCents ?? 0)"
                   #campo
                   inputmode="decimal"
                 />
@@ -245,18 +292,30 @@ export class Orcamento {
   protected readonly budgets = signal<BudgetDoc[]>([]);
   private cartoes: ReadonlySet<string> = new Set();
   protected readonly totais = signal(monthTotals([]));
+  /** Gasto por categoria no mês anterior; `null` quando ele não tem dados. */
+  private readonly gastoAnterior = signal<Record<string, number> | null>(null);
+  /** Metas do mês com a sobra do anterior somada ao limite (rollover). */
+  private readonly efetivas = computed(() =>
+    limitesComSobra(this.budgets(), this.gastoAnterior()),
+  );
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
 
   protected readonly rotulo = computed(() => rotuloMes(this.month()));
   protected readonly linhas = computed(() =>
-    budgetRows(this.budgets(), this.totais().spentByCategory).sort(
+    budgetRows(this.efetivas(), this.totais().spentByCategory).sort(
       (a, b) =>
         b.spentCents / (b.limitCents || 1) - a.spentCents / (a.limitCents || 1),
     ),
   );
   protected readonly limiteTotal = computed(() =>
-    this.budgets().reduce((s, b) => s + b.limitCents, 0),
+    this.efetivas().reduce((s, b) => s + b.limitCents, 0),
+  );
+  protected readonly proximoMes = computed(() =>
+    rotuloMes(mesSeguinte(this.month())).split(' ')[0].toLowerCase(),
+  );
+  protected readonly mesPassado = computed(() =>
+    rotuloMes(mesAnterior(this.month())).split(' ')[0].toLowerCase(),
   );
   protected readonly semMeta = computed(() => {
     const usadas = new Set(this.budgets().map((b) => b.categoryId));
@@ -318,11 +377,15 @@ export class Orcamento {
   private async carregarMes(): Promise<void> {
     this.carregando.set(true);
     try {
-      this.totais.set(
-        monthTotals(
-          await this.txRepo.listMonth(this.uid, this.month()),
-          this.cartoes,
-        ),
+      const [doMes, doAnterior] = await Promise.all([
+        this.txRepo.listMonth(this.uid, this.month()),
+        this.txRepo.listMonth(this.uid, mesAnterior(this.month())),
+      ]);
+      this.totais.set(monthTotals(doMes, this.cartoes));
+      this.gastoAnterior.set(
+        doAnterior.length
+          ? monthTotals(doAnterior, this.cartoes).spentByCategory
+          : null,
       );
     } catch (e) {
       this.falha(e);
@@ -334,6 +397,33 @@ export class Orcamento {
   protected mudarMes(delta: 1 | -1): void {
     this.month.update((m) => (delta === 1 ? mesSeguinte(m) : mesAnterior(m)));
     void this.carregarMes();
+  }
+
+  /** A meta como gravada (limite sem a sobra). */
+  protected meta(id: string): BudgetDoc | undefined {
+    return this.budgets().find((b) => b.categoryId === id);
+  }
+
+  protected sobraDe(id: string): number {
+    return this.efetivas().find((b) => b.categoryId === id)?.sobraCents ?? 0;
+  }
+
+  protected async mudarSobra(
+    categoryId: string,
+    ligar: boolean,
+  ): Promise<void> {
+    const m = this.meta(categoryId);
+    if (!m) return;
+    try {
+      await this.budgetRepo.save(this.uid, categoryId, m.limitCents, ligar);
+      this.budgets.update((list) =>
+        list.map((b) =>
+          b.categoryId === categoryId ? { ...b, rollover: ligar } : b,
+        ),
+      );
+    } catch (e) {
+      this.falha(e);
+    }
   }
 
   protected nome(id: string): string {
@@ -351,11 +441,12 @@ export class Orcamento {
       this.erro.set('Informe um limite maior que zero, por exemplo 900,00.');
       return;
     }
+    const rollover = this.meta(categoryId)?.rollover ?? false;
     try {
-      await this.budgetRepo.save(this.uid, categoryId, cents);
+      await this.budgetRepo.save(this.uid, categoryId, cents, rollover);
       this.budgets.update((list) => [
         ...list.filter((b) => b.categoryId !== categoryId),
-        { categoryId, limitCents: cents },
+        { categoryId, limitCents: cents, rollover },
       ]);
     } catch (e) {
       this.falha(e);

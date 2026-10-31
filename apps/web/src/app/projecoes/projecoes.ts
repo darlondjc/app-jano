@@ -4,6 +4,7 @@ import {
   ElementRef,
   afterNextRender,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
@@ -12,7 +13,9 @@ import {
   AuthService,
   BalancesRepository,
   CatalogRepository,
+  ScenariosRepository,
   TransactionsRepository,
+  type CenariosDoc,
   type CategoryDoc,
   type TransactionDoc,
 } from '@jano/data-access';
@@ -556,7 +559,8 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
           <section class="j-card" aria-label="Cenários">
             <h2>E se…</h2>
             <p class="sub" style="margin: -4px 0 4px">
-              Ligue um cenário e veja o efeito no gráfico.
+              Ligue um cenário e veja o efeito no gráfico. Fica salvo como você
+              deixar.
             </p>
 
             <div class="cenario">
@@ -719,6 +723,12 @@ export class Projecoes {
   private readonly catalog = inject(CatalogRepository);
   private readonly prefs = inject(Preferencias);
   private readonly balancesRepo = inject(BalancesRepository);
+  private readonly scenariosRepo = inject(ScenariosRepository);
+  /** Só grava cenários depois de restaurar os salvos, para não sobrescrevê-los com o padrão. */
+  private restaurado = false;
+  /** Último estado gravado (ou restaurado): só grava quando muda de verdade. */
+  private ultimoSalvo = '';
+  private gravarEm: ReturnType<typeof setTimeout> | undefined;
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly money = formatBRL;
@@ -974,7 +984,7 @@ export class Projecoes {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {
-      const [txs, cats, contas, saldos] = await Promise.all([
+      const [txs, cats, contas, saldos, salvos] = await Promise.all([
         this.txRepo.listRange(
           uid,
           previousMonths(this.month, 6).at(-1) as string,
@@ -983,6 +993,7 @@ export class Projecoes {
         this.catalog.categories(uid),
         this.catalog.accounts(uid),
         this.balancesRepo.list(uid).catch(() => []),
+        this.scenariosRepo.get(uid).catch(() => null),
       ]);
       this.saldoBanco.set(saldoAtual(saldos));
       this.cartoes.set(
@@ -995,12 +1006,51 @@ export class Projecoes {
       const despesas = cats.filter((c) => c.type === 'despesa');
       if (!despesas.some((c) => c.id === 'lazer') && despesas[0])
         this.categoriaCorte.set(despesas[0].id);
+      if (salvos) this.restaurar(salvos, despesas);
     } catch (e) {
       this.erro.set(
         e instanceof Error ? e.message : 'Tente de novo em instantes.',
       );
     } finally {
       this.carregando.set(false);
+      this.restaurado = true;
+      this.ultimoSalvo = JSON.stringify(this.cenariosAtuais());
     }
   }
+
+  private restaurar(c: CenariosDoc, despesas: CategoryDoc[]): void {
+    this.cortarLigado.set(c.cortarLigado);
+    // Categoria apagada desde então: fica a padrão.
+    if (despesas.some((d) => d.id === c.categoriaCorte))
+      this.categoriaCorte.set(c.categoriaCorte);
+    this.parcelaLigada.set(c.parcelaLigada);
+    this.parcelaTexto.set(c.parcelaTexto);
+    this.rendaLigada.set(c.rendaLigada);
+    this.rendaTexto.set(c.rendaTexto);
+    if ([3, 6, 12].includes(c.horizonte)) this.horizonte.set(c.horizonte);
+  }
+
+  private readonly cenariosAtuais = computed<CenariosDoc>(() => ({
+    cortarLigado: this.cortarLigado(),
+    categoriaCorte: this.categoriaCorte(),
+    parcelaLigada: this.parcelaLigada(),
+    parcelaTexto: this.parcelaTexto(),
+    rendaLigada: this.rendaLigada(),
+    rendaTexto: this.rendaTexto(),
+    horizonte: this.horizonte(),
+  }));
+
+  /** Grava os cenários um instante depois da última mudança. Falhar (sem rede) não atrapalha. */
+  private readonly salvarCenarios = effect(() => {
+    const c = this.cenariosAtuais();
+    const uid = this.auth.user()?.uid;
+    const json = JSON.stringify(c);
+    if (!this.restaurado || !uid || json === this.ultimoSalvo) return;
+    this.ultimoSalvo = json;
+    clearTimeout(this.gravarEm);
+    this.gravarEm = setTimeout(
+      () => void this.scenariosRepo.save(uid, c).catch(() => undefined),
+      800,
+    );
+  });
 }

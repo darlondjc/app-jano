@@ -6,6 +6,7 @@ import {
   BudgetsRepository,
   CatalogRepository,
   ContaRepository,
+  InsightsRepository,
   TransactionsRepository,
   type BalanceDoc,
   type TransactionDoc,
@@ -59,6 +60,10 @@ function montar(saldos: BalanceDoc[]) {
       {
         provide: BalancesRepository,
         useValue: { list: vi.fn().mockResolvedValue(saldos) },
+      },
+      {
+        provide: InsightsRepository,
+        useValue: { dispensados: vi.fn().mockResolvedValue([]) },
       },
     ],
   });
