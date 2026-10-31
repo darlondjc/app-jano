@@ -6,6 +6,7 @@ import {
   getDoc,
   getDocs,
   orderBy,
+  setDoc,
   query,
   where,
   writeBatch,
@@ -18,8 +19,36 @@ import { FirebaseService } from '../firebase/firebase.service';
 import { monthBounds, type TransactionDoc } from './models';
 
 const BATCH_LIMIT = 400; // Firestore aceita 500 operações por lote.
-/** Quanto tempo um mês lido vale antes de reler (a sincronização roda uma vez por dia). */
+/** Quanto tempo um mês lido vale na memória antes de reler. */
 const VALIDADE_MS = 10 * 60_000;
+/**
+ * A sincronização traz lançamentos de até 45 dias atrás (o cartão chega quando a fatura
+ * fecha). Mês que terminou antes disso está fechado: só muda por edição, que fica registrada
+ * em `meta/meses`.
+ */
+const JANELA_DIAS = 45;
+
+/** Mês (AAAA-MM) que já não recebe lançamentos da sincronização. */
+export function mesFechado(month: string, hoje = new Date()): boolean {
+  const limite = new Date(hoje);
+  limite.setDate(limite.getDate() - JANELA_DIAS);
+  const ultimoDia = new Date(
+    Number(month.slice(0, 4)),
+    Number(month.slice(5, 7)),
+    0,
+  );
+  return ultimoDia < limite;
+}
+
+function mesAtual(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function mesAnterior(month: string): string {
+  const [y, m] = month.split('-').map(Number);
+  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+}
 
 function mesSeguinte(month: string): string {
   const [y, m] = month.split('-').map(Number);
@@ -32,16 +61,22 @@ export class TransactionsRepository {
   private readonly cache = inject(CacheLocal);
 
   /**
-   * Meses já lidos nesta sessão, reaproveitados entre as telas por `VALIDADE_MS`. O plano
-   * gratuito do Firestore dá 50 mil leituras por dia, e cada tela pede de 4 a 7 meses; sem
-   * isso, navegar um pouco esgota a cota. As escritas deste repositório atualizam a memória.
+   * O plano gratuito do Firestore dá 50 mil leituras por dia, e as telas pedem de 1 a 7 meses.
+   * Para não reler sem necessidade:
+   * - memória: cada mês lido vale `VALIDADE_MS` para todas as telas;
+   * - aparelho: mês fechado (ver `mesFechado`) é lido do servidor uma vez e depois vem do
+   *   IndexedDB, até `meta/meses` dizer que ele mudou (edição aqui, em outro aparelho ou pela
+   *   sincronização). Mês aberto sempre volta ao servidor.
+   * As escritas deste repositório atualizam memória, aparelho e `meta/meses`.
    */
   private readonly memoria = new Map<
     string,
     { em: number; txs: TransactionDoc[] }
   >();
-  /** Quando o histórico inteiro foi lido (para "alterar as passadas"), por usuário. */
-  private readonly tudoEm = new Map<string, number>();
+  private readonly alteracoesLidas = new Map<
+    string,
+    { em: number; meses: Record<string, string> }
+  >();
 
   listMonth(uid: string, month: string): Promise<TransactionDoc[]> {
     return this.mes(uid, month);
@@ -63,11 +98,47 @@ export class TransactionsRepository {
     const chave = `${uid}|${month}`;
     const m = this.memoria.get(chave);
     if (m && Date.now() - m.em < VALIDADE_MS) return [...m.txs];
-    const txs = await this.cache.ler(`${uid}|tx|${month}`, () =>
+    const local = `${uid}|tx|${month}`;
+    if (mesFechado(month)) {
+      const g = await this.cache.guardado<TransactionDoc[]>(local);
+      const mudou = g && (await this.alteracoes(uid))[month];
+      if (g && !(mudou && mudou > g.em)) {
+        this.memoria.set(chave, { em: Date.now(), txs: g.valor });
+        return [...g.valor];
+      }
+    }
+    const txs = await this.cache.ler(local, () =>
       this.listMonthDoServidor(uid, month),
     );
     this.memoria.set(chave, { em: Date.now(), txs });
     return [...txs];
+  }
+
+  /** `meta/meses`: quando cada mês mudou pela última vez. Uma leitura a cada `VALIDADE_MS`. */
+  private async alteracoes(uid: string): Promise<Record<string, string>> {
+    const a = this.alteracoesLidas.get(uid);
+    if (a && Date.now() - a.em < VALIDADE_MS) return a.meses;
+    const meses = await this.cache
+      .ler(`${uid}|meta-meses`, async () => {
+        const d = await getDoc(doc(this.db, paths.meta(uid), 'meses'));
+        return (d.exists() ? d.data() : {}) as Record<string, string>;
+      })
+      .catch(() => ({}) as Record<string, string>);
+    this.alteracoesLidas.set(uid, { em: Date.now(), meses });
+    return meses;
+  }
+
+  /** Avisa os outros aparelhos (e a próxima sessão) que esses meses fechados mudaram. */
+  private async marcarAlterados(uid: string, meses: Iterable<string>) {
+    const agora = new Date().toISOString();
+    const fechados = [...new Set(meses)].filter((m) => mesFechado(m));
+    if (!fechados.length) return;
+    const campos = Object.fromEntries(fechados.map((m) => [m, agora]));
+    await setDoc(doc(this.db, paths.meta(uid), 'meses'), campos, {
+      merge: true,
+    });
+    const a = this.alteracoesLidas.get(uid);
+    if (a) Object.assign(a.meses, campos);
   }
 
   private async listMonthDoServidor(
@@ -89,10 +160,14 @@ export class TransactionsRepository {
     }));
   }
 
-  /** O histórico inteiro, lido uma vez por sessão e guardado mês a mês na memória. */
+  /**
+   * O histórico inteiro, para "alterar as passadas". A primeira vez neste aparelho lê tudo do
+   * servidor e guarda mês a mês; depois só os meses abertos ou alterados voltam ao servidor.
+   */
   private async tudo(uid: string): Promise<TransactionDoc[]> {
-    const em = this.tudoEm.get(uid);
-    if (!em || Date.now() - em >= VALIDADE_MS) {
+    const indice = `${uid}|tx-meses`;
+    const g = await this.cache.guardado<string[]>(indice);
+    if (!g) {
       const snap = await getDocs(collection(this.db, paths.transactions(uid)));
       const porMes = new Map<string, TransactionDoc[]>();
       for (const d of snap.docs) {
@@ -100,36 +175,44 @@ export class TransactionsRepository {
         const m = t.date.slice(0, 7);
         (porMes.get(m) ?? porMes.set(m, []).get(m)!).push(t);
       }
-      const agora = Date.now();
-      for (const [k] of this.memoria)
-        if (k.startsWith(`${uid}|`)) this.memoria.delete(k);
-      for (const [m, txs] of porMes)
-        this.memoria.set(`${uid}|${m}`, {
-          em: agora,
-          txs: txs.sort((a, b) => b.date.localeCompare(a.date)),
-        });
-      this.tudoEm.set(uid, agora);
+      for (const [m, txs] of porMes) {
+        txs.sort((a, b) => b.date.localeCompare(a.date));
+        this.memoria.set(`${uid}|${m}`, { em: Date.now(), txs });
+        await this.cache.guardar(`${uid}|tx|${m}`, txs);
+      }
+      await this.cache.guardar(indice, [...porMes.keys()]);
+      return [...porMes.values()].flat();
     }
-    return [...this.memoria]
-      .filter(([k]) => k.startsWith(`${uid}|`))
-      .flatMap(([, v]) => v.txs);
+    const meses = new Set([
+      ...g.valor,
+      ...Object.keys(await this.alteracoes(uid)),
+      mesAtual(),
+      mesAnterior(mesAtual()),
+      mesAnterior(mesAnterior(mesAtual())),
+    ]);
+    return (await Promise.all([...meses].map((m) => this.mes(uid, m)))).flat();
   }
 
   /** Esquece o que foi lido (ao apagar os dados da conta). */
   esquecer(): void {
     this.memoria.clear();
-    this.tudoEm.clear();
+    this.alteracoesLidas.clear();
   }
 
-  /** Aplica na memória o que acabou de ser gravado, para a próxima tela não reler. */
-  private alterarNaMemoria(
+  /**
+   * Depois de gravar: aplica a mudança na memória e no aparelho, para a próxima tela não
+   * reler, e marca os meses fechados como alterados para os outros aparelhos.
+   */
+  private async registrar(
     uid: string,
     ids: Iterable<string>,
     mudanca: Partial<TransactionDoc>,
-  ): void {
+  ): Promise<void> {
     const alvo = new Set(ids);
+    const tocados: string[] = [];
     for (const [k, v] of this.memoria) {
-      if (!k.startsWith(`${uid}|`)) continue;
+      if (!k.startsWith(`${uid}|`) || !v.txs.some((t) => alvo.has(t.id)))
+        continue;
       v.txs = v.txs.map((t) => {
         if (!alvo.has(t.id)) return t;
         const novo = { ...t, ...mudanca };
@@ -137,6 +220,13 @@ export class TransactionsRepository {
           delete novo.splits;
         return novo;
       });
+      tocados.push(k.slice(uid.length + 1));
+    }
+    await this.marcarAlterados(uid, tocados);
+    // Guardado depois da marca: a cópia do aparelho fica mais nova que a alteração.
+    for (const m of tocados) {
+      const v = this.memoria.get(`${uid}|${m}`);
+      if (v) await this.cache.guardar(`${uid}|tx|${m}`, v.txs);
     }
   }
 
@@ -168,7 +258,7 @@ export class TransactionsRepository {
       }
       await batch.commit();
     }
-    this.alterarNaMemoria(uid, ids, { ...patch, splits: undefined });
+    await this.registrar(uid, ids, { ...patch, splits: undefined });
   }
 
   /** Chaves já gravadas no período do arquivo (para a prévia). */
@@ -216,10 +306,15 @@ export class TransactionsRepository {
       }
       await batch.commit();
     }
-    // Lançamentos novos: os meses deles voltam a ser lidos do servidor.
-    for (const { tx } of rows)
-      this.memoria.delete(`${uid}|${tx.date.slice(0, 7)}`);
-    this.tudoEm.delete(uid);
+    // Lançamentos novos: os meses deles voltam a ser lidos do servidor, aqui e nos outros aparelhos.
+    const meses = new Set(rows.map(({ tx }) => tx.date.slice(0, 7)));
+    for (const m of meses) this.memoria.delete(`${uid}|${m}`);
+    await this.marcarAlterados(uid, meses);
+    const indice = await this.cache.guardado<string[]>(`${uid}|tx-meses`);
+    if (indice)
+      await this.cache.guardar(`${uid}|tx-meses`, [
+        ...new Set([...indice.valor, ...meses]),
+      ]);
   }
 
   async setCategory(
@@ -233,7 +328,7 @@ export class TransactionsRepository {
       isTransfer: false,
       splits: deleteField(),
     });
-    this.alterarNaMemoria(uid, [id], {
+    await this.registrar(uid, [id], {
       categoryId,
       categoryIsManual: true,
       isTransfer: false,
@@ -259,7 +354,7 @@ export class TransactionsRepository {
       categoryIsManual: true,
       isTransfer: false,
     });
-    this.alterarNaMemoria(uid, [id], {
+    await this.registrar(uid, [id], {
       splits,
       categoryId: principal,
       categoryIsManual: true,
@@ -295,7 +390,7 @@ export class TransactionsRepository {
       await batch.commit();
     }
     const ids = alvo.map((t) => t.id);
-    this.alterarNaMemoria(uid, ids, { categoryId, categoryIsManual: true });
+    await this.registrar(uid, ids, { categoryId, categoryIsManual: true });
     return ids;
   }
 
@@ -307,7 +402,7 @@ export class TransactionsRepository {
       isTransfer: true,
       splits: deleteField(),
     });
-    this.alterarNaMemoria(uid, [id], {
+    await this.registrar(uid, [id], {
       categoryId: null,
       categoryIsManual: true,
       isTransfer: true,
@@ -326,6 +421,6 @@ export class TransactionsRepository {
       }
       await batch.commit();
     }
-    this.alterarNaMemoria(uid, ids, { isTransfer: true });
+    await this.registrar(uid, ids, { isTransfer: true });
   }
 }

@@ -62,6 +62,19 @@ export class CacheLocal {
     }
   }
 
+  /** O que está guardado no aparelho para a chave, sem ir ao servidor. */
+  async guardado<T>(
+    chave: string,
+  ): Promise<{ valor: T; em: string } | undefined> {
+    const g = await this.obter(chave);
+    return g ? { valor: g.valor as T, em: g.em } : undefined;
+  }
+
+  /** Guarda um valor já conhecido (ex.: depois de uma escrita), como se viesse do servidor agora. */
+  async guardar(chave: string, valor: unknown): Promise<void> {
+    await this.gravar(chave, { valor, em: new Date().toISOString() });
+  }
+
   /** Apaga tudo (ao sair da conta ou apagar os dados). */
   async limpar(): Promise<void> {
     const db = await this.abrir();

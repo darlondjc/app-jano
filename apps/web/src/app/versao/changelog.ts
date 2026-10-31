@@ -20,7 +20,7 @@ export const CHANGELOG: Versao[] = [
       {
         tipo: 'correcao',
         texto:
-          'O app gasta bem menos leituras do servidor: cada mês lido fica guardado por 10 minutos e é reaproveitado entre as telas, e "alterar também as transações passadas" lê o histórico uma vez só. Isso evita o erro "Quota exceeded".',
+          'O app gasta bem menos leituras do servidor e evita o erro "Quota exceeded": meses antigos ficam guardados no aparelho e só são buscados de novo quando algo neles muda; só o mês atual e o anterior vão sempre ao servidor. Entre telas, o que já foi lido é reaproveitado.',
       },
       {
         tipo: 'melhoria',

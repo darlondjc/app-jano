@@ -155,6 +155,8 @@ async function sync(
     `Período: ${janela} a ${ate}${seco ? ' (simulação, nada é gravado)' : ''}`,
   );
   const contasPluggy = await connector.listAccounts();
+  // Meses com lançamento novo ou alterado: o app relê só esses (ver gravarMesesAlterados).
+  const alterados = new Set<string>();
   for (const account of contasPluggy) {
     const accountId = config.contas[account.externalId];
     if (!accountId) {
@@ -195,6 +197,8 @@ async function sync(
       categorizar(plan.duplicates, categorias, regras),
       snap.docs,
     );
+    for (const r of rows) alterados.add(r.tx.date.slice(0, 7));
+    for (const r of reavaliar) alterados.add(r.date.slice(0, 7));
     console.log(
       `- ${account.name} → ${accountId}${desde > janela ? ` (desde ${desde})` : ''}: ` +
         `${rows.length} novas, ` +
@@ -268,7 +272,9 @@ async function sync(
       createdAt: new Date().toISOString(),
     });
   }
-  await revisarHistorico(db, base, categorias, seco);
+  for (const m of await revisarHistorico(db, base, categorias, seco))
+    alterados.add(m);
+  if (!seco) await gravarMesesAlterados(db, base, alterados);
   if (!seco) {
     await gravarSaldos(db, base, contasPluggy, config);
     await gravarConexoes(db, base, connector);
@@ -285,16 +291,18 @@ async function revisarHistorico(
   base: string,
   categorias: CategoriaRef[],
   seco: boolean,
-): Promise<void> {
+): Promise<string[]> {
   const snap = await db.collection(`${base}/transactions`).get();
   const porLoja = inferirPeloHistorico(
     snap.docs.map((d) => ({ id: d.id, ...d.data() }) as LancamentoGravado),
     categorias,
   );
+  const data = new Map(snap.docs.map((d) => [d.id, d.get('date') as string]));
+  const meses = [...new Set(porLoja.map((m) => data.get(m.id)!.slice(0, 7)))];
   console.log(
     `Mesma loja no histórico: ${porLoja.length} lançamentos sem categoria ${seco ? 'receberiam' : 'receberam'} categoria.`,
   );
-  if (seco) return;
+  if (seco) return meses;
   for (let i = 0; i < porLoja.length; i += BATCH_LIMIT) {
     const batch = db.batch();
     for (const m of porLoja.slice(i, i + BATCH_LIMIT))
@@ -303,6 +311,25 @@ async function revisarHistorico(
       });
     await batch.commit();
   }
+  return meses;
+}
+
+/**
+ * `meta/meses` diz ao app quando cada mês mudou. O app guarda meses antigos no aparelho e só
+ * os relê quando aparecem aqui com data mais nova que a cópia dele.
+ */
+async function gravarMesesAlterados(
+  db: Firestore,
+  base: string,
+  meses: Set<string>,
+): Promise<void> {
+  if (!meses.size) return;
+  const agora = new Date().toISOString();
+  await db
+    .doc(`${base}/meta/meses`)
+    .set(Object.fromEntries([...meses].map((m) => [m, agora])), {
+      merge: true,
+    });
 }
 
 /**
@@ -314,6 +341,7 @@ function reavaliacoes(
   gravados: QueryDocumentSnapshot[],
 ): {
   ref: DocumentReference;
+  date: string;
   categoryId: string | null;
   isTransfer: boolean;
 }[] {
@@ -331,7 +359,12 @@ function reavaliacoes(
     )
       continue;
     if (!categoryId && !tx.isTransfer) continue;
-    out.push({ ref: d.ref, categoryId, isTransfer: !!tx.isTransfer });
+    out.push({
+      ref: d.ref,
+      date: tx.date,
+      categoryId,
+      isTransfer: !!tx.isTransfer,
+    });
   }
   return out;
 }

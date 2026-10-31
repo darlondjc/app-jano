@@ -27,6 +27,7 @@ const COLECOES = [
   'insights',
   'balances',
   'connections',
+  'meta',
 ] as const;
 
 export type NomeColecao = (typeof COLECOES)[number];
