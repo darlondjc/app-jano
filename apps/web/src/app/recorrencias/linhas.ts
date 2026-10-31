@@ -58,7 +58,7 @@ function somarMeses(mes: string, n: number): string {
  * pela conta, descrição, número de parcelas e valor; fica a parcela mais recente. Some
  * quando a última foi paga ou quando nenhuma parcela aparece há 45 dias (quitada antes).
  */
-function parcelamentos(txs: TxRec[], hoje: string): LinhaRecorrencia[] {
+export function parcelamentos(txs: TxRec[], hoje: string): LinhaRecorrencia[] {
   const ultimas = new Map<
     string,
     TxRec & { installment: { n: number; total: number } }

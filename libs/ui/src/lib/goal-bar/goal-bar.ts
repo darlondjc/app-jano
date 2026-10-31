@@ -26,7 +26,11 @@ import { formatBRL, goalStatus } from '@jano/engine';
       >
         <div class="j-goal__fill" [style.width.%]="fill()"></div>
         @if (pace() !== undefined) {
-          <div class="j-goal__pace" [style.left.%]="paceLeft()"></div>
+          <div
+            class="j-goal__pace"
+            [style.left.%]="paceLeft()"
+            [style.transform]="paceShift()"
+          ></div>
         }
       </div>
       <div class="j-goal__meta">
@@ -68,6 +72,10 @@ export class JanoGoalBar {
   protected readonly paceLeft = computed(() =>
     Math.round((this.pace() ?? 0) * 100),
   );
+  /** Recua o marcador na mesma proporção: em 100% ele fica dentro da barra, não pendurado fora. */
+  protected readonly paceShift = computed(
+    () => `translateX(-${this.paceLeft()}%)`,
+  );
 
   protected readonly message = computed(() => {
     const left = this.limitCents() - this.spentCents();
@@ -75,10 +83,14 @@ export class JanoGoalBar {
       case 'ok':
         return `No ritmo. Sobram ${formatBRL(left)}.`;
       case 'warning': {
+        if (left <= 0) return 'No limite da meta: não sobra nada.';
         const d = this.daysLeft();
-        return d !== undefined
-          ? `Atenção: restam ${d} ${d === 1 ? 'dia' : 'dias'} e ${formatBRL(left)}.`
-          : `Atenção: restam ${formatBRL(left)}.`;
+        if (d === undefined) return `Atenção: restam ${formatBRL(left)}.`;
+        if (d === 0)
+          return `Atenção: último dia do mês e restam ${formatBRL(left)}.`;
+        return d === 1
+          ? `Atenção: resta 1 dia e ${formatBRL(left)}.`
+          : `Atenção: restam ${d} dias e ${formatBRL(left)}.`;
       }
       case 'over':
         return `Passou ${formatBRL(-left)} da meta.`;

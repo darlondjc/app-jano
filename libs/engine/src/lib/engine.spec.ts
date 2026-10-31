@@ -7,7 +7,8 @@ describe('goalStatus', () => {
     [72000, 90000, 'warning'],
     [82800, 90000, 'warning'],
     [89999, 90000, 'warning'],
-    [90000, 90000, 'over'],
+    [90000, 90000, 'warning'],
+    [90001, 90000, 'over'],
     [43400, 35000, 'over'],
   ])('gasto %i de %i → %s', (spent, limit, expected) => {
     expect(goalStatus(spent, limit)).toBe(expected);

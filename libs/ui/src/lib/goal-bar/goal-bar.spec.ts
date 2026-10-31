@@ -53,4 +53,32 @@ describe('JanoGoalBar', () => {
       'No ritmo. Sobram R$ 120,00.',
     );
   });
+
+  it('exatamente na meta: atenção, sem "passou -R$ 0,00"', () => {
+    const el = render({
+      name: 'Educação',
+      spentCents: 145000,
+      limitCents: 145000,
+    });
+    expect(el.querySelector('.j-goal--warn')).toBeTruthy();
+    expect(norm(el.querySelector('.j-goal__state')?.textContent)).toBe(
+      'No limite da meta: não sobra nada.',
+    );
+  });
+
+  it('último dia do mês e marcador de ritmo dentro da barra', () => {
+    const el = render({
+      name: 'Moradia',
+      spentCents: 270042,
+      limitCents: 280000,
+      pace: 1,
+      daysLeft: 0,
+    });
+    expect(norm(el.querySelector('.j-goal__state')?.textContent)).toBe(
+      'Atenção: último dia do mês e restam R$ 99,58.',
+    );
+    const marcador = el.querySelector('.j-goal__pace') as HTMLElement;
+    expect(marcador.style.left).toBe('100%');
+    expect(marcador.style.transform).toBe('translateX(-100%)');
+  });
 });

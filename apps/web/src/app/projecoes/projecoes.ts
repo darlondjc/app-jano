@@ -42,6 +42,8 @@ import { saldoAtual, type SaldoAtual } from '../inicio/saldo';
 import { Progresso } from '../shell/progresso';
 import { marcarTransferencias } from '../transacoes/transferencias';
 import { mesAtual } from '../transacoes/agrupar';
+import { planoDoMes } from './plano';
+import { PlanoMes } from './plano-mes';
 
 const MESES = [
   'Jan',
@@ -96,6 +98,7 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
     JanoSkeletonCard,
     JanoSkeletonGroup,
     JanoSkeletonKpi,
+    PlanoMes,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -124,6 +127,18 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
     .chips {
       display: flex;
       gap: 8px;
+    }
+    .longo {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin: 32px 0 16px;
+    }
+    .longo h2 {
+      margin: 0;
+      font: 600 20px/28px var(--font-sans);
     }
     .colunas {
       display: grid;
@@ -276,22 +291,6 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
     .comparar .dif {
       font-weight: 600;
     }
-    ul.cobrancas {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-    ul.cobrancas li {
-      display: grid;
-      grid-template-columns: 56px 1fr auto;
-      gap: 12px;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    ul.cobrancas li:last-child {
-      border-bottom: 0;
-    }
     .data {
       font: 600 14px/20px var(--font-sans);
     }
@@ -337,21 +336,9 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
       <div>
         <h1>Projeções</h1>
         <div class="j-sub">
-          Saldo previsto a partir de hoje, {{ hoje.getDate() }} de
-          {{ mesLongo }}
+          O que vem até o salário e nos próximos meses, a partir de hoje,
+          {{ hoje.getDate() }} de {{ mesLongo }}
         </div>
-      </div>
-      <div class="chips" role="group" aria-label="Horizonte">
-        @for (h of horizontes; track h) {
-          <button
-            class="j-chip"
-            type="button"
-            [attr.aria-pressed]="horizonte() === h"
-            (click)="horizonte.set(h)"
-          >
-            {{ h }} meses
-          </button>
-        }
       </div>
     </div>
 
@@ -374,345 +361,342 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
           </div>
         </div>
       </jano-skeleton-group>
-    } @else if (!proj()) {
-      <div class="j-card j-empty">
-        <div class="j-empty__title">Ainda falta histórico para projetar</div>
-        <div class="j-empty__text">
-          Precisamos de pelo menos 2 meses fechados com lançamentos. Importe
-          extratos e faturas dos meses anteriores.
-        </div>
-        <a janoButton variant="primary" routerLink="/transacoes">Importar</a>
-      </div>
     } @else {
-      <div class="colunas">
-        <div class="coluna">
-          <section class="j-card" aria-label="Saldo projetado">
-            <h2>Saldo projetado</h2>
-            <p class="resumo">{{ frase() }}</p>
-            <div class="legenda">
-              <span><i style="border-color: var(--text)"></i>Realizado</span>
-              <span
-                ><i
-                  style="border-color: var(--info); border-top-style: dashed"
-                ></i
-                >Projeção base</span
-              >
-              <span><i class="faixa"></i>Faixa otimista e pessimista</span>
-              @if (cenariosAtivos().length) {
-                <span
-                  ><i style="border-color: var(--primary)"></i>Com
-                  cenários</span
-                >
-              }
-            </div>
-            <svg
-              [attr.width]="w()"
-              [attr.height]="altura"
-              role="img"
-              [attr.aria-label]="frase()"
+      <jano-plano-mes [plano]="plano()" />
+      <div class="longo">
+        <h2>Longo prazo</h2>
+        <div class="chips" role="group" aria-label="Horizonte">
+          @for (h of horizontes; track h) {
+            <button
+              class="j-chip"
+              type="button"
+              [attr.aria-pressed]="horizonte() === h"
+              (click)="horizonte.set(h)"
             >
-              @for (t of yTicks(); track t.y) {
-                <line
-                  [attr.x1]="x0"
-                  [attr.x2]="w() - 8"
-                  [attr.y1]="t.y"
-                  [attr.y2]="t.y"
-                  style="stroke: var(--border)"
+              {{ h }} meses
+            </button>
+          }
+        </div>
+      </div>
+      @if (!proj()) {
+        <div class="j-card j-empty">
+          <div class="j-empty__title">Ainda falta histórico para projetar</div>
+          <div class="j-empty__text">
+            Precisamos de pelo menos 2 meses fechados com lançamentos. Importe
+            extratos e faturas dos meses anteriores.
+          </div>
+          <a janoButton variant="primary" routerLink="/transacoes">Importar</a>
+        </div>
+      } @else {
+        <div class="colunas">
+          <div class="coluna">
+            <section class="j-card" aria-label="Saldo projetado">
+              <h2>Saldo projetado</h2>
+              <p class="resumo">{{ frase() }}</p>
+              <div class="legenda">
+                <span><i style="border-color: var(--text)"></i>Realizado</span>
+                <span
+                  ><i
+                    style="border-color: var(--info); border-top-style: dashed"
+                  ></i
+                  >Projeção base</span
+                >
+                <span><i class="faixa"></i>Faixa otimista e pessimista</span>
+                @if (cenariosAtivos().length) {
+                  <span
+                    ><i style="border-color: var(--primary)"></i>Com
+                    cenários</span
+                  >
+                }
+              </div>
+              <svg
+                [attr.width]="w()"
+                [attr.height]="altura"
+                role="img"
+                [attr.aria-label]="frase()"
+              >
+                @for (t of yTicks(); track t.y) {
+                  <line
+                    [attr.x1]="x0"
+                    [attr.x2]="w() - 8"
+                    [attr.y1]="t.y"
+                    [attr.y2]="t.y"
+                    style="stroke: var(--border)"
+                  />
+                  <text [attr.x]="x0 - 6" [attr.y]="t.y + 4" text-anchor="end">
+                    {{ t.rotulo }}
+                  </text>
+                }
+                <polygon
+                  [attr.points]="faixa()"
+                  style="fill: var(--info); opacity: 0.16"
                 />
-                <text [attr.x]="x0 - 6" [attr.y]="t.y + 4" text-anchor="end">
-                  {{ t.rotulo }}
-                </text>
-              }
-              <polygon
-                [attr.points]="faixa()"
-                style="fill: var(--info); opacity: 0.16"
-              />
-              <polyline
-                [attr.points]="linhaRealizado()"
-                fill="none"
-                style="stroke: var(--text)"
-                stroke-width="2.5"
-                stroke-linejoin="round"
-                stroke-linecap="round"
-              />
-              <polyline
-                [attr.points]="linhaBase()"
-                fill="none"
-                style="stroke: var(--info)"
-                stroke-width="2.5"
-                stroke-dasharray="6 5"
-                stroke-linecap="round"
-              />
-              @if (cenariosAtivos().length) {
                 <polyline
-                  [attr.points]="linhaCenario()"
+                  [attr.points]="linhaRealizado()"
                   fill="none"
-                  style="stroke: var(--primary)"
+                  style="stroke: var(--text)"
                   stroke-width="2.5"
                   stroke-linejoin="round"
                   stroke-linecap="round"
                 />
-              }
-              <line
-                [attr.x1]="hojeXY().x"
-                [attr.x2]="hojeXY().x"
-                [attr.y1]="topo"
-                [attr.y2]="base"
-                style="stroke: var(--border-strong)"
-                stroke-dasharray="2 3"
-              />
-              <circle
-                [attr.cx]="hojeXY().x"
-                [attr.cy]="hojeXY().y"
-                r="5"
-                style="fill: var(--text)"
-              />
-              <text [attr.x]="hojeXY().x + 6" [attr.y]="topo + 10">hoje</text>
-              @for (m of xTicks(); track m.x) {
-                <text [attr.x]="m.x" [attr.y]="base + 20" text-anchor="middle">
-                  {{ m.t }}
-                </text>
-              }
-            </svg>
-
-            @if (saldoBanco(); as s) {
-              <div class="saldo">
-                <span
-                  >Saldo de hoje:
-                  <b class="j-num">{{ money(s.cents) }}</b></span
-                >
-                <span class="sub"
-                  >{{ s.legenda }}, do banco, atualizado
-                  {{ quando(s.atualizadoEm) }}.</span
-                >
-              </div>
-            } @else {
-              <div class="saldo">
-                <label for="saldo">Saldo de hoje (opcional):</label>
-                <span class="j-input">
-                  <span class="j-input__prefix">R$</span>
-                  <input
-                    id="saldo"
-                    inputmode="decimal"
-                    placeholder="0,00"
-                    [value]="saldoTexto()"
-                    (change)="definirSaldo($any($event.target).value)"
+                <polyline
+                  [attr.points]="linhaBase()"
+                  fill="none"
+                  style="stroke: var(--info)"
+                  stroke-width="2.5"
+                  stroke-dasharray="6 5"
+                  stroke-linecap="round"
+                />
+                @if (cenariosAtivos().length) {
+                  <polyline
+                    [attr.points]="linhaCenario()"
+                    fill="none"
+                    style="stroke: var(--primary)"
+                    stroke-width="2.5"
+                    stroke-linejoin="round"
+                    stroke-linecap="round"
                   />
-                </span>
-                <span class="sub"
-                  >Sem ele, o gráfico parte de R$ 0 e mostra só a variação.
-                  Guardado apenas neste aparelho.</span
-                >
-              </div>
-            }
-
-            <details style="margin-top: 12px">
-              <summary>Ver os valores do gráfico</summary>
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Fim de</th>
-                    <th scope="col">Base</th>
-                    <th scope="col">Com cenários</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (p of proj()!.pontos; track p.k) {
-                    <tr>
-                      <td>{{ rotuloMes(p.mes) }}</td>
-                      <td>{{ money(p.base) }}</td>
-                      <td>{{ money(p.cenario) }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </details>
-          </section>
-
-          <section class="j-card" aria-label="Próximas cobranças recorrentes">
-            <h2>Próximas cobranças recorrentes</h2>
-            <ul class="cobrancas">
-              @for (c of cobrancas(); track c.nome) {
-                <li>
-                  <span class="data">{{ c.data }}</span>
-                  <div>
-                    <div>{{ c.nome }}</div>
-                    <div class="sub">{{ c.sub }}</div>
-                  </div>
-                  <span class="j-num">−{{ money(c.cents) }}</span>
-                </li>
-              } @empty {
-                <li>
-                  <span></span>
-                  <span class="sub"
-                    >Ainda não detectamos cobranças que se repetem todo
-                    mês.</span
+                }
+                <line
+                  [attr.x1]="hojeXY().x"
+                  [attr.x2]="hojeXY().x"
+                  [attr.y1]="topo"
+                  [attr.y2]="base"
+                  style="stroke: var(--border-strong)"
+                  stroke-dasharray="2 3"
+                />
+                <circle
+                  [attr.cx]="hojeXY().x"
+                  [attr.cy]="hojeXY().y"
+                  r="5"
+                  style="fill: var(--text)"
+                />
+                <text [attr.x]="hojeXY().x + 6" [attr.y]="topo + 10">hoje</text>
+                @for (m of xTicks(); track m.x) {
+                  <text
+                    [attr.x]="m.x"
+                    [attr.y]="base + 20"
+                    text-anchor="middle"
                   >
-                  <span></span>
-                </li>
+                    {{ m.t }}
+                  </text>
+                }
+              </svg>
+
+              @if (saldoBanco(); as s) {
+                <div class="saldo">
+                  <span
+                    >Saldo de hoje:
+                    <b class="j-num">{{ money(s.cents) }}</b></span
+                  >
+                  <span class="sub"
+                    >{{ s.legenda }}, do banco, atualizado
+                    {{ quando(s.atualizadoEm) }}.</span
+                  >
+                </div>
+              } @else {
+                <div class="saldo">
+                  <label for="saldo">Saldo de hoje (opcional):</label>
+                  <span class="j-input">
+                    <span class="j-input__prefix">R$</span>
+                    <input
+                      id="saldo"
+                      inputmode="decimal"
+                      placeholder="0,00"
+                      [value]="saldoTexto()"
+                      (change)="definirSaldo($any($event.target).value)"
+                    />
+                  </span>
+                  <span class="sub"
+                    >Sem ele, o gráfico parte de R$ 0 e mostra só a variação.
+                    Guardado apenas neste aparelho.</span
+                  >
+                </div>
               }
-            </ul>
-          </section>
-        </div>
 
-        <div class="coluna">
-          <section class="j-card" aria-label="Cenários">
-            <h2>E se…</h2>
-            <p class="sub" style="margin: -4px 0 4px">
-              Ligue um cenário e veja o efeito no gráfico. Fica salvo como você
-              deixar.
-            </p>
+              <details style="margin-top: 12px">
+                <summary>Ver os valores do gráfico</summary>
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Fim de</th>
+                      <th scope="col">Base</th>
+                      <th scope="col">Com cenários</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (p of proj()!.pontos; track p.k) {
+                      <tr>
+                        <td>{{ rotuloMes(p.mes) }}</td>
+                        <td>{{ money(p.base) }}</td>
+                        <td>{{ money(p.cenario) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </details>
+            </section>
+          </div>
 
-            <div class="cenario">
-              <button
-                class="chave"
-                type="button"
-                role="switch"
-                aria-labelledby="c1"
-                [attr.aria-checked]="cortarLigado()"
-                (click)="cortarLigado.set(!cortarLigado())"
-              >
-                <span></span>
-              </button>
-              <div>
-                <b id="c1"
-                  >Cortar {{ nomeCategoria(categoriaCorte()) }} em 20%</b
+          <div class="coluna">
+            <section class="j-card" aria-label="Cenários">
+              <h2>E se…</h2>
+              <p class="sub" style="margin: -4px 0 4px">
+                Ligue um cenário e veja o efeito no gráfico. Fica salvo como
+                você deixar.
+              </p>
+
+              <div class="cenario">
+                <button
+                  class="chave"
+                  type="button"
+                  role="switch"
+                  aria-labelledby="c1"
+                  [attr.aria-checked]="cortarLigado()"
+                  (click)="cortarLigado.set(!cortarLigado())"
                 >
-                <div class="desc">A partir do mês seguinte</div>
-                <select
-                  aria-label="Categoria a cortar"
-                  [value]="categoriaCorte()"
-                  (change)="categoriaCorte.set($any($event.target).value)"
-                >
-                  @for (c of categoriasGasto(); track c.id) {
-                    <option
-                      [value]="c.id"
-                      [selected]="c.id === categoriaCorte()"
-                    >
-                      {{ c.name }}
-                    </option>
+                  <span></span>
+                </button>
+                <div>
+                  <b id="c1"
+                    >Cortar {{ nomeCategoria(categoriaCorte()) }} em 20%</b
+                  >
+                  <div class="desc">A partir do mês seguinte</div>
+                  <select
+                    aria-label="Categoria a cortar"
+                    [value]="categoriaCorte()"
+                    (change)="categoriaCorte.set($any($event.target).value)"
+                  >
+                    @for (c of categoriasGasto(); track c.id) {
+                      <option
+                        [value]="c.id"
+                        [selected]="c.id === categoriaCorte()"
+                      >
+                        {{ c.name }}
+                      </option>
+                    }
+                  </select>
+                  @if (cortarLigado()) {
+                    <div [class]="classeEfeito(efeito(0))">
+                      {{ textoEfeito(efeito(0)) }}
+                    </div>
                   }
-                </select>
-                @if (cortarLigado()) {
-                  <div [class]="classeEfeito(efeito(0))">
-                    {{ textoEfeito(efeito(0)) }}
-                  </div>
-                }
+                </div>
               </div>
-            </div>
 
-            <div class="cenario">
-              <button
-                class="chave"
-                type="button"
-                role="switch"
-                aria-labelledby="c2"
-                [attr.aria-checked]="parcelaLigada()"
-                (click)="parcelaLigada.set(!parcelaLigada())"
-              >
-                <span></span>
-              </button>
-              <div>
-                <b id="c2">Nova parcela mensal</b>
-                <div class="desc">Todo mês, a partir do mês seguinte</div>
-                <label class="campo">
-                  <span class="j-input">
-                    <span class="j-input__prefix">R$</span>
-                    <input
-                      inputmode="decimal"
-                      aria-label="Valor da parcela"
-                      [value]="parcelaTexto()"
-                      (change)="parcelaTexto.set($any($event.target).value)"
-                    />
-                  </span>
-                </label>
-                @if (parcelaLigada()) {
-                  <div [class]="classeEfeito(efeito(1))">
-                    {{ textoEfeito(efeito(1)) }}
-                  </div>
-                }
-              </div>
-            </div>
-
-            <div class="cenario">
-              <button
-                class="chave"
-                type="button"
-                role="switch"
-                aria-labelledby="c3"
-                [attr.aria-checked]="rendaLigada()"
-                (click)="rendaLigada.set(!rendaLigada())"
-              >
-                <span></span>
-              </button>
-              <div>
-                <b id="c3">Renda extra</b>
-                <div class="desc">Uma vez, daqui a 2 meses</div>
-                <label class="campo">
-                  <span class="j-input">
-                    <span class="j-input__prefix">R$</span>
-                    <input
-                      inputmode="decimal"
-                      aria-label="Valor da renda extra"
-                      [value]="rendaTexto()"
-                      (change)="rendaTexto.set($any($event.target).value)"
-                    />
-                  </span>
-                </label>
-                @if (rendaLigada() && horizonte() >= 2) {
-                  <div [class]="classeEfeito(efeito(2))">
-                    {{ textoEfeito(efeito(2)) }}
-                  </div>
-                }
-              </div>
-            </div>
-
-            <div class="comparar">
-              <div>
-                <span>Saldo base em {{ mesFinal() }}</span>
-                <span class="j-num">{{ money(final().base) }}</span>
-              </div>
-              <div>
-                <span>Saldo com cenários em {{ mesFinal() }}</span>
-                <span class="j-num">{{ money(final().cenario) }}</span>
-              </div>
-              <div class="dif">
-                <span>Diferença</span>
-                <span
-                  class="j-num"
-                  [style.color]="
-                    diferenca() > 0
-                      ? 'var(--positive)'
-                      : diferenca() < 0
-                        ? 'var(--danger)'
-                        : null
-                  "
-                  >{{ diferenca() > 0 ? '+' : ''
-                  }}{{ money(diferenca()) }}</span
+              <div class="cenario">
+                <button
+                  class="chave"
+                  type="button"
+                  role="switch"
+                  aria-labelledby="c2"
+                  [attr.aria-checked]="parcelaLigada()"
+                  (click)="parcelaLigada.set(!parcelaLigada())"
                 >
+                  <span></span>
+                </button>
+                <div>
+                  <b id="c2">Nova parcela mensal</b>
+                  <div class="desc">Todo mês, a partir do mês seguinte</div>
+                  <label class="campo">
+                    <span class="j-input">
+                      <span class="j-input__prefix">R$</span>
+                      <input
+                        inputmode="decimal"
+                        aria-label="Valor da parcela"
+                        [value]="parcelaTexto()"
+                        (change)="parcelaTexto.set($any($event.target).value)"
+                      />
+                    </span>
+                  </label>
+                  @if (parcelaLigada()) {
+                    <div [class]="classeEfeito(efeito(1))">
+                      {{ textoEfeito(efeito(1)) }}
+                    </div>
+                  }
+                </div>
               </div>
-            </div>
-          </section>
 
-          <section class="j-card" aria-label="Como calculamos">
-            <details>
-              <summary>Como calculamos</summary>
-              <p>
-                A projeção parte do seu saldo de hoje e soma, a cada mês, a
-                sobra média dos últimos {{ proj()!.mesesBase }} meses fechados
-                (receitas {{ money(proj()!.receitaMedia) }}, gastos
-                {{ money(proj()!.gastoMedio) }}), dando mais peso aos meses
-                recentes. O resto do mês atual completa a média.
-              </p>
-              <p>
-                A faixa mostra uma variação possível para mais e para menos,
-                calculada pela oscilação das sobras passadas, e cresce com o
-                tempo. Cenários são ajustes sobre essa base, nunca previsões.
-              </p>
-            </details>
-          </section>
+              <div class="cenario">
+                <button
+                  class="chave"
+                  type="button"
+                  role="switch"
+                  aria-labelledby="c3"
+                  [attr.aria-checked]="rendaLigada()"
+                  (click)="rendaLigada.set(!rendaLigada())"
+                >
+                  <span></span>
+                </button>
+                <div>
+                  <b id="c3">Renda extra</b>
+                  <div class="desc">Uma vez, daqui a 2 meses</div>
+                  <label class="campo">
+                    <span class="j-input">
+                      <span class="j-input__prefix">R$</span>
+                      <input
+                        inputmode="decimal"
+                        aria-label="Valor da renda extra"
+                        [value]="rendaTexto()"
+                        (change)="rendaTexto.set($any($event.target).value)"
+                      />
+                    </span>
+                  </label>
+                  @if (rendaLigada() && horizonte() >= 2) {
+                    <div [class]="classeEfeito(efeito(2))">
+                      {{ textoEfeito(efeito(2)) }}
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <div class="comparar">
+                <div>
+                  <span>Saldo base em {{ mesFinal() }}</span>
+                  <span class="j-num">{{ money(final().base) }}</span>
+                </div>
+                <div>
+                  <span>Saldo com cenários em {{ mesFinal() }}</span>
+                  <span class="j-num">{{ money(final().cenario) }}</span>
+                </div>
+                <div class="dif">
+                  <span>Diferença</span>
+                  <span
+                    class="j-num"
+                    [style.color]="
+                      diferenca() > 0
+                        ? 'var(--positive)'
+                        : diferenca() < 0
+                          ? 'var(--danger)'
+                          : null
+                    "
+                    >{{ diferenca() > 0 ? '+' : ''
+                    }}{{ money(diferenca()) }}</span
+                  >
+                </div>
+              </div>
+            </section>
+
+            <section class="j-card" aria-label="Como calculamos">
+              <details>
+                <summary>Como calculamos</summary>
+                <p>
+                  A projeção parte do seu saldo de hoje e soma, a cada mês, a
+                  sobra média dos últimos {{ proj()!.mesesBase }} meses fechados
+                  (receitas {{ money(proj()!.receitaMedia) }}, gastos
+                  {{ money(proj()!.gastoMedio) }}), dando mais peso aos meses
+                  recentes. O resto do mês atual completa a média.
+                </p>
+                <p>
+                  A faixa mostra uma variação possível para mais e para menos,
+                  calculada pela oscilação das sobras passadas, e cresce com o
+                  tempo. Cenários são ajustes sobre essa base, nunca previsões.
+                </p>
+              </details>
+            </section>
+          </div>
         </div>
-      </div>
+      }
     }
   `,
 })
@@ -760,6 +744,17 @@ export class Projecoes {
 
   /** Saldo do banco (Open Finance); quando existe, substitui o digitado à mão. */
   protected readonly saldoBanco = signal<SaldoAtual | null>(null);
+  /** Fatura em aberto dos cartões (positivo = devido), do banco. */
+  private readonly fatura = signal(0);
+  protected readonly plano = computed(() =>
+    planoDoMes({
+      saldoCents: this.saldoBanco()?.cents ?? null,
+      faturaCents: this.fatura(),
+      txs: this.historico(),
+      cartoes: this.cartoes(),
+      hoje: `${this.month}-${String(this.hoje.getDate()).padStart(2, '0')}`,
+    }),
+  );
   protected readonly quando = haQuantoTempo;
 
   protected readonly saldoTexto = computed(() =>
@@ -905,27 +900,6 @@ export class Projecoes {
       .filter((_, i) => i % passo === 0);
   });
 
-  protected readonly cobrancas = computed(() => {
-    const hojeIso = `${this.month}-${String(this.hoje.getDate()).padStart(2, '0')}`;
-    const nomes = new Map<string, TransactionDoc>();
-    for (const t of this.historico())
-      if (!nomes.has(t.descriptionNorm)) nomes.set(t.descriptionNorm, t);
-    return detectRecurrences(this.historico())
-      .map((s) => {
-        const iso = proximaCobranca(s.day, hojeIso);
-        const t = nomes.get(s.description);
-        return {
-          iso,
-          nome: t?.description ?? s.description,
-          cents: s.amountCents,
-          data: `${Number(iso.slice(8))} ${nomeMes(iso).toLowerCase()}`,
-          sub: `Todo dia ${s.day} · ${this.nomeCategoria(t?.categoryId ?? null)}`,
-        };
-      })
-      .sort((a, b) => a.iso.localeCompare(b.iso))
-      .slice(0, 6);
-  });
-
   constructor() {
     void this.carregar();
     afterNextRender(() => {
@@ -934,7 +908,7 @@ export class Projecoes {
           Math.max(
             Math.round(
               this.el.nativeElement
-                .querySelector('section.j-card')
+                .querySelector('section[aria-label="Saldo projetado"]')
                 ?.getBoundingClientRect().width ?? 640,
             ) - 40,
             280,
@@ -996,6 +970,11 @@ export class Projecoes {
         this.scenariosRepo.get(uid).catch(() => null),
       ]);
       this.saldoBanco.set(saldoAtual(saldos));
+      this.fatura.set(
+        saldos
+          .filter((b) => b.kind === 'cartao')
+          .reduce((soma, b) => soma + Math.max(0, b.balanceCents), 0),
+      );
       this.cartoes.set(
         new Set(contas.filter((c) => c.type === 'cartao').map((c) => c.id)),
       );

@@ -18,13 +18,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { definirModoDemo, modoDemoAtivo } from '@jano/data-access';
-import {
-  JanoBackToTop,
-  JanoBanner,
-  JanoButton,
-  JanoLogo,
-  JanoProgressBar,
-} from '@jano/ui';
+import { JanoBackToTop, JanoLogo, JanoProgressBar } from '@jano/ui';
 import { VERSAO_ATUAL } from '../versao/changelog';
 import { haNovidades } from '../versao/novidades';
 import { AvatarMenu } from './avatar-menu';
@@ -96,18 +90,33 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
     AvisoConexaoBanner,
     JanoProgressBar,
     JanoBackToTop,
-    JanoBanner,
-    JanoButton,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
-    .demo {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 16px 16px 0;
+    /* Modo demonstração: chip no centro do cabeçalho; tocar sai do modo. */
+    .chip-demo {
+      justify-self: center;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 10px 0 12px;
+      border: 1px solid var(--info);
+      border-radius: var(--radius-pill);
+      background: var(--info-soft);
+      color: var(--info);
+      font: 600 13px/1 var(--font-sans);
+      cursor: pointer;
     }
-    .demo button {
-      margin-left: 8px;
+    .chip-demo svg {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+    .chip-demo:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
     }
     :host {
       display: flex;
@@ -162,9 +171,18 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
       padding: 0 12px;
     }
     .topo-largo {
-      display: flex;
-      justify-content: flex-end;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
       padding: 12px 24px 0;
+    }
+    .topo-largo jano-avatar-menu,
+    .topo jano-avatar-menu {
+      justify-self: end;
+      grid-column: 3;
+    }
+    .topo jano-logo {
+      justify-self: start;
     }
     main {
       flex: 1 1 0;
@@ -182,9 +200,9 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
         display: none;
       }
       .topo {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
         align-items: center;
-        justify-content: space-between;
         padding: 12px 16px;
         background: var(--surface);
         border-bottom: 1px solid var(--border);
@@ -313,30 +331,43 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
 
     <header class="topo">
       <jano-logo [size]="26" />
+      @if (demo) {
+        <button
+          class="chip-demo"
+          type="button"
+          title="Sair da demonstração"
+          aria-label="Modo demonstração, com dados fictícios. Sair da demonstração"
+          (click)="sairDaDemo()"
+        >
+          Demonstração
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+            <path d="M18 6L6 18M6 6l12 12" />
+          </svg>
+        </button>
+      }
       <jano-avatar-menu [novidades]="novidades()" />
     </header>
 
     <main>
       <div class="topo-largo">
+        <span></span>
+        @if (demo) {
+          <button
+            class="chip-demo"
+            type="button"
+            title="Sair da demonstração"
+            aria-label="Modo demonstração, com dados fictícios. Sair da demonstração"
+            (click)="sairDaDemo()"
+          >
+            Demonstração
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        }
         <jano-avatar-menu [novidades]="novidades()" />
       </div>
-      @if (demo) {
-        <div class="demo">
-          <jano-banner tone="info" title="Modo demonstração.">
-            Dados fictícios. O que você mudar some ao recarregar e nada vai para
-            o servidor.
-            <button
-              janoButton
-              variant="secondary"
-              [small]="true"
-              type="button"
-              (click)="sairDaDemo()"
-            >
-              Sair da demonstração
-            </button>
-          </jano-banner>
-        </div>
-      } @else {
+      @if (!demo) {
         <jano-aviso-conexao />
       }
       <router-outlet />

@@ -60,7 +60,7 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
     const pct = Math.round((m.spent / m.limitCents) * 100);
     const nome = e.nomeCategoria(m.categoryId);
     out.push(
-      pct >= 100
+      m.spent > m.limitCents
         ? {
             id: `meta-passou:${m.categoryId}`,
             tom: 'warn',
