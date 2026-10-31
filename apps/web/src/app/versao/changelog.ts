@@ -33,6 +33,11 @@ export const CHANGELOG: Versao[] = [
           'No celular, transação com nome longo e sem espaço ("MERCADOLIVRE*...") quebra a linha em vez de esconder o valor.',
       },
       {
+        tipo: 'melhoria',
+        texto:
+          'Orçamento ganhou o mesmo seletor de mês de Transações: mês centralizado entre as setas.',
+      },
+      {
         tipo: 'correcao',
         texto:
           'A sincronização diária não troca mais categorias que já existem: só preenche as que estão vazias. Regras genéricas como "COMPRA C CARTAO" são ignoradas e, quando duas regras valem, vence a mais específica.',
