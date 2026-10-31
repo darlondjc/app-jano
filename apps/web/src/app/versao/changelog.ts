@@ -28,6 +28,11 @@ export const CHANGELOG: Versao[] = [
           'A projeção de 3 a 12 meses e os cenários "E se" continuam, em Longo prazo, abaixo do plano.',
       },
       {
+        tipo: 'melhoria',
+        texto:
+          'No modo demonstração, um chip "Demonstração ×" no centro do cabeçalho substitui o aviso azul; tocar nele sai do modo.',
+      },
+      {
         tipo: 'correcao',
         texto:
           'Metas: gastar exatamente o limite aparece como "No limite da meta", em atenção, e não mais como "Passou -R$ 0,00". No último dia, a mensagem diz "último dia do mês" em vez de "restam 0 dias", e o marcador de ritmo fica dentro da barra.',

@@ -92,4 +92,26 @@ describe('Shell', () => {
     expect(signOut).toHaveBeenCalled();
     expect(nav).toHaveBeenCalledWith('/entrar');
   });
+
+  it('sem modo demonstração, não há chip', async () => {
+    const f = await criar();
+    expect(
+      (f.nativeElement as HTMLElement).querySelector('.chip-demo'),
+    ).toBeNull();
+  });
+
+  it('no modo demonstração, um chip no cabeçalho e nenhum card de aviso', async () => {
+    localStorage.setItem('jano.demo', '1');
+    try {
+      const f = await criar();
+      const el = f.nativeElement as HTMLElement;
+      const chips = el.querySelectorAll('.chip-demo');
+      // Um no cabeçalho do celular e outro na faixa de topo do computador.
+      expect(chips.length).toBe(2);
+      expect(chips[0].textContent).toContain('Demonstração');
+      expect(el.querySelector('jano-banner')).toBeNull();
+    } finally {
+      localStorage.removeItem('jano.demo');
+    }
+  });
 });
