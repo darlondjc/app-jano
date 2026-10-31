@@ -14,6 +14,27 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.10.5',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Ao mudar a categoria de uma transação: "Alterar também as transações passadas" muda agora todas as já gravadas com o mesmo nome, e "Alterar também as transações futuras" vale para as que chegarem.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Botão para copiar o nome da transação e para limpar o trecho do nome, para montar o trecho mais rápido.',
+      },
+      {
+        tipo: 'correcao',
+        texto:
+          'A sincronização diária não troca mais categorias que já existem: só preenche as que estão vazias. Regras genéricas como "COMPRA C CARTAO" são ignoradas e, quando duas regras valem, vence a mais específica.',
+      },
+    ],
+  },
+  {
     version: '0.10.4',
     date: '2026-10-31',
     items: [

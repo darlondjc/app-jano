@@ -1,9 +1,5 @@
 import { addDedupeKeys } from '@jano/import-file';
-import {
-  categorizar,
-  inferirPeloHistorico,
-  reaplicarRegras,
-} from './categorizar';
+import { categorizar, inferirPeloHistorico } from './categorizar';
 import { deCategoriaPluggy, deMcc } from './categorias';
 import { toRawTransaction } from './pluggy-connector';
 import type { PluggyTransaction } from './pluggy-client';
@@ -130,53 +126,33 @@ describe('categorias da Pluggy e MCC', () => {
     expect(r[0].categoryId).toBe('combustivel');
   });
 
-  it('reaplica as regras no histórico, sem tocar no manual, dividido ou transferência', () => {
-    const t = (id: string, over: object = {}) => ({
-      id,
-      descriptionNorm: 'COMPRA MATEUS SUPERMERCADOS',
-      categoryId: 'compras',
-      categoryIsManual: false,
-      isTransfer: false,
-      ...over,
-    });
-    const r = reaplicarRegras(
-      [
-        t('auto'),
-        t('ja-certo', { categoryId: 'mercado' }),
-        t('sem-cat', { categoryId: null }),
-        t('manual', { categoryIsManual: true }),
-        t('dividido', { splits: [{}, {}] }),
-        t('transf', { isTransfer: true }),
-        t('outra-loja', { descriptionNorm: 'PADARIA' }),
-      ],
-      [{ pattern: 'MATEUS', categoryId: 'mercado' }],
+  it('na sincronização, vence a regra mais específica e a genérica não vale', () => {
+    const rows = addDedupeKeys('cc', [
+      {
+        date: '2026-10-05',
+        amountCents: -100,
+        description: 'COMPRA C/CARTAO 05/10 10:00 MATEUS SUPERMERCADOS',
+      },
+      {
+        date: '2026-10-05',
+        amountCents: -100,
+        description: 'COMPRA C/CARTAO 05/10 11:00 LOJA NOVA',
+      },
+    ]);
+    const r = categorizar(
+      rows,
       [
         { id: 'mercado', name: 'Mercado' },
         { id: 'compras', name: 'Compras' },
+        { id: 'lazer', name: 'Lazer' },
+      ],
+      [
+        { pattern: 'COMPRA C CARTAO', categoryId: 'lazer' },
+        { pattern: 'MATEUS', categoryId: 'compras' },
+        { pattern: 'MATEUS SUPERMERCADOS', categoryId: 'mercado' },
       ],
     );
-    expect(r).toEqual([
-      { id: 'auto', categoryId: 'mercado' },
-      { id: 'sem-cat', categoryId: 'mercado' },
-    ]);
-  });
-
-  it('regra para categoria apagada não vale', () => {
-    expect(
-      reaplicarRegras(
-        [
-          {
-            id: 'x',
-            descriptionNorm: 'MATEUS',
-            categoryId: null,
-            categoryIsManual: false,
-            isTransfer: false,
-          },
-        ],
-        [{ pattern: 'MATEUS', categoryId: 'apagada' }],
-        [{ id: 'mercado', name: 'Mercado' }],
-      ),
-    ).toEqual([]);
+    expect(r.map((x) => x.categoryId)).toEqual(['mercado', null]);
   });
 });
 

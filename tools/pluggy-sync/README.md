@@ -91,11 +91,13 @@ O categorizador da Pluggy vem ligado no trial e depois é recurso pago; sem ele,
 regras, o dicionário e o MCC. O `sync --seco` mostra quantos lançamentos vieram com sugestão.
 
 A cada sincronização, lançamentos dos últimos 45 dias que continuam sem categoria, e que você
-não editou, são reavaliados. Além disso, suas regras valem para o histórico inteiro: onde uma
-regra casa e a categoria automática é outra, fica a da regra. Escolhas manuais, divisões e
-transferências nunca mudam. Uma regra criada no app passa a valer assim no dia seguinte.
+não editou, são reavaliados. Depois, o que segue sem categoria em todo o histórico recebe a
+categoria de outros lançamentos da mesma loja: a que você escolheu à mão ou, se nunca
+escolheu, a mais frequente. A loja é a descrição sem o prefixo da operação nem a hora, então
+"COMPRA C/CARTAO 27/10 17:15 PADARIA X" e "PADARIA X" são a mesma.
 
-Por fim, o que continua sem categoria em todo o histórico recebe a categoria de outros
-lançamentos da mesma loja: a que você escolheu à mão ou, se nunca escolheu, a mais frequente.
-A loja é a descrição sem o prefixo da operação nem a hora, então "COMPRA C/CARTAO 27/10 17:15
-PADARIA X" e "PADARIA X" são a mesma.
+A sincronização nunca troca uma categoria que já existe. Suas regras valem para o que chega
+(no app, "Alterar também as transações futuras"); para mudar as que já estão gravadas, use
+"Alterar também as transações passadas" ao editar a transação. Quando mais de uma regra casa,
+vale a de trecho mais longo e, no empate, a mais recente. Regras só com palavras da operação
+("COMPRA C CARTAO", "PIX ENVIADO") são ignoradas.

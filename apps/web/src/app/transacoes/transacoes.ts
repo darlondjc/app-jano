@@ -30,6 +30,7 @@ import {
   suggestCategory,
   type FaturaResult,
   type ImportPlan,
+  regraQueCasa,
 } from '@jano/import-file';
 import {
   JanoBanner,
@@ -48,7 +49,12 @@ import {
   mesSeguinte,
   rotuloMes,
 } from './agrupar';
-import { DetalheTransacao, TRANSFERENCIA, type SalvarDetalhe } from './detalhe';
+import {
+  DetalheTransacao,
+  TRANSFERENCIA,
+  avisoDoSalvar,
+  type SalvarDetalhe,
+} from './detalhe';
 import {
   filtrar,
   SEM_FILTROS,
@@ -1384,7 +1390,7 @@ export class Transacoes {
       if (transferencia) await this.repo.setTransfer(this.uid, t.id);
       else await this.repo.setCategory(this.uid, t.id, categoryId);
       let outras: string[] = [];
-      if (ev.regra) {
+      if (ev.regra?.futuras) {
         const regra = await this.rulesRepo.save(
           this.uid,
           ev.regra.pattern,
@@ -1394,22 +1400,15 @@ export class Transacoes {
           ...r.filter((x) => x.id !== regra.id),
           regra,
         ]);
-        outras = this.txs()
-          .filter(
-            (x) =>
-              x.id !== t.id &&
-              !x.categoryIsManual &&
-              !x.isTransfer &&
-              x.descriptionNorm.includes(regra.pattern),
-          )
-          .map((x) => x.id);
-        if (outras.length)
-          await this.repo.bulkUpdate(this.uid, outras, {
-            categoryId: ev.regra.categoryId,
-            categoryIsManual: false,
-            isTransfer: false,
-          });
       }
+      if (ev.regra?.passadas)
+        outras = (
+          await this.repo.aplicarAsPassadas(
+            this.uid,
+            ev.regra.pattern,
+            ev.regra.categoryId,
+          )
+        ).filter((id) => id !== t.id);
       const extra = new Set(outras);
       this.txs.update((l) =>
         l.map((x) =>
@@ -1422,15 +1421,11 @@ export class Transacoes {
                 splits: undefined,
               }
             : extra.has(x.id)
-              ? { ...x, categoryId: regraCat }
+              ? { ...x, categoryId: regraCat, categoryIsManual: true }
               : x,
         ),
       );
-      this.aviso.set(
-        ev.regra
-          ? `Regra criada. ${outras.length} outros lançamentos deste período foram atualizados.`
-          : 'Salvo.',
-      );
+      this.aviso.set(avisoDoSalvar(ev.regra, outras.length));
       this.detalheId.set(null);
     } catch (e) {
       this.falha(e);
@@ -1440,9 +1435,7 @@ export class Transacoes {
   }
 
   private nomeDaRegra(descriptionNorm: string): string | null {
-    const regra = this.regras().find((r) =>
-      descriptionNorm.includes(r.pattern),
-    );
+    const regra = regraQueCasa(descriptionNorm, this.regras());
     return regra ? (this.cat(regra.categoryId)?.name ?? null) : null;
   }
 

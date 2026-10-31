@@ -5,10 +5,16 @@ import {
   input,
   linkedSignal,
   output,
+  signal,
 } from '@angular/core';
 import type { CategoryDoc, TransactionDoc } from '@jano/data-access';
 import { formatBRL, validarDivisao } from '@jano/engine';
-import { estabelecimento, parseAmountToCents } from '@jano/import-file';
+import {
+  estabelecimento,
+  normalizeDescription,
+  parseAmountToCents,
+  regraGenerica,
+} from '@jano/import-file';
 import { JanoBanner, JanoButton } from '@jano/ui';
 import { classeValor, dayLabel } from './agrupar';
 
@@ -17,9 +23,36 @@ export const TRANSFERENCIA = '__transferencia__';
 export interface SalvarDetalhe {
   /** Id da categoria, TRANSFERENCIA ou null (sem categoria). */
   escolha: string | null;
-  regra: { pattern: string; categoryId: string } | null;
+  /**
+   * Outras transações com o mesmo nome: `passadas` muda as já gravadas, `futuras` cria a
+   * regra para as que chegarem. `pattern` já vem normalizado (maiúsculas, sem acento).
+   */
+  regra: {
+    pattern: string;
+    categoryId: string;
+    passadas: boolean;
+    futuras: boolean;
+  } | null;
   /** Partes da divisão, já conferidas e com o sinal do lançamento; ausente = sem divisão. */
   divisao?: { categoryId: string; amountCents: number }[];
+}
+
+/** Mensagem depois de salvar, contando as outras transações alteradas. */
+export function avisoDoSalvar(
+  regra: SalvarDetalhe['regra'],
+  passadas: number,
+): string {
+  if (!regra) return 'Salvo.';
+  const partes: string[] = [];
+  if (regra.passadas)
+    partes.push(
+      passadas === 1
+        ? '1 transação passada alterada'
+        : `${passadas} transações passadas alteradas`,
+    );
+  if (regra.futuras) partes.push('as próximas com esse nome já chegam assim');
+  const texto = partes.join('; ');
+  return `Salvo: ${texto}.`;
 }
 
 interface LinhaDivisao {
@@ -31,7 +64,7 @@ interface LinhaDivisao {
 const emReais = (cents: number): string =>
   (Math.abs(cents) / 100).toFixed(2).replace('.', ',');
 
-/** Painel de uma transação: categoria, transferência e regra para as próximas. */
+/** Painel de uma transação: categoria, transferência e a mesma categoria para outras com o mesmo nome. */
 @Component({
   selector: 'jano-detalhe-transacao',
   imports: [JanoBanner, JanoButton],
@@ -47,6 +80,11 @@ const emReais = (cents: number): string =>
       justify-content: space-between;
       align-items: flex-start;
       gap: 8px;
+    }
+    .nome {
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
     }
     h2 {
       margin: 0;
@@ -79,6 +117,44 @@ const emReais = (cents: number): string =>
       gap: 10px;
       align-items: flex-start;
       min-height: 32px;
+    }
+    .icone {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: 0;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+    }
+    .icone:hover {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+    .icone:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+    .icone svg {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .copiado {
+      color: var(--positive);
+    }
+    .campo-trecho {
+      padding-right: 4px;
+    }
+    .aviso-trecho {
+      color: var(--danger);
     }
     .regra input[type='checkbox'] {
       accent-color: var(--primary);
@@ -130,7 +206,40 @@ const emReais = (cents: number): string =>
   template: `
     <div class="topo">
       <div>
-        <h2>{{ tx().description }}</h2>
+        <div class="nome">
+          <h2>{{ tx().description }}</h2>
+          <button
+            class="icone"
+            [class.copiado]="copiado()"
+            type="button"
+            [attr.aria-label]="copiado() ? 'Nome copiado' : 'Copiar nome'"
+            [title]="copiado() ? 'Copiado' : 'Copiar nome'"
+            (click)="copiar()"
+          >
+            @if (copiado()) {
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                aria-hidden="true"
+              >
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            } @else {
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                aria-hidden="true"
+              >
+                <rect x="9" y="9" width="12" height="12" rx="2" />
+                <path
+                  d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                />
+              </svg>
+            }
+          </button>
+        </div>
         <div class="j-sub">{{ data() }} · {{ conta() }}</div>
       </div>
       <button
@@ -153,8 +262,8 @@ const emReais = (cents: number): string =>
       !dividindo() && !tx().categoryId && !tx().isTransfer && escolha() === null
     ) {
       <jano-banner tone="info" title="Sem categoria.">
-        Escolha uma abaixo. Se marcar a regra, o Jano lembra nas próximas
-        importações.
+        Escolha uma abaixo. Dá para aplicar a mesma categoria às outras
+        transações com esse nome.
       </jano-banner>
     }
 
@@ -279,21 +388,57 @@ const emReais = (cents: number): string =>
         <label class="chk">
           <input
             type="checkbox"
-            [checked]="criarRegra()"
-            (change)="criarRegra.set($any($event.target).checked)"
+            [checked]="passadas()"
+            (change)="passadas.set($any($event.target).checked)"
           />
-          <span>Criar regra para as próximas e aplicar às deste período</span>
+          <span>Alterar também as transações passadas</span>
         </label>
-        @if (criarRegra()) {
+        <label class="chk">
+          <input
+            type="checkbox"
+            [checked]="futuras()"
+            (change)="futuras.set($any($event.target).checked)"
+          />
+          <span>Alterar também as transações futuras</span>
+        </label>
+        @if (passadas() || futuras()) {
           <label class="j-field">
-            <span class="j-field__label">Sempre que a descrição contiver</span>
-            <span class="j-input"
-              ><input
+            <span class="j-field__label">Transações com o nome contendo</span>
+            <span
+              class="j-input campo-trecho"
+              [class.j-input--error]="trechoGenerico()"
+            >
+              <input
+                #trecho
                 [value]="padrao()"
                 (input)="padrao.set($any($event.target).value)"
-                aria-label="Trecho da regra"
-            /></span>
+                aria-label="Trecho do nome"
+              />
+              @if (padrao()) {
+                <button
+                  class="icone"
+                  type="button"
+                  aria-label="Limpar trecho"
+                  (click)="padrao.set(''); trecho.focus()"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    aria-hidden="true"
+                  >
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              }
+            </span>
           </label>
+          @if (trechoGenerico()) {
+            <span class="j-cap aviso-trecho" role="alert">
+              Inclua o nome da loja: esse trecho pegaria quase todas as
+              transações.
+            </span>
+          }
         }
       </div>
     }
@@ -325,14 +470,29 @@ export class DetalheTransacao {
   protected readonly escolha = linkedSignal<string | null>(() =>
     this.tx().isTransfer ? TRANSFERENCIA : this.tx().categoryId,
   );
-  protected readonly criarRegra = linkedSignal<boolean>(() => {
+  protected readonly passadas = linkedSignal<boolean>(() => {
     this.tx();
     return false;
   });
+  protected readonly futuras = linkedSignal<boolean>(() => {
+    this.tx();
+    return false;
+  });
+  /** Nome da loja, sem "COMPRA C CARTAO 17 15", que pegaria todas as compras no débito. */
   protected readonly padrao = linkedSignal<string>(() =>
-    // Sem "COMPRA C CARTAO 17 15": a regra seria de todas as compras no débito.
-    estabelecimento(this.tx().descriptionNorm).split(' ').slice(0, 3).join(' '),
+    estabelecimento(this.tx().descriptionNorm),
   );
+  /** O trecho como será comparado: maiúsculas, sem acento nem pontuação. */
+  private readonly trechoNorm = computed(() =>
+    normalizeDescription(this.padrao()),
+  );
+  protected readonly trechoGenerico = computed(() =>
+    regraGenerica(this.trechoNorm()),
+  );
+  private readonly outras = computed(
+    () => this.podeRegra() && (this.passadas() || this.futuras()),
+  );
+  protected readonly copiado = signal(false);
 
   /** Editor de divisão aberto; abre sozinho quando o lançamento já é dividido. */
   protected readonly dividindo = linkedSignal<boolean>(
@@ -387,7 +547,8 @@ export class DetalheTransacao {
       );
     if (dividido) return true; // desfazer a divisão
     const atual = t.isTransfer ? TRANSFERENCIA : t.categoryId;
-    return this.escolha() !== atual || (this.podeRegra() && this.criarRegra());
+    if (this.outras() && this.trechoGenerico()) return false;
+    return this.escolha() !== atual || this.outras();
   });
 
   protected dividir(): void {
@@ -413,6 +574,16 @@ export class DetalheTransacao {
     this.linhas.update((l) => l.filter((_, j) => j !== i));
   }
 
+  protected async copiar(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.tx().description);
+      this.copiado.set(true);
+      setTimeout(() => this.copiado.set(false), 2000);
+    } catch {
+      // Sem permissão de área de transferência: o nome continua selecionável na tela.
+    }
+  }
+
   protected escolher(id: string): void {
     this.escolha.set(id);
   }
@@ -427,12 +598,16 @@ export class DetalheTransacao {
       return;
     }
     const escolha = this.escolha();
-    const pattern = this.padrao().trim();
     this.salvar.emit({
       escolha,
       regra:
-        this.podeRegra() && this.criarRegra() && pattern.length >= 3
-          ? { pattern, categoryId: escolha as string }
+        this.outras() && !this.trechoGenerico()
+          ? {
+              pattern: this.trechoNorm(),
+              categoryId: escolha as string,
+              passadas: this.passadas(),
+              futuras: this.futuras(),
+            }
           : null,
     });
   }

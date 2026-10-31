@@ -181,6 +181,35 @@ export class TransactionsRepository {
     return principal;
   }
 
+  /**
+   * "Alterar também as transações passadas": todo lançamento gravado cuja descrição contém o
+   * trecho passa para a categoria, como escolha sua (a sincronização não troca depois).
+   * Transferências e lançamentos divididos ficam como estão. Devolve os ids alterados.
+   */
+  async aplicarAsPassadas(
+    uid: string,
+    pattern: string,
+    categoryId: string,
+  ): Promise<string[]> {
+    const snap = await getDocs(collection(this.db, paths.transactions(uid)));
+    const alvo = snap.docs.filter((d) => {
+      const t = d.data() as Omit<TransactionDoc, 'id'>;
+      return (
+        t.descriptionNorm.includes(pattern) &&
+        !t.isTransfer &&
+        !t.splits?.length &&
+        !(t.categoryId === categoryId && t.categoryIsManual)
+      );
+    });
+    for (let i = 0; i < alvo.length; i += BATCH_LIMIT) {
+      const batch = writeBatch(this.db);
+      for (const d of alvo.slice(i, i + BATCH_LIMIT))
+        batch.update(d.ref, { categoryId, categoryIsManual: true });
+      await batch.commit();
+    }
+    return alvo.map((d) => d.id);
+  }
+
   /** Marca à mão como transferência (fora dos totais). */
   async setTransfer(uid: string, id: string): Promise<void> {
     await updateDoc(doc(this.db, paths.transactions(uid), id), {

@@ -60,3 +60,58 @@ export function suggestCategory(
   }
   return null;
 }
+
+/** Palavras de operação bancária: uma regra feita só delas casaria com quase tudo. */
+const PALAVRAS_DE_OPERACAO = new Set([
+  'COMPRA',
+  'C',
+  'COM',
+  'CARTAO',
+  'NO',
+  'DEBITO',
+  'CREDITO',
+  'PAGAMENTO',
+  'PAGTO',
+  'PIX',
+  'TED',
+  'DOC',
+  'TRANSFERENCIA',
+  'TRANSF',
+  'ENVIADO',
+  'RECEBIDO',
+]);
+
+/**
+ * Trecho que não identifica nenhuma loja: curto demais ou só palavras de operação e hora
+ * ("COMPRA C CARTAO", "PIX ENVIADO", "COMPRA C CARTAO 17 15").
+ */
+export function regraGenerica(pattern: string): boolean {
+  const p = pattern.trim();
+  if (p.length < 3) return true;
+  return p
+    .split(/\s+/)
+    .every((w) => PALAVRAS_DE_OPERACAO.has(w) || /^\d{1,2}$/.test(w));
+}
+
+/**
+ * A regra do usuário que vale para a descrição: entre as que casam, a de trecho mais longo
+ * (mais específica) e, no empate, a mais recente. Regras genéricas não valem.
+ */
+export function regraQueCasa<R extends { pattern: string; createdAt?: string }>(
+  descriptionNorm: string,
+  regras: readonly R[],
+): R | undefined {
+  let melhor: R | undefined;
+  for (const r of regras) {
+    if (regraGenerica(r.pattern) || !descriptionNorm.includes(r.pattern))
+      continue;
+    if (
+      !melhor ||
+      r.pattern.length > melhor.pattern.length ||
+      (r.pattern.length === melhor.pattern.length &&
+        (r.createdAt ?? '') > (melhor.createdAt ?? ''))
+    )
+      melhor = r;
+  }
+  return melhor;
+}
