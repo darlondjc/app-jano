@@ -32,6 +32,11 @@ export const CHANGELOG: Versao[] = [
         texto:
           'Maiores estabelecimentos e Recorrências juntam as compras no débito da mesma loja, mesmo com horários diferentes.',
       },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Transações: período redesenhado, com as opções num controle só e o mês centralizado entre as setas. Sai o resumo abaixo do título.',
+      },
     ],
   },
   {

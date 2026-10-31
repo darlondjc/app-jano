@@ -2,7 +2,6 @@ import type { TransactionDoc } from '@jano/data-access';
 import {
   agruparPorDia,
   dayLabel,
-  gastosDoMes,
   mesAnterior,
   mesSeguinte,
   rotuloMes,
@@ -42,31 +41,9 @@ describe('agrupar', () => {
     expect(g.map((x) => x.date)).toEqual(['2026-10-22', '2026-10-05']);
     expect(g[0].items).toHaveLength(2);
   });
-  it('gastos ignoram receitas e transferências', () => {
-    const total = gastosDoMes([
-      tx('a', '2026-10-05', 635000),
-      tx('b', '2026-10-22', -48000),
-      tx('c', '2026-10-25', -50000, { isTransfer: true }),
-      tx('d', '2026-10-21', -4200),
-    ]);
-    expect(total).toBe(52200);
-  });
   it('navega entre meses virando o ano', () => {
     expect(mesAnterior('2026-01')).toBe('2025-12');
     expect(mesSeguinte('2026-12')).toBe('2027-01');
     expect(rotuloMes('2026-10')).toBe('Outubro 2026');
-  });
-});
-
-describe('gastosDoMes com estorno', () => {
-  it('estorno do cartão abate o gasto', () => {
-    const tx = (accountId: string, amountCents: number) =>
-      ({ accountId, amountCents, isTransfer: false }) as never;
-    expect(
-      gastosDoMes(
-        [tx('c', -10000), tx('c', 550), tx('cc', 20000)],
-        new Set(['c']),
-      ),
-    ).toBe(9450);
   });
 });

@@ -43,7 +43,6 @@ import {
   agruparPorDia,
   classeValor,
   dataCurta,
-  gastosDoMes,
   mesAnterior,
   mesAtual,
   mesSeguinte,
@@ -91,7 +90,7 @@ interface Previa {
     }
     header.topo {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 12px;
     }
@@ -130,24 +129,103 @@ interface Previa {
     .linha-chips .j-chip {
       flex: none;
     }
-    .linha-chips.periodo {
+    .periodo {
+      display: flex;
       flex-wrap: wrap;
-      overflow: visible;
+      align-items: center;
+      gap: 12px;
     }
+    /* Controle segmentado: um grupo só, a opção ativa em destaque. */
+    .segmentos {
+      display: inline-flex;
+      padding: 3px;
+      gap: 2px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+    }
+    .segmentos button {
+      height: 32px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--text-2);
+      font: 500 14px/20px var(--font-sans);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .segmentos button:hover {
+      color: var(--text);
+    }
+    .segmentos button[aria-pressed='true'] {
+      background: var(--surface);
+      color: var(--primary-text);
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+    }
+    .segmentos button:focus-visible,
+    .nav-mes button:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+    /* Mês centralizado entre as setas; no período de 3 meses as setas somem sem mexer nele. */
     .nav-mes {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr) 40px;
+      align-items: center;
+      width: 100%;
+      max-width: 360px;
+      height: 44px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+    }
+    .nav-mes button {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      flex: none;
-      margin-left: 8px;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      margin: 0 2px;
+      border: 0;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
     }
-    .nav-mes strong {
-      font: 600 14px/20px var(--font-sans);
-      min-width: 110px;
+    .nav-mes button:hover {
+      background: var(--surface-2);
+      color: var(--text);
+    }
+    .nav-mes.fixo button {
+      visibility: hidden;
+    }
+    .nav-mes svg {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .rotulo-mes {
       text-align: center;
+      font: 600 16px/24px var(--font-sans);
+      letter-spacing: -0.01em;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .resumo {
-      margin-top: 4px;
+    @media (max-width: 599px) {
+      .segmentos,
+      .nav-mes {
+        width: 100%;
+        max-width: none;
+      }
+      .segmentos button {
+        flex: 1;
+      }
     }
     .ocultar-largo {
       display: inline-flex;
@@ -429,17 +507,7 @@ interface Previa {
   `,
   template: `
     <header class="topo">
-      <div>
-        <h1>Transações</h1>
-        @if (carregando()) {
-          <jano-skeleton w="320px" h="14px" style="margin-top: 10px" />
-        } @else {
-          <div class="j-sub resumo">
-            {{ visiveis().length }} de {{ filtradas().length }} transações ·
-            gastos de {{ money(gastos()) }}
-          </div>
-        }
-      </div>
+      <h1>Transações</h1>
       <label class="imp">
         <input
           type="file"
@@ -535,58 +603,53 @@ interface Previa {
           Selecionar
         </button>
       </div>
-      <div class="linha-chips periodo" role="group" aria-label="Período">
-        <button
-          class="j-chip"
-          type="button"
-          [attr.aria-pressed]="periodoAtivo() === 'este'"
-          (click)="irPara(mesAtualStr)"
-        >
-          Este mês
-        </button>
-        <button
-          class="j-chip"
-          type="button"
-          [attr.aria-pressed]="periodoAtivo() === 'passado'"
-          (click)="irPara(mesPassado)"
-        >
-          Mês passado
-        </button>
-        <button
-          class="j-chip"
-          type="button"
-          [attr.aria-pressed]="periodo().tipo === '3m'"
-          (click)="tresMeses()"
-        >
-          3 meses
-        </button>
-        <span class="nav-mes">
-          @if (periodo().tipo === 'mes') {
-            <button
-              janoButton
-              variant="ghost"
-              [small]="true"
-              type="button"
-              aria-label="Mês anterior"
-              (click)="mudarMes(-1)"
-            >
-              ‹
-            </button>
-          }
-          <strong>{{ rotulo() }}</strong>
-          @if (periodo().tipo === 'mes') {
-            <button
-              janoButton
-              variant="ghost"
-              [small]="true"
-              type="button"
-              aria-label="Próximo mês"
-              (click)="mudarMes(1)"
-            >
-              ›
-            </button>
-          }
-        </span>
+      <div class="periodo" role="group" aria-label="Período">
+        <div class="segmentos">
+          <button
+            type="button"
+            [attr.aria-pressed]="periodoAtivo() === 'este'"
+            (click)="irPara(mesAtualStr)"
+          >
+            Este mês
+          </button>
+          <button
+            type="button"
+            [attr.aria-pressed]="periodoAtivo() === 'passado'"
+            (click)="irPara(mesPassado)"
+          >
+            Mês passado
+          </button>
+          <button
+            type="button"
+            [attr.aria-pressed]="periodo().tipo === '3m'"
+            (click)="tresMeses()"
+          >
+            3 meses
+          </button>
+        </div>
+        <div class="nav-mes" [class.fixo]="periodo().tipo !== 'mes'">
+          <button
+            type="button"
+            aria-label="Mês anterior"
+            [disabled]="periodo().tipo !== 'mes'"
+            (click)="mudarMes(-1)"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <span class="rotulo-mes" aria-live="polite">{{ rotulo() }}</span>
+          <button
+            type="button"
+            aria-label="Próximo mês"
+            [disabled]="periodo().tipo !== 'mes'"
+            (click)="mudarMes(1)"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1090,9 +1153,6 @@ export class Transacoes {
           .filter((c) => c.type === 'cartao')
           .map((c) => c.id),
       ),
-  );
-  protected readonly gastos = computed(() =>
-    gastosDoMes(this.filtradas(), this.cartoes()),
   );
   protected readonly semCategoriaN = computed(
     () => this.txs().filter((t) => !t.categoryId && !t.isTransfer).length,
