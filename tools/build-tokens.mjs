@@ -4,10 +4,12 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 const src = 'libs/ui/tokens/tokens.json';
 const outDir = 'libs/ui/src/styles';
 const t = JSON.parse(readFileSync(src, 'utf8'));
+// "{primary}" no JSON é referência a outro token: vira var(--primary) no CSS.
+const ref = (v) => v.replace(/^\{([a-z0-9-]+)\}$/, 'var(--$1)');
 const themed = (list, theme) =>
   list.map((x) => [
     x.name,
-    typeof x.value === 'string' ? x.value : x.value[theme],
+    ref(typeof x.value === 'string' ? x.value : x.value[theme]),
   ]);
 
 const base = [

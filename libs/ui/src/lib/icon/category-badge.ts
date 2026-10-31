@@ -6,7 +6,7 @@ import {
 } from '@angular/core';
 import { JanoIcon } from './icon';
 
-/** Círculo com o ícone da categoria, na cor da categoria (token "cat-N"). */
+/** Quadrado arredondado com o ícone da categoria: ícone na cor cheia, fundo na versão suave ("cat-N-soft"). */
 @Component({
   selector: 'jano-category-badge',
   imports: [JanoIcon],
@@ -19,7 +19,7 @@ import { JanoIcon } from './icon';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
+      border-radius: 28%;
       flex: none;
     }
   `,
@@ -44,6 +44,6 @@ export class JanoCategoryBadge {
   );
   protected readonly bg = computed(
     () =>
-      `color-mix(in srgb, var(--${this.colorToken() || 'cat-1'}) 16%, transparent)`,
+      `var(--${this.colorToken() || 'cat-1'}-soft, color-mix(in srgb, var(--${this.colorToken() || 'cat-1'}) 16%, transparent))`,
   );
 }

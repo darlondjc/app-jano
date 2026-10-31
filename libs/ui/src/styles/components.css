@@ -170,12 +170,74 @@
 /* Cartão e KPI */
 .j-card {
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  /* Revisão de 31/10/2026: cartão de conteúdo com elevação leve; a borda some no claro e
+     fica no escuro, onde a sombra não aparece. */
+  border: 1px solid var(--card-border);
+  box-shadow: var(--elev-1);
+  border-radius: var(--radius-lg);
   padding: var(--space-5);
   color: var(--text);
   font-family: var(--font-sans);
   box-sizing: border-box;
+}
+/* Destaque da tela (revisão de 31/10/2026): um por tela, na superfície da marca. */
+.j-hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--brand-deep);
+  color: var(--on-brand);
+  font-family: var(--font-sans);
+}
+.j-hero__label {
+  font: 500 14px/20px var(--font-sans);
+  color: var(--on-brand-2);
+}
+.j-hero__valor {
+  font: 700 40px/44px var(--font-sans);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.j-hero__valor small {
+  font-size: 0.55em;
+  font-weight: 600;
+}
+.j-hero__mes {
+  position: relative;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--on-brand) 18%, transparent);
+}
+.j-hero__mes > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--radius-pill);
+  background: var(--on-brand);
+}
+.j-hero__linha {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid color-mix(in srgb, var(--on-brand) 16%, transparent);
+}
+.j-hero__destaque {
+  font: 600 22px/28px var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.j-hero__nota {
+  font: 400 13px/18px var(--font-sans);
+  color: var(--on-brand-2);
+}
+.j-spark {
+  display: block;
+  width: 100%;
+  height: 28px;
+  margin-top: var(--space-1);
 }
 jano-kpi-card {
   display: block;
@@ -221,6 +283,10 @@ jano-kpi-card .j-kpi {
 .j-delta--bad {
   background: var(--danger-soft);
   color: var(--danger);
+}
+.j-delta--neutral {
+  background: var(--surface-2);
+  color: var(--text-2);
 }
 .j-delta--neutral {
   background: var(--surface-2);
@@ -332,7 +398,8 @@ jano-kpi-card .j-kpi {
   color: var(--positive);
 }
 .j-tx__amount--out {
-  color: var(--danger);
+  /* O sinal de menos já diz que é saída; vermelho fica para o que pede atenção. */
+  color: var(--text);
 }
 .j-tx__amount--neutral {
   color: var(--text-2);
@@ -341,7 +408,7 @@ jano-kpi-card .j-kpi {
   color: var(--positive);
 }
 .j-kpi__value--out {
-  color: var(--danger);
+  color: var(--text);
 }
 .j-day {
   font: 600 12px/16px var(--font-sans);
@@ -541,6 +608,11 @@ jano-kpi-card .j-kpi {
   .j-kpis-2col .j-kpi__value {
     font-size: 22px;
     line-height: 28px;
+  }
+  .j-kpis-2col .j-delta {
+    font-size: 12px;
+    line-height: 16px;
+    padding: 3px 8px;
   }
   .j-kpis-2col .j-kpi__label,
   .j-kpis-2col .j-cap {

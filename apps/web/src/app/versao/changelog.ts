@@ -14,6 +14,31 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.11.0',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Início com destaque para o saldo e quanto dá para gastar por dia até o próximo salário, já descontando a fatura do cartão e as contas fixas que vencem antes.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Gasto e receita do mês comparados com o mês anterior até o mesmo dia, com a tendência dos últimos meses.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Visual revisado: cartões com mais profundidade, números maiores, ícones de categoria coloridos e saídas sem vermelho (o vermelho fica para o que pede atenção).',
+      },
+      {
+        tipo: 'correcao',
+        texto: 'O contorno de foco ao navegar pelo teclado voltou a aparecer.',
+      },
+    ],
+  },
+  {
     version: '0.10.9',
     date: '2026-10-31',
     items: [
