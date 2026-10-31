@@ -18,6 +18,11 @@ export interface TransactionDoc {
   holder?: string;
   /** Parcela "n de total". */
   installment?: { n: number; total: number };
+  /**
+   * Divisão em categorias, com o mesmo sinal do lançamento e soma igual a `amountCents`.
+   * Quem tem divisão fica com `categoryIsManual`; `categoryId` aponta para a maior parte.
+   */
+  splits?: { categoryId: string | null; amountCents: number }[];
 }
 
 export interface AccountDoc {

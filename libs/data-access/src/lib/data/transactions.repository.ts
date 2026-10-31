@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import {
   collection,
+  deleteField,
   doc,
   getDocs,
   orderBy,
@@ -68,7 +69,11 @@ export class TransactionsRepository {
     for (let i = 0; i < ids.length; i += BATCH_LIMIT) {
       const batch = writeBatch(this.db);
       for (const id of ids.slice(i, i + BATCH_LIMIT)) {
-        batch.update(doc(this.db, paths.transactions(uid), id), { ...patch });
+        // Escolher uma categoria (ou transferência) desfaz a divisão.
+        batch.update(doc(this.db, paths.transactions(uid), id), {
+          ...patch,
+          splits: deleteField(),
+        });
       }
       await batch.commit();
     }
@@ -130,7 +135,29 @@ export class TransactionsRepository {
       categoryId,
       categoryIsManual: true,
       isTransfer: false,
+      splits: deleteField(),
     });
+  }
+
+  /**
+   * Divide em categorias (partes já validadas por `validarDivisao`). A categoria principal
+   * vira a da maior parte, para listas e filtros que mostram uma só.
+   */
+  async setSplits(
+    uid: string,
+    id: string,
+    splits: { categoryId: string; amountCents: number }[],
+  ): Promise<string> {
+    const principal = [...splits].sort(
+      (a, b) => a.amountCents - b.amountCents,
+    )[0].categoryId;
+    await updateDoc(doc(this.db, paths.transactions(uid), id), {
+      splits,
+      categoryId: principal,
+      categoryIsManual: true,
+      isTransfer: false,
+    });
+    return principal;
   }
 
   /** Marca à mão como transferência (fora dos totais). */
@@ -139,6 +166,7 @@ export class TransactionsRepository {
       categoryId: null,
       categoryIsManual: true,
       isTransfer: true,
+      splits: deleteField(),
     });
   }
 

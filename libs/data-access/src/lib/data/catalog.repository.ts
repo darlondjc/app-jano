@@ -164,6 +164,31 @@ export class CatalogRepository {
       }
       await batch.commit();
     }
+    // Partes de divisões nessa categoria ficam sem categoria; o resto da divisão continua.
+    const divididas = await getDocs(
+      query(
+        collection(this.db, paths.transactions(uid)),
+        where('splits', '!=', null),
+      ),
+    );
+    const afetadas = divididas.docs.filter((d) =>
+      (d.get('splits') as { categoryId: string | null }[]).some(
+        (p) => p.categoryId === id,
+      ),
+    );
+    for (let i = 0; i < afetadas.length; i += BATCH_LIMIT) {
+      const batch = writeBatch(this.db);
+      for (const d of afetadas.slice(i, i + BATCH_LIMIT))
+        batch.update(d.ref, {
+          splits: (
+            d.get('splits') as {
+              categoryId: string | null;
+              amountCents: number;
+            }[]
+          ).map((p) => (p.categoryId === id ? { ...p, categoryId: null } : p)),
+        });
+      await batch.commit();
+    }
     await deleteDoc(doc(this.db, paths.budgets(uid), id));
     await deleteDoc(doc(this.db, paths.categories(uid), id));
   }

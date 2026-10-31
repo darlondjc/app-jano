@@ -876,7 +876,7 @@ interface Previa {
                         {{
                           t.isTransfer
                             ? 'Transferência · fora do total'
-                            : nomeCategoria2(t.categoryId)
+                            : rotuloCategoria(t)
                         }}
                       </span>
                     </td>
@@ -919,9 +919,7 @@ interface Previa {
                       }}</span>
                       <span class="j-tx__sub" style="display: block">
                         {{
-                          t.isTransfer
-                            ? 'Transferência'
-                            : nomeCategoria2(t.categoryId)
+                          t.isTransfer ? 'Transferência' : rotuloCategoria(t)
                         }}
                         · {{ nomeConta(t.accountId) }}
                       </span>
@@ -1221,6 +1219,14 @@ export class Transacoes {
     return this.cat(id)?.name ?? 'Sem categoria';
   }
 
+  /** "Mercado", ou "Mercado + 1" quando o lançamento é dividido. */
+  protected rotuloCategoria(t: TransactionDoc): string {
+    const nome = this.nomeCategoria2(t.categoryId);
+    return t.splits && t.splits.length > 1
+      ? `${nome} + ${t.splits.length - 1}`
+      : nome;
+  }
+
   protected nomeConta(id: string): string {
     return this.contas().find((c) => c.id === id)?.nickname ?? '';
   }
@@ -1267,6 +1273,7 @@ export class Transacoes {
                 categoryId: transferencia ? null : escolha,
                 categoryIsManual: true,
                 isTransfer: transferencia,
+                splits: undefined,
               }
             : t,
         ),
@@ -1283,6 +1290,33 @@ export class Transacoes {
   protected async salvarDetalhe(ev: SalvarDetalhe): Promise<void> {
     const t = this.detalhe();
     if (!t) return;
+    if (ev.divisao) {
+      this.ocupado.set(true);
+      try {
+        const splits = ev.divisao;
+        const categoryId = await this.repo.setSplits(this.uid, t.id, splits);
+        this.txs.update((l) =>
+          l.map((x) =>
+            x.id === t.id
+              ? {
+                  ...x,
+                  splits,
+                  categoryId,
+                  categoryIsManual: true,
+                  isTransfer: false,
+                }
+              : x,
+          ),
+        );
+        this.aviso.set(`Dividido em ${splits.length} categorias.`);
+        this.detalheId.set(null);
+      } catch (e) {
+        this.falha(e);
+      } finally {
+        this.ocupado.set(false);
+      }
+      return;
+    }
     const transferencia = ev.escolha === TRANSFERENCIA;
     const categoryId = transferencia ? null : ev.escolha;
     const regraCat = ev.regra?.categoryId ?? null;
@@ -1326,6 +1360,7 @@ export class Transacoes {
                 categoryId,
                 categoryIsManual: true,
                 isTransfer: transferencia,
+                splits: undefined,
               }
             : extra.has(x.id)
               ? { ...x, categoryId: regraCat }
