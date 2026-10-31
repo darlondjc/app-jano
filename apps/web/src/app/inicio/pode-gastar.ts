@@ -39,7 +39,11 @@ const dias = (de: string, ate: string): number =>
   );
 
 /** A série já caiu neste mês (mesmo valor, ±25%, perto do dia de costume)? */
-function jaVeioNoMes(s: RecurringSeries, txs: HistTx[], hoje: string): boolean {
+export function jaVeioNoMes(
+  s: RecurringSeries,
+  txs: HistTx[],
+  hoje: string,
+): boolean {
   const mes = hoje.slice(0, 7);
   return txs.some(
     (t) =>

@@ -14,9 +14,19 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
-    version: '0.11.1',
+    version: '0.12.0',
     date: '2026-10-31',
     items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Projeções virou o plano do mês: quanto fica livre até o salário, o que entra e sai nos próximos 30 dias com o saldo previsto depois de cada um (salário, contas fixas, fatura do cartão), e quanto da renda dos próximos meses já está comprometido com contas fixas e parcelas.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'A projeção de 3 a 12 meses e os cenários "E se" continuam, em Longo prazo, abaixo do plano.',
+      },
       {
         tipo: 'correcao',
         texto:
