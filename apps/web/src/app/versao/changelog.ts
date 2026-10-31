@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.10.6',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Transações no celular mais enxuta: o período cabe numa linha só (toque no mês para escolher Este mês, Mês passado ou Últimos 3 meses) e os filtros rápidos quebram a linha em vez de sumir para o lado.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Filtros em uso aparecem como chips com × para tirar; "Sem categoria" só aparece quando há algo para categorizar; Selecionar virou um botão ao lado de Importar.',
+      },
+    ],
+  },
+  {
     version: '0.10.5',
     date: '2026-10-31',
     items: [
