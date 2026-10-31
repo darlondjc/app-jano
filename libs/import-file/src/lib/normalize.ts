@@ -17,3 +17,22 @@ export function normalizeDescription(raw: string): string {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+/**
+ * Prefixos de operação que o banco põe antes do nome da loja, já normalizados. A compra no
+ * débito do BB vem como "COMPRA C/CARTAO 27/10 17:15 LOJA": a data some na normalização, mas
+ * "C/" e a hora ficam ("COMPRA C CARTAO 17 15 LOJA").
+ */
+const PREFIXO_OPERACAO =
+  /^(COMPRA (C |COM )?CARTAO|COMPRA NO DEBITO|PAGAMENTO (COM )?CARTAO)( \d{2} \d{2}(?= ))?\s+/;
+
+/**
+ * Só o estabelecimento, sem o prefixo da operação nem a hora. Serve para agrupar compras da
+ * mesma loja e propor regras; a `descriptionNorm` gravada não muda, porque é parte da chave de
+ * deduplicação.
+ */
+export function estabelecimento(descriptionNorm: string): string {
+  return (
+    descriptionNorm.replace(PREFIXO_OPERACAO, '').trim() || descriptionNorm
+  );
+}

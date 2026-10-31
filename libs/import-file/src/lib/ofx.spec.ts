@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { addDedupeKeys, hashKey } from './dedupe';
 import { parseAmountToCents } from './money';
-import { normalizeDescription } from './normalize';
+import { estabelecimento, normalizeDescription } from './normalize';
 import { decodeBytes, parseOfx } from './ofx';
 
 const fx = (name: string) => readFileSync(join(__dirname, 'fixtures', name));
@@ -106,4 +106,24 @@ describe('addDedupeKeys', () => {
   });
   it('hashKey devolve 64 hex', async () =>
     expect(await hashKey('f:cc:X1')).toMatch(/^[0-9a-f]{64}$/));
+});
+
+describe('estabelecimento', () => {
+  it('tira o prefixo da compra no débito e a hora', () => {
+    const norm = normalizeDescription('COMPRA C/CARTAO 27/10 17:15 PADARIA X');
+    expect(norm).toBe('COMPRA C CARTAO 17 15 PADARIA X');
+    expect(estabelecimento(norm)).toBe('PADARIA X');
+  });
+  it('compras da mesma loja em horas diferentes ficam iguais', () => {
+    const a = normalizeDescription('COMPRA C/CARTAO 27/10 17:15 MATEUS SUPERM');
+    const b = normalizeDescription('COMPRA C/CARTAO 02/11 09:03 MATEUS SUPERM');
+    expect(estabelecimento(a)).toBe(estabelecimento(b));
+  });
+  it('não mexe em número que faz parte do nome', () => {
+    expect(estabelecimento('COMPRA C CARTAO 99 POP')).toBe('99 POP');
+    expect(estabelecimento('PADARIA 24 HORAS')).toBe('PADARIA 24 HORAS');
+  });
+  it('sem nada depois do prefixo, devolve como veio', () => {
+    expect(estabelecimento('COMPRA C CARTAO')).toBe('COMPRA C CARTAO');
+  });
 });

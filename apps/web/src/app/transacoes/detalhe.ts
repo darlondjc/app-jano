@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import type { CategoryDoc, TransactionDoc } from '@jano/data-access';
 import { formatBRL, validarDivisao } from '@jano/engine';
-import { parseAmountToCents } from '@jano/import-file';
+import { estabelecimento, parseAmountToCents } from '@jano/import-file';
 import { JanoBanner, JanoButton } from '@jano/ui';
 import { classeValor, dayLabel } from './agrupar';
 
@@ -330,7 +330,8 @@ export class DetalheTransacao {
     return false;
   });
   protected readonly padrao = linkedSignal<string>(() =>
-    this.tx().descriptionNorm.split(' ').slice(0, 3).join(' '),
+    // Sem "COMPRA C CARTAO 17 15": a regra seria de todas as compras no débito.
+    estabelecimento(this.tx().descriptionNorm).split(' ').slice(0, 3).join(' '),
   );
 
   /** Editor de divisão aberto; abre sozinho quando o lançamento já é dividido. */

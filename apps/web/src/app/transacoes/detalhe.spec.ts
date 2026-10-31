@@ -84,6 +84,27 @@ describe('DetalheTransacao', () => {
     ]);
   });
 
+  it('na compra no débito, a regra proposta é a loja, sem prefixo nem hora', () => {
+    const { f, el, saidas } = montar({
+      ...tx,
+      description: 'COMPRA C/CARTAO 27/10 17:15 MATEUS SUPERM SAO LUIS',
+      descriptionNorm: 'COMPRA C CARTAO 17 15 MATEUS SUPERM SAO LUIS',
+    });
+    botao(el, 'Mercado').click();
+    f.detectChanges();
+    const chk = el.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    chk.checked = true;
+    chk.dispatchEvent(new Event('change'));
+    f.detectChanges();
+    botao(el, 'Salvar').click();
+    expect(saidas).toEqual([
+      {
+        escolha: 'mercado',
+        regra: { pattern: 'MATEUS SUPERM SAO', categoryId: 'mercado' },
+      },
+    ]);
+  });
+
   it('transferência não oferece regra', () => {
     const { f, el, saidas } = montar();
     botao(el, 'Transferência').click();

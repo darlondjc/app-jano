@@ -1,5 +1,4 @@
 import type { TransactionDoc } from '@jano/data-access';
-import { ehEstorno } from '@jano/engine';
 
 export interface DayGroup {
   date: string;
@@ -49,19 +48,6 @@ export function agruparPorDia(txs: TransactionDoc[]): DayGroup[] {
     label: dayLabel(date),
     items,
   }));
-}
-
-/** Soma dos gastos do mês: saídas menos estornos do cartão, sem transferências entre contas. */
-export function gastosDoMes(
-  txs: TransactionDoc[],
-  cartoes?: ReadonlySet<string>,
-): number {
-  const total = txs.reduce((sum, t) => {
-    if (t.isTransfer) return sum;
-    if (t.amountCents < 0 || ehEstorno(t, cartoes)) return sum - t.amountCents;
-    return sum;
-  }, 0);
-  return Math.max(total, 0);
 }
 
 export function mesAnterior(month: string): string {
