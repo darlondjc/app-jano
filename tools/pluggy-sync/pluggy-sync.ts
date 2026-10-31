@@ -21,6 +21,7 @@ import {
   PluggyClient,
   PluggyConnector,
   categorizar,
+  inferirPeloHistorico,
   reaplicarRegras,
   type CategoriaRef,
   type LancamentoGravado,
@@ -268,7 +269,7 @@ async function sync(
       createdAt: new Date().toISOString(),
     });
   }
-  await regrasNoHistorico(db, base, regras, categorias, seco);
+  await revisarHistorico(db, base, regras, categorias, seco);
   if (!seco) {
     await gravarSaldos(db, base, contasPluggy, config);
     await gravarConexoes(db, base, connector);
@@ -276,27 +277,36 @@ async function sync(
 }
 
 /**
- * Suas regras valem para o histórico inteiro, não só para o período sincronizado: categoria
- * automática que diverge da regra passa a ser a da regra. Escolhas manuais ficam.
+ * Revisão do histórico inteiro, não só do período sincronizado. Primeiro suas regras: categoria
+ * automática que diverge da regra passa a ser a da regra. Depois, o que segue sem categoria
+ * recebe a da mesma loja em outros lançamentos. Escolhas manuais ficam.
  */
-async function regrasNoHistorico(
+async function revisarHistorico(
   db: Firestore,
   base: string,
   regras: RegraRef[],
   categorias: CategoriaRef[],
   seco: boolean,
 ): Promise<void> {
-  if (!regras.length) return;
   const snap = await db.collection(`${base}/transactions`).get();
-  const mudar = reaplicarRegras(
-    snap.docs.map((d) => ({ id: d.id, ...d.data() }) as LancamentoGravado),
-    regras,
-    categorias,
+  const todos = snap.docs.map(
+    (d) => ({ id: d.id, ...d.data() }) as LancamentoGravado,
+  );
+  const porRegra = reaplicarRegras(todos, regras, categorias);
+  const novas = new Map(porRegra.map((m) => [m.id, m.categoryId]));
+  const depoisDasRegras = todos.map((t) =>
+    novas.has(t.id) ? { ...t, categoryId: novas.get(t.id) ?? null } : t,
+  );
+  const porLoja = inferirPeloHistorico(depoisDasRegras, categorias);
+  const verbo = seco ? 'mudariam' : 'atualizados';
+  console.log(
+    `Regras no histórico: ${porRegra.length} lançamentos ${verbo} de categoria.`,
   );
   console.log(
-    `Regras no histórico: ${mudar.length} lançamentos ${seco ? 'mudariam' : 'atualizados'} de categoria.`,
+    `Mesma loja no histórico: ${porLoja.length} lançamentos sem categoria ${seco ? 'receberiam' : 'receberam'} categoria.`,
   );
   if (seco) return;
+  const mudar = [...porRegra, ...porLoja];
   for (let i = 0; i < mudar.length; i += BATCH_LIMIT) {
     const batch = db.batch();
     for (const m of mudar.slice(i, i + BATCH_LIMIT))

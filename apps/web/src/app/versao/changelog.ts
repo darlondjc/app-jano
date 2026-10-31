@@ -14,6 +14,27 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.10.4',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'correcao',
+        texto:
+          'Na compra no débito ("COMPRA C/CARTAO 27/10 17:15 LOJA"), a regra proposta passa a ser o nome da loja. Antes era "COMPRA C CARTAO", que pegaria todas as compras no débito.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Lançamento sem categoria recebe a de outras compras na mesma loja, priorizando a que você escolheu à mão. Vale para o histórico inteiro, na sincronização diária.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Maiores estabelecimentos e Recorrências juntam as compras no débito da mesma loja, mesmo com horários diferentes.',
+      },
+    ],
+  },
+  {
     version: '0.10.3',
     date: '2026-10-31',
     items: [

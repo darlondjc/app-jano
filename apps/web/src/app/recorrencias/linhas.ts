@@ -4,6 +4,7 @@ import {
   type HistTx,
   type RecurringSeries,
 } from '@jano/engine';
+import { estabelecimento } from '@jano/import-file';
 
 export interface TxRec extends HistTx {
   description: string;
@@ -111,7 +112,13 @@ export function montarRecorrencias(
   assinaturasId: string | null = 'assinaturas',
 ): LinhaRecorrencia[] {
   // Parcela não é conta fixa: tem fim. Fica só em parcelamentos.
-  const txs = todas.filter((t) => !t.installment);
+  // Agrupa pela loja: a compra no débito traz a hora na descrição e nunca se repetiria.
+  const txs = todas
+    .filter((t) => !t.installment)
+    .map((t) => ({
+      ...t,
+      descriptionNorm: estabelecimento(t.descriptionNorm),
+    }));
   const ultimo = new Map<string, TxRec>();
   for (const t of [...txs].sort((a, b) => a.date.localeCompare(b.date)))
     ultimo.set(t.descriptionNorm, t);

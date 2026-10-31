@@ -1,5 +1,9 @@
 import { addDedupeKeys } from '@jano/import-file';
-import { categorizar, reaplicarRegras } from './categorizar';
+import {
+  categorizar,
+  inferirPeloHistorico,
+  reaplicarRegras,
+} from './categorizar';
 import { deCategoriaPluggy, deMcc } from './categorias';
 import { toRawTransaction } from './pluggy-connector';
 import type { PluggyTransaction } from './pluggy-client';
@@ -171,6 +175,68 @@ describe('categorias da Pluggy e MCC', () => {
         ],
         [{ pattern: 'MATEUS', categoryId: 'apagada' }],
         [{ id: 'mercado', name: 'Mercado' }],
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe('inferirPeloHistorico', () => {
+  const cats = [
+    { id: 'mercado', name: 'Mercado' },
+    { id: 'restaurantes', name: 'Restaurantes' },
+  ];
+  const l = (
+    id: string,
+    descriptionNorm: string,
+    categoryId: string | null,
+    over: { categoryIsManual?: boolean; isTransfer?: boolean } = {},
+  ) => ({
+    id,
+    descriptionNorm,
+    categoryId,
+    categoryIsManual: false,
+    isTransfer: false,
+    ...over,
+  });
+
+  it('compra no débito sem categoria recebe a da mesma loja, ignorando prefixo e hora', () => {
+    expect(
+      inferirPeloHistorico(
+        [
+          l('a', 'COMPRA C CARTAO 09 03 MATEUS SUPERM', 'mercado'),
+          l('b', 'COMPRA C CARTAO 17 15 MATEUS SUPERM', null),
+          l('c', 'COMPRA C CARTAO 17 15 OUTRA LOJA', null),
+        ],
+        cats,
+      ),
+    ).toEqual([{ id: 'b', categoryId: 'mercado' }]);
+  });
+
+  it('a escolha manual vale mais que as automáticas', () => {
+    expect(
+      inferirPeloHistorico(
+        [
+          l('a', 'PADARIA X', 'mercado'),
+          l('b', 'PADARIA X', 'mercado'),
+          l('c', 'PADARIA X', 'restaurantes', { categoryIsManual: true }),
+          l('d', 'COMPRA C CARTAO 08 10 PADARIA X', null),
+        ],
+        cats,
+      ),
+    ).toEqual([{ id: 'd', categoryId: 'restaurantes' }]);
+  });
+
+  it('não mexe em transferência, em escolha manual nem em categoria apagada', () => {
+    expect(
+      inferirPeloHistorico(
+        [
+          l('a', 'LOJA', 'apagada'),
+          l('b', 'LOJA', null),
+          l('c', 'MERCADO Z', 'mercado'),
+          l('d', 'MERCADO Z', null, { isTransfer: true }),
+          l('e', 'MERCADO Z', null, { categoryIsManual: true }),
+        ],
+        cats,
       ),
     ).toEqual([]);
   });

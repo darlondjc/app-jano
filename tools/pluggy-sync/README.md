@@ -94,3 +94,8 @@ A cada sincronização, lançamentos dos últimos 45 dias que continuam sem cate
 não editou, são reavaliados. Além disso, suas regras valem para o histórico inteiro: onde uma
 regra casa e a categoria automática é outra, fica a da regra. Escolhas manuais, divisões e
 transferências nunca mudam. Uma regra criada no app passa a valer assim no dia seguinte.
+
+Por fim, o que continua sem categoria em todo o histórico recebe a categoria de outros
+lançamentos da mesma loja: a que você escolheu à mão ou, se nunca escolheu, a mais frequente.
+A loja é a descrição sem o prefixo da operação nem a hora, então "COMPRA C/CARTAO 27/10 17:15
+PADARIA X" e "PADARIA X" são a mesma.
