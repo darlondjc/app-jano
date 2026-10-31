@@ -18,6 +18,7 @@
   --surface: #ffffff;
   --surface-2: #eef1f5;
   --border: #e1e5eb;
+  --card-border: transparent;
   --border-strong: #7b8696;
   --text: #0f1720;
   --text-2: #5b6675;
@@ -25,6 +26,9 @@
   --primary-hover: #0a6254;
   --primary-soft: #ddf3ee;
   --primary-text: #0a5c4f;
+  --brand-deep: #0b3d36;
+  --on-brand: #eafaf6;
+  --on-brand-2: #a9d9cf;
   --on-primary: #ffffff;
   --positive: #14703b;
   --positive-soft: #e3f4ea;
@@ -36,7 +40,7 @@
   --on-danger: #ffffff;
   --info: #2459c4;
   --info-soft: #e4eefd;
-  --focus: {primary};
+  --focus: var(--primary);
   --overlay: #0f172080;
   --chart-grid: #e1e5eb;
   --projection-band: #0e7c6b26;
@@ -48,6 +52,15 @@
   --cat-6: #1f9cb8;
   --cat-7: #6b7a2a;
   --cat-8: #d0558a;
+  --cat-1-soft: #ddf3ee;
+  --cat-2-soft: #e4eefd;
+  --cat-3-soft: #fbf0dc;
+  --cat-4-soft: #f1e6fa;
+  --cat-5-soft: #fbe6e6;
+  --cat-6-soft: #ddf2f7;
+  --cat-7-soft: #eef1dc;
+  --cat-8-soft: #fbe6ef;
+  --elev-1: 0 1px 2px #0f172014, 0 1px 1px #0f17200a;
   --shadow-popover: 0 2px 8px #0f172020;
   --shadow-sheet: 0 8px 24px #0f172029;
 }
@@ -56,6 +69,7 @@
   --surface: #151c24;
   --surface-2: #1c252f;
   --border: #2a3542;
+  --card-border: #222c37;
   --border-strong: #5e6c7d;
   --text: #eaeff5;
   --text-2: #9aa7b5;
@@ -63,6 +77,8 @@
   --primary-hover: #5ad4be;
   --primary-soft: #123a34;
   --primary-text: #7ae0cb;
+  --brand-deep: #12463e;
+  --on-brand-2: #8fd3c4;
   --on-primary: #0c1117;
   --positive: #4cc27d;
   --positive-soft: #123524;
@@ -85,6 +101,15 @@
   --cat-6: #4fc3dd;
   --cat-7: #a3b84f;
   --cat-8: #ee86b2;
+  --cat-1-soft: #123a34;
+  --cat-2-soft: #172a4d;
+  --cat-3-soft: #3a2c10;
+  --cat-4-soft: #2c1d3d;
+  --cat-5-soft: #3d1a1a;
+  --cat-6-soft: #12333b;
+  --cat-7-soft: #272d12;
+  --cat-8-soft: #3d1a2a;
+  --elev-1: 0 1px 2px #00000066;
   --shadow-popover: 0 2px 8px #00000066;
   --shadow-sheet: 0 8px 24px #00000080;
 }
@@ -94,6 +119,7 @@
     --surface: #151c24;
     --surface-2: #1c252f;
     --border: #2a3542;
+    --card-border: #222c37;
     --border-strong: #5e6c7d;
     --text: #eaeff5;
     --text-2: #9aa7b5;
@@ -101,6 +127,8 @@
     --primary-hover: #5ad4be;
     --primary-soft: #123a34;
     --primary-text: #7ae0cb;
+    --brand-deep: #12463e;
+    --on-brand-2: #8fd3c4;
     --on-primary: #0c1117;
     --positive: #4cc27d;
     --positive-soft: #123524;
@@ -123,6 +151,15 @@
     --cat-6: #4fc3dd;
     --cat-7: #a3b84f;
     --cat-8: #ee86b2;
+    --cat-1-soft: #123a34;
+    --cat-2-soft: #172a4d;
+    --cat-3-soft: #3a2c10;
+    --cat-4-soft: #2c1d3d;
+    --cat-5-soft: #3d1a1a;
+    --cat-6-soft: #12333b;
+    --cat-7-soft: #272d12;
+    --cat-8-soft: #3d1a2a;
+    --elev-1: 0 1px 2px #00000066;
     --shadow-popover: 0 2px 8px #00000066;
     --shadow-sheet: 0 8px 24px #00000080;
   }

@@ -17,7 +17,14 @@ import {
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
-import { JanoBackToTop, JanoButton, JanoLogo, JanoProgressBar } from '@jano/ui';
+import { definirModoDemo, modoDemoAtivo } from '@jano/data-access';
+import {
+  JanoBackToTop,
+  JanoBanner,
+  JanoButton,
+  JanoLogo,
+  JanoProgressBar,
+} from '@jano/ui';
 import { VERSAO_ATUAL } from '../versao/changelog';
 import { haNovidades } from '../versao/novidades';
 import { AvatarMenu } from './avatar-menu';
@@ -89,9 +96,19 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
     AvisoConexaoBanner,
     JanoProgressBar,
     JanoBackToTop,
+    JanoBanner,
+    JanoButton,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
+    .demo {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 16px 16px 0;
+    }
+    .demo button {
+      margin-left: 8px;
+    }
     :host {
       display: flex;
       min-height: 100vh;
@@ -303,7 +320,25 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
       <div class="topo-largo">
         <jano-avatar-menu [novidades]="novidades()" />
       </div>
-      <jano-aviso-conexao />
+      @if (demo) {
+        <div class="demo">
+          <jano-banner tone="info" title="Modo demonstração.">
+            Dados fictícios. O que você mudar some ao recarregar e nada vai para
+            o servidor.
+            <button
+              janoButton
+              variant="secondary"
+              [small]="true"
+              type="button"
+              (click)="sairDaDemo()"
+            >
+              Sair da demonstração
+            </button>
+          </jano-banner>
+        </div>
+      } @else {
+        <jano-aviso-conexao />
+      }
       <router-outlet />
     </main>
 
@@ -396,6 +431,10 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
 })
 export class Shell {
   private readonly router = inject(Router);
+  protected readonly demo = modoDemoAtivo();
+  protected sairDaDemo(): void {
+    definirModoDemo(false);
+  }
   protected readonly progresso = inject(Progresso);
 
   protected readonly itens = ITENS;

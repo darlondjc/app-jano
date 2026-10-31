@@ -13,5 +13,6 @@ Baixado em 27/10/2026.
 | `telas-do-app/project/` | Protótipos de todas as telas, mobile e desktop, claro e escuro. `canvas.json` lista o título de cada artboard; `jano.css` tem os estilos usados | [Telas do app](https://claude.ai/artifact/Wm2dYVtKi16tYGz5zG5toQ) |
 | `conceitos-de-logo/project/` | Rodadas de logo, guia de uso do logo escolhido (`Guia.dc.html`) e opções de ícone (`Icone.dc.html`, aprovada a B) | [Conceitos de logo](https://claude.ai/artifact/Lk8ZTD9oVEuqqKWM38Xrkh) |
 | `direcoes-de-identidade/project/` | As três direções visuais. Aprovada a A, "Equilíbrio" (`Main.dc.html`) | [Direções de identidade](https://claude.ai/artifact/7L9GgUpXVZyBbsgVxQdoL6) |
+| `revisao-2026-10-31.md` | Revisão do design system aprovada em 31/10: superfície da marca, elevação, números, contexto nos indicadores, cores suaves de categoria, foco corrigido. Vale sobre o que conflitar | [Revisão do Jano](https://claude.ai/artifact/E2cLgq5hgWaapvC8pvfNnV) |
 
 Os `.dc.html` dependem do runtime do Claude Design (`support.js`) e não abrem sozinhos no navegador. Leia como HTML: a marcação e os estilos inline mostram layout, textos e valores.

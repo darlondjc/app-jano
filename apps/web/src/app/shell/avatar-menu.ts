@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { AuthService } from '@jano/data-access';
+import { AuthService, definirModoDemo, modoDemoAtivo } from '@jano/data-access';
 import { Preferencias } from '../conta/preferencias';
 
 /** "Darlon Jose Costa" → "DC"; sem nome, usa a inicial do e-mail. */
@@ -167,6 +167,16 @@ export function iniciais(nome: string | null, email: string | null): string {
           Ocultar valores
           <small>{{ prefs.ocultarValores() ? 'ligado' : 'desligado' }}</small>
         </button>
+        <button
+          class="item"
+          type="button"
+          role="menuitemcheckbox"
+          [attr.aria-checked]="demo"
+          (click)="alternarDemo()"
+        >
+          Modo demonstração
+          <small>{{ demo ? 'ligado' : 'desligado' }}</small>
+        </button>
         <button class="item" type="button" role="menuitem" (click)="sair()">
           Sair
         </button>
@@ -175,6 +185,11 @@ export function iniciais(nome: string | null, email: string | null): string {
   `,
 })
 export class AvatarMenu {
+  /** Dados fictícios em vez dos seus; ligar ou desligar recarrega o app. */
+  protected readonly demo = modoDemoAtivo();
+  protected alternarDemo(): void {
+    definirModoDemo(!this.demo);
+  }
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);

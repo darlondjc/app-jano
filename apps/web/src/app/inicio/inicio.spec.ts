@@ -98,20 +98,16 @@ describe('Inicio', () => {
       },
     ]);
     await pronto(f);
-    expect(kpis(el)[0]).toContain('Saldo atual');
-    expect(kpis(el)[0]).toContain('4.832');
-    expect(kpis(el)[0]).toContain('Conta corrente');
-    expect(el.querySelector('header')?.textContent).toContain(
-      'Saldo atualizado hoje',
-    );
+    const destaque = el.querySelector('.j-hero')?.textContent ?? '';
+    expect(destaque).toContain('4.832');
+    expect(destaque).toContain('Conta corrente · atualizado hoje');
+    expect(kpis(el)[0]).toContain('Gasto no mês');
   });
 
   it('sem Open Finance, mostra a sobra do mês', async () => {
     const { f, el } = montar([]);
     await pronto(f);
     expect(kpis(el)[0]).toContain('Sobra do mês');
-    expect(el.querySelector('header')?.textContent).not.toContain(
-      'Saldo atualizado',
-    );
+    expect(el.querySelector('.j-hero')).toBeNull();
   });
 });

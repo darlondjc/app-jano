@@ -29,6 +29,7 @@ import {
   previousMonths,
   projectMonthEnd,
   tightestGoals,
+  valoresOcultos,
 } from '@jano/engine';
 import {
   JanoBanner,
@@ -49,6 +50,12 @@ import { Progresso } from '../shell/progresso';
 import { haQuantoTempo } from '../conta/tempo';
 import { deveLembrar } from './lembrete';
 import { saldoAtual, type SaldoAtual } from './saldo';
+import { podeGastar, type PodeGastar } from './pode-gastar';
+import { comparacaoNoDia, variacao } from './comparacao';
+
+function hojeIso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 const CHAVE_LEMBRETE = 'jano.lembreteImportacao';
 
@@ -103,6 +110,15 @@ function lerDispensado(): string | null {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
+    }
+    .destaque {
+      margin-top: 20px;
+    }
+    /* Celular, em duas colunas: com número ímpar de indicadores, o último ocupa a linha. */
+    @media (max-width: 599px) {
+      .kpis > :last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+      }
     }
     .kpis {
       display: grid;
@@ -172,9 +188,6 @@ function lerDispensado(): string | null {
           {{ mes() }}
         </div>
       </div>
-      @if (saldo(); as s) {
-        <span class="j-cap">Saldo atualizado {{ quando(s.atualizadoEm) }}</span>
-      }
     </header>
 
     @if (erro()) {
@@ -236,12 +249,53 @@ function lerDispensado(): string | null {
         <a janoButton variant="primary" routerLink="/transacoes">Importar</a>
       </div>
     } @else {
+      @if (saldo(); as s) {
+        <section
+          class="j-hero destaque"
+          aria-label="Saldo e quanto dá para gastar"
+        >
+          <div class="j-hero__label">
+            {{ s.legenda }} · atualizado {{ quando(s.atualizadoEm) }}
+          </div>
+          <div class="j-hero__valor j-num">
+            @if (oculto()) {
+              R$ ••••••
+            } @else {
+              {{ s.cents < 0 ? '−' : '' }}R$ {{ reais(s.cents)
+              }}<small>,{{ centavos(s.cents) }}</small>
+            }
+          </div>
+          <div
+            class="j-hero__mes"
+            role="img"
+            [attr.aria-label]="'Dia ' + diaAtual + ' de ' + diasNoMes"
+          >
+            <span [style.width.%]="pace * 100"></span>
+          </div>
+          @if (gastar(); as g) {
+            <div class="j-hero__linha">
+              <div>
+                <div class="j-hero__label">
+                  Pode gastar até o salário ({{ diaMes(g.salario) }})
+                </div>
+                <div class="j-hero__destaque">
+                  {{ reaisInteiros(g.porDiaCents) }} por dia
+                </div>
+              </div>
+              <div class="j-hero__label">
+                {{
+                  g.dias === 1 ? 'falta 1 dia' : 'faltam ' + g.dias + ' dias'
+                }}
+              </div>
+              <div class="j-hero__nota" style="flex-basis: 100%">
+                {{ explicacao(g) }}
+              </div>
+            </div>
+          }
+        </section>
+      }
       <section class="kpis j-kpis-2col" aria-label="Resumo do mês">
-        @if (saldo(); as s) {
-          <jano-kpi-card label="Saldo atual" [valueCents]="s.cents">
-            <span class="j-cap">{{ s.legenda }}</span>
-          </jano-kpi-card>
-        } @else {
+        @if (!saldo()) {
           <jano-kpi-card
             label="Sobra do mês"
             [valueCents]="totais().net"
@@ -251,7 +305,32 @@ function lerDispensado(): string | null {
         <jano-kpi-card
           label="Gasto no mês"
           [valueCents]="totais().spent"
-          tone="out"
+          [serie]="comparacao().gastos"
+          corTendencia="text-2"
+        >
+          @if (variacaoGasto(); as v) {
+            <div>
+              <span [class]="'j-delta j-delta--' + v.tom">{{ v.texto }}</span>
+            </div>
+          }
+        </jano-kpi-card>
+        <jano-kpi-card
+          label="Receitas"
+          [valueCents]="totais().income"
+          tone="in"
+          [serie]="comparacao().receitas"
+          corTendencia="positive"
+        >
+          @if (variacaoReceita(); as v) {
+            <div>
+              <span [class]="'j-delta j-delta--' + v.tom">{{ v.texto }}</span>
+            </div>
+          }
+        </jano-kpi-card>
+        <jano-kpi-card
+          label="Sobra prevista no fechamento"
+          [valueCents]="sobraPrevista()"
+          tone="auto"
         >
           @if (statusMeta(); as s) {
             <div>
@@ -262,21 +341,11 @@ function lerDispensado(): string | null {
                 {{ s.noRitmo ? 'abaixo do ritmo' : 'acima do ritmo' }}
               </span>
             </div>
+          } @else {
+            <span class="j-cap"
+              >Projeção para {{ diasNoMes }} de {{ mesCurto }}</span
+            >
           }
-        </jano-kpi-card>
-        <jano-kpi-card
-          label="Receitas"
-          [valueCents]="totais().income"
-          tone="in"
-        />
-        <jano-kpi-card
-          label="Sobra prevista no fechamento"
-          [valueCents]="sobraPrevista()"
-          tone="auto"
-        >
-          <span class="j-cap"
-            >Projeção para {{ diasNoMes }} de {{ mesCurto }}</span
-          >
         </jano-kpi-card>
       </section>
 
@@ -493,6 +562,70 @@ export class Inicio {
   protected readonly erro = signal('');
   /** Saldo do banco (Open Finance); sem sincronização, o primeiro KPI volta a ser a sobra do mês. */
   protected readonly saldo = signal<SaldoAtual | null>(null);
+  /** Fatura em aberto dos cartões (positivo = devido), do banco. */
+  private readonly fatura = signal(0);
+  protected readonly oculto = valoresOcultos;
+  protected readonly gastar = computed(() => {
+    const s = this.saldo();
+    if (!s) return null;
+    const cartoes = this.cartoes();
+    return podeGastar({
+      saldoCents: s.cents,
+      faturaCents: this.fatura(),
+      // Compras do cartão já estão na fatura; recorrências só das contas.
+      txs: this.historico().filter((t) => !cartoes.has(t.accountId)),
+      hoje: hojeIso(this.hoje),
+    });
+  });
+  protected readonly comparacao = computed(() =>
+    comparacaoNoDia(
+      this.historico(),
+      this.month,
+      this.diaAtual,
+      3,
+      this.cartoes(),
+    ),
+  );
+  protected readonly variacaoGasto = computed(() =>
+    variacao(this.comparacao().gastos, previousMonths(this.month, 1)[0], false),
+  );
+  protected readonly variacaoReceita = computed(() =>
+    variacao(
+      this.comparacao().receitas,
+      previousMonths(this.month, 1)[0],
+      true,
+    ),
+  );
+  protected reais(cents: number): string {
+    return new Intl.NumberFormat('pt-BR').format(
+      Math.trunc(Math.abs(cents) / 100),
+    );
+  }
+  protected centavos(cents: number): string {
+    return String(Math.abs(cents) % 100).padStart(2, '0');
+  }
+  /** "R$ 1.853": o valor por dia não precisa de centavos. */
+  protected reaisInteiros(cents: number): string {
+    return this.oculto()
+      ? formatBRL(cents)
+      : `R$ ${new Intl.NumberFormat('pt-BR').format(Math.floor(cents / 100))}`;
+  }
+  protected explicacao(g: PodeGastar): string {
+    const partes = [
+      g.faturaCents ? `a fatura do cartão (${formatBRL(g.faturaCents)})` : '',
+      g.contasCents
+        ? `as contas fixas até lá (${formatBRL(g.contasCents)})`
+        : '',
+    ].filter(Boolean);
+    if (!partes.length) return 'Saldo das contas dividido pelos dias até lá.';
+    const lista = partes.join(' e ');
+    return g.livreCents > 0
+      ? `Saldo menos ${lista}.`
+      : `${lista[0].toUpperCase()}${lista.slice(1)} passam do saldo em ${formatBRL(-g.livreCents)}.`;
+  }
+  protected diaMes(iso: string): string {
+    return `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+  }
   protected readonly quando = haQuantoTempo;
 
   protected readonly cartoes = signal<ReadonlySet<string>>(new Set());
@@ -632,6 +765,11 @@ export class Inicio {
         ]);
       this.dispensados.set(new Set(dispensados));
       this.saldo.set(saldoAtual(saldos));
+      this.fatura.set(
+        saldos
+          .filter((b) => b.kind === 'cartao')
+          .reduce((soma, b) => soma + Math.max(0, b.balanceCents), 0),
+      );
       this.cartoes.set(
         new Set(contas.filter((c) => c.type === 'cartao').map((c) => c.id)),
       );

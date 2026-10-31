@@ -5,12 +5,12 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { AuthService } from '@jano/data-access';
-import { JanoBanner, JanoLogo } from '@jano/ui';
+import { AuthService, definirModoDemo } from '@jano/data-access';
+import { JanoBanner, JanoButton, JanoLogo } from '@jano/ui';
 
 @Component({
   selector: 'jano-entrar',
-  imports: [JanoBanner, JanoLogo],
+  imports: [JanoBanner, JanoButton, JanoLogo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -244,6 +244,14 @@ import { JanoBanner, JanoLogo } from '@jano/ui';
           <span class="cap" style="text-align: center"
             >Você será levado ao Google e volta para cá em seguida.</span
           >
+          <button
+            janoButton
+            variant="ghost"
+            type="button"
+            (click)="demonstracao()"
+          >
+            Ver com dados de demonstração
+          </button>
         </div>
 
         <div class="nota">
@@ -284,6 +292,11 @@ export class Entrar {
   private readonly router = inject(Router);
   protected readonly carregando = signal(false);
   protected readonly erro = signal('');
+
+  /** Abre o app com dados fictícios, sem login nem servidor. */
+  protected demonstracao(): void {
+    definirModoDemo(true);
+  }
 
   protected async entrar(): Promise<void> {
     this.erro.set('');
