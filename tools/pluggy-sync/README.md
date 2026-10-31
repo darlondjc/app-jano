@@ -101,3 +101,11 @@ A sincronização nunca troca uma categoria que já existe. Suas regras valem pa
 "Alterar também as transações passadas" ao editar a transação. Quando mais de uma regra casa,
 vale a de trecho mais longo e, no empate, a mais recente. Regras só com palavras da operação
 ("COMPRA C CARTAO", "PIX ENVIADO") são ignoradas.
+
+## Cache do app
+
+O app guarda no aparelho os meses que terminaram há mais de 45 dias e não os relê do servidor
+(o plano gratuito do Firestore dá 50 mil leituras por dia). Para ele saber quando um desses
+meses mudou, a sincronização grava em `users/{uid}/meta/meses` a data de alteração de cada mês
+em que inseriu ou categorizou lançamentos. Quem altera transações direto no Firestore, fora do
+app e deste script, precisa atualizar esse documento também.

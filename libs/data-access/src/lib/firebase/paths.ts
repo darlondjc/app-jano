@@ -15,4 +15,9 @@ export const paths = {
   balances: (uid: string) => `users/${uid}/balances`,
   /** Estado de cada conexão Open Finance (autorização, última atualização), gravado pela sincronização. */
   connections: (uid: string) => `users/${uid}/connections`,
+  /**
+   * Controle do cache: `meta/meses` guarda, por mês (AAAA-MM), quando algum lançamento dele mudou.
+   * Meses fechados ficam no aparelho e só são relidos quando mudam (ver TransactionsRepository).
+   */
+  meta: (uid: string) => `users/${uid}/meta`,
 } as const;

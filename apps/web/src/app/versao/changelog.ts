@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.10.8',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'correcao',
+        texto:
+          'O app gasta bem menos leituras do servidor e evita o erro "Quota exceeded": meses antigos ficam guardados no aparelho e só são buscados de novo quando algo neles muda; só o mês atual e o anterior vão sempre ao servidor. Entre telas, o que já foi lido é reaproveitado.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Se o limite diário do servidor acabar, o app mostra os últimos dados guardados no aparelho, com um aviso, em vez de ficar vazio.',
+      },
+    ],
+  },
+  {
     version: '0.10.7',
     date: '2026-10-31',
     items: [

@@ -100,4 +100,15 @@ describe('avisoConexao', () => {
     expect(a.texto).toContain('dados de há 5 minutos');
     expect(a.acao).toBeUndefined();
   });
+
+  it('cota do servidor esgotada tem aviso próprio', () => {
+    const a = avisoOffline(
+      '2026-10-31T15:00:00Z',
+      new Date('2026-10-31T15:30:00Z'),
+      'cota',
+    );
+    expect(a.titulo).toBe('Limite diário do servidor atingido.');
+    expect(a.texto).toContain('há 30 minutos');
+    expect(a.texto).toContain('4h');
+  });
 });

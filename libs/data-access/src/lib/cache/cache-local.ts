@@ -9,6 +9,11 @@ interface Guardado {
   em: string;
 }
 
+/** Cota diária do plano gratuito do Firestore esgotada (50 mil leituras; zera às 4h). */
+export function cotaEsgotada(e: unknown): boolean {
+  return (e as { code?: string } | null)?.code === 'resource-exhausted';
+}
+
 /** Falta de rede, não erro de regra ou de dado. */
 export function semConexao(e: unknown): boolean {
   if (typeof navigator !== 'undefined' && navigator.onLine === false)
@@ -25,6 +30,8 @@ export function semConexao(e: unknown): boolean {
 export class CacheLocal {
   /** Sem conexão: de quando são os dados mais antigos na tela. `null` = dados ao vivo. */
   readonly offlineDesde = signal<string | null>(null);
+  /** Por que os dados vêm do aparelho: sem internet ou cota do servidor esgotada. */
+  readonly motivo = signal<'offline' | 'cota'>('offline');
   private banco: Promise<IDBDatabase | null> | null = null;
 
   /** Lê do servidor e guarda; sem rede, devolve a última leitura guardada. */
@@ -35,12 +42,37 @@ export class CacheLocal {
       void this.gravar(chave, { valor, em: new Date().toISOString() });
       return valor;
     } catch (e) {
-      const guardado = semConexao(e) ? await this.obter(chave) : undefined;
-      if (!guardado) throw e;
+      const cota = cotaEsgotada(e);
+      const guardado =
+        semConexao(e) || cota ? await this.obter(chave) : undefined;
+      if (!guardado) {
+        if (cota)
+          throw Object.assign(
+            new Error(
+              'O limite diário de leituras do servidor acabou. Volta por volta das 4h da manhã.',
+            ),
+            { code: 'resource-exhausted' },
+          );
+        throw e;
+      }
+      this.motivo.set(cota ? 'cota' : 'offline');
       const atual = this.offlineDesde();
       if (!atual || guardado.em < atual) this.offlineDesde.set(guardado.em);
       return guardado.valor as T;
     }
+  }
+
+  /** O que está guardado no aparelho para a chave, sem ir ao servidor. */
+  async guardado<T>(
+    chave: string,
+  ): Promise<{ valor: T; em: string } | undefined> {
+    const g = await this.obter(chave);
+    return g ? { valor: g.valor as T, em: g.em } : undefined;
+  }
+
+  /** Guarda um valor já conhecido (ex.: depois de uma escrita), como se viesse do servidor agora. */
+  async guardar(chave: string, valor: unknown): Promise<void> {
+    await this.gravar(chave, { valor, em: new Date().toISOString() });
   }
 
   /** Apaga tudo (ao sair da conta ou apagar os dados). */

@@ -58,7 +58,9 @@ export class AvisoConexaoBanner {
   private readonly conexao = signal<AvisoConexao | null>(null);
   protected readonly aviso = computed(() => {
     const desde = this.cache.offlineDesde();
-    return desde ? avisoOffline(desde) : this.conexao();
+    return desde
+      ? avisoOffline(desde, new Date(), this.cache.motivo())
+      : this.conexao();
   });
 
   constructor() {

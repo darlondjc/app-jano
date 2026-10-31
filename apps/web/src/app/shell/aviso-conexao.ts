@@ -54,7 +54,17 @@ export function haQuanto(iso: string, agora = new Date()): string {
 }
 
 /** Sem internet o app mostra os últimos dados guardados no aparelho, só para leitura. */
-export function avisoOffline(desde: string, agora = new Date()): AvisoConexao {
+export function avisoOffline(
+  desde: string,
+  agora = new Date(),
+  motivo: 'offline' | 'cota' = 'offline',
+): AvisoConexao {
+  if (motivo === 'cota')
+    return {
+      tom: 'warn',
+      titulo: 'Limite diário do servidor atingido.',
+      texto: `Mostrando os dados guardados no aparelho, de ${haQuanto(desde, agora)}. Volta ao normal por volta das 4h da manhã.`,
+    };
   return {
     tom: 'info',
     titulo: 'Sem conexão.',
