@@ -8,6 +8,7 @@ import {
   writeBatch,
 } from 'firebase/firestore/lite';
 import { paths } from '../firebase/paths';
+import { TransactionsRepository } from './transactions.repository';
 import { CacheLocal } from '../cache/cache-local';
 import { FirebaseService } from '../firebase/firebase.service';
 
@@ -47,6 +48,7 @@ export interface RegistroImportacao {
 export class ContaRepository {
   private readonly db = inject(FirebaseService).db;
   private readonly cache = inject(CacheLocal);
+  private readonly transacoes = inject(TransactionsRepository);
 
   ultimaImportacao(uid: string): Promise<RegistroImportacao | null> {
     return this.cache.ler(`${uid}|ultimaImportacao`, () =>
@@ -82,6 +84,7 @@ export class ContaRepository {
   /** Apaga tudo o que está sob users/{uid}; a conta de login continua existindo. */
   async apagarTudo(uid: string): Promise<number> {
     await this.cache.limpar();
+    this.transacoes.esquecer();
     let total = 0;
     for (const nome of COLECOES) {
       const snap = await getDocs(collection(this.db, paths[nome](uid)));
