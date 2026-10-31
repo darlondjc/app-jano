@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.11.1',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'correcao',
+        texto:
+          'Metas: gastar exatamente o limite aparece como "No limite da meta", em atenção, e não mais como "Passou -R$ 0,00". No último dia, a mensagem diz "último dia do mês" em vez de "restam 0 dias", e o marcador de ritmo fica dentro da barra.',
+      },
+    ],
+  },
+  {
     version: '0.11.0',
     date: '2026-10-31',
     items: [

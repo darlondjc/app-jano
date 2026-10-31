@@ -9,7 +9,8 @@ export type GoalStatus = 'ok' | 'warning' | 'over';
 export function goalStatus(spent: Cents, limit: Cents): GoalStatus {
   if (limit <= 0) return spent > 0 ? 'over' : 'ok';
   const ratio = spent / limit;
-  if (ratio >= 1) return 'over';
+  // Gastar exatamente o limite é chegar nele, não passar: fica em atenção.
+  if (ratio > 1) return 'over';
   if (ratio >= 0.8) return 'warning';
   return 'ok';
 }
