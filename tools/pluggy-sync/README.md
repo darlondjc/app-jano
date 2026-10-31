@@ -78,3 +78,17 @@ e-mail e basta reativar em Actions.
 A cada sincronização o saldo de todas as contas do banco (inclusive as sem mapeamento, como a
 poupança) vai para `users/{uid}/balances`, com a data da atualização. No cartão, o saldo é o
 valor da fatura em aberto.
+
+## Categorias automáticas
+
+Cada lançamento recebe a primeira categoria encontrada nesta ordem, desde que ela exista na
+sua conta: regra sua, dicionário de estabelecimentos, categoria do categorizador da Pluggy e,
+nas compras do cartão, o ramo do estabelecimento (código MCC da bandeira). O categorizador da
+Pluggy também marca como transferência o que é entre contas suas, aplicação automática e
+pagamento de fatura.
+
+O categorizador da Pluggy vem ligado no trial e depois é recurso pago; sem ele, valem as
+regras, o dicionário e o MCC. O `sync --seco` mostra quantos lançamentos vieram com sugestão.
+
+A cada sincronização, lançamentos dos últimos 45 dias que continuam sem categoria, e que você
+não editou, são reavaliados: uma regra criada no app passa a valer para eles no dia seguinte.

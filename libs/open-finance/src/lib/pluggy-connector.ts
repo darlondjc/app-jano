@@ -1,4 +1,5 @@
 import type { RawTransaction } from '@jano/import-file';
+import { deCategoriaPluggy, deMcc } from './categorias';
 import type {
   BankConnector,
   ConnectedAccount,
@@ -94,7 +95,14 @@ export function toRawTransaction(
     };
   }
   if (meta?.cardNumber) row.holder = meta.cardNumber.slice(-4);
-  if (t.category) row.bankCategory = t.category;
+  // Categoria pelo categorizador da Pluggy ou, no cartão, pelo ramo do estabelecimento.
+  const pluggy = deCategoriaPluggy(t.category);
+  const sugerida = pluggy.nome ?? deMcc(meta?.payeeMCC);
+  // Categoria de entrada só para entrada: um erro do categorizador não vira receita.
+  const deEntrada = sugerida === 'Receita' || sugerida === 'Rendimentos';
+  if (sugerida && deEntrada === row.amountCents > 0)
+    row.suggestedCategory = sugerida;
+  if (pluggy.transferencia) row.isTransfer = true;
   if (
     kind === 'cartao' &&
     t.operationType &&

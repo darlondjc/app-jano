@@ -246,9 +246,7 @@ function lerDispensado(): string | null {
             label="Sobra do mês"
             [valueCents]="totais().net"
             tone="auto"
-          >
-            <span class="j-cap">receitas menos gastos até agora</span>
-          </jano-kpi-card>
+          />
         }
         <jano-kpi-card
           label="Gasto no mês"
@@ -264,17 +262,13 @@ function lerDispensado(): string | null {
                 {{ s.noRitmo ? 'abaixo do ritmo' : 'acima do ritmo' }}
               </span>
             </div>
-          } @else {
-            <span class="j-cap">tudo que saiu no mês, sem transferências</span>
           }
         </jano-kpi-card>
         <jano-kpi-card
           label="Receitas"
           [valueCents]="totais().income"
           tone="in"
-        >
-          <span class="j-cap">tudo que entrou no mês, sem transferências</span>
-        </jano-kpi-card>
+        />
         <jano-kpi-card
           label="Sobra prevista no fechamento"
           [valueCents]="sobraPrevista()"

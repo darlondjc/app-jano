@@ -437,7 +437,6 @@ interface Previa {
           <div class="j-sub resumo">
             {{ visiveis().length }} de {{ filtradas().length }} transações ·
             gastos de {{ money(gastos()) }}
-            <span class="j-cap">(transferências ficam de fora)</span>
           </div>
         }
       </div>

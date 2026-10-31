@@ -39,6 +39,7 @@ export interface PluggyTransaction {
   currencyCode: string;
   type: 'DEBIT' | 'CREDIT';
   status: 'PENDING' | 'POSTED';
+  /** Do categorizador da Pluggy (só no trial ou no plano pago); null sem ele. */
   category?: string | null;
   operationType?: string | null;
   /**
@@ -50,6 +51,8 @@ export interface PluggyTransaction {
     installmentNumber?: number | null;
     totalInstallments?: number | null;
     cardNumber?: string | null;
+    /** Código de ramo do estabelecimento (MCC). */
+    payeeMCC?: number | null;
   } | null;
 }
 

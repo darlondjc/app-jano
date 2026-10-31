@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.10.1',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Mais lançamentos chegam categorizados pelo Open Finance: pelo categorizador da Pluggy e, no cartão, pelo ramo do estabelecimento. Os que estavam sem categoria são reavaliados a cada sincronização.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Resumos mais limpos: saem as legendas explicativas dos indicadores do Início e de Transações.',
+      },
+    ],
+  },
+  {
     version: '0.10.0',
     date: '2026-10-31',
     items: [

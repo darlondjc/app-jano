@@ -10,13 +10,19 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { applicationDefault, initializeApp } from 'firebase-admin/app';
-import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import {
+  getFirestore,
+  type DocumentReference,
+  type Firestore,
+  type QueryDocumentSnapshot,
+} from 'firebase-admin/firestore';
 import { addDedupeKeys, hashKey, planImport } from '@jano/import-file';
 import {
   PluggyClient,
   PluggyConnector,
   categorizar,
   type CategoriaRef,
+  type LancamentoPronto,
   type ConnectedAccount,
   type RegraRef,
 } from '@jano/open-finance';
@@ -183,10 +189,15 @@ async function sync(
     const semCategoria = rows.filter(
       (r) => !r.categoryId && !r.tx.isTransfer,
     ).length;
+    const reavaliar = reavaliacoes(
+      categorizar(plan.duplicates, categorias, regras),
+      snap.docs,
+    );
     console.log(
       `- ${account.name} → ${accountId}${desde > janela ? ` (desde ${desde})` : ''}: ` +
         `${rows.length} novas, ` +
-        `${plan.duplicates.length} já existiam, ${semCategoria} sem categoria.`,
+        `${plan.duplicates.length} já existiam, ${semCategoria} sem categoria, ` +
+        `${reavaliar.length} categorizadas agora.`,
     );
     if (seco) {
       // Na simulação, mostra cada lançamento para conferir antes de gravar.
@@ -202,7 +213,22 @@ async function sync(
         console.log(
           `    ${semId} sem id do banco (providerId): chave por data + valor + descrição.`,
         );
+      const comSugestao = keyed.filter((t) => t.suggestedCategory).length;
+      console.log(
+        `    ${comSugestao} de ${keyed.length} com categoria sugerida pela Pluggy ou pelo ramo da loja.`,
+      );
       continue;
+    }
+
+    // Já gravados, ainda sem categoria e sem edição sua: recebem a categoria encontrada agora.
+    for (let i = 0; i < reavaliar.length; i += BATCH_LIMIT) {
+      const batch = db.batch();
+      for (const r of reavaliar.slice(i, i + BATCH_LIMIT))
+        batch.update(r.ref, {
+          categoryId: r.categoryId,
+          isTransfer: r.isTransfer,
+        });
+      await batch.commit();
     }
 
     const importId = crypto.randomUUID();
@@ -244,6 +270,37 @@ async function sync(
     await gravarSaldos(db, base, contasPluggy, config);
     await gravarConexoes(db, base, connector);
   }
+}
+
+/**
+ * Lançamentos já gravados que continuam sem categoria, nunca editados à mão, e para os quais
+ * agora há categoria (regra nova, sugestão da Pluggy, ramo da loja) ou transferência.
+ */
+function reavaliacoes(
+  prontos: LancamentoPronto[],
+  gravados: QueryDocumentSnapshot[],
+): {
+  ref: DocumentReference;
+  categoryId: string | null;
+  isTransfer: boolean;
+}[] {
+  const porChave = new Map(
+    gravados.map((d) => [d.get('dedupeKey') as string, d]),
+  );
+  const out = [];
+  for (const { tx, categoryId } of prontos) {
+    const d = porChave.get(tx.dedupeKey);
+    if (
+      !d ||
+      d.get('categoryIsManual') ||
+      d.get('isTransfer') ||
+      d.get('categoryId')
+    )
+      continue;
+    if (!categoryId && !tx.isTransfer) continue;
+    out.push({ ref: d.ref, categoryId, isTransfer: !!tx.isTransfer });
+  }
+  return out;
 }
 
 /**
