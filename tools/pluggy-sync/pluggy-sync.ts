@@ -21,7 +21,9 @@ import {
   PluggyClient,
   PluggyConnector,
   categorizar,
+  reaplicarRegras,
   type CategoriaRef,
+  type LancamentoGravado,
   type LancamentoPronto,
   type ConnectedAccount,
   type RegraRef,
@@ -266,9 +268,42 @@ async function sync(
       createdAt: new Date().toISOString(),
     });
   }
+  await regrasNoHistorico(db, base, regras, categorias, seco);
   if (!seco) {
     await gravarSaldos(db, base, contasPluggy, config);
     await gravarConexoes(db, base, connector);
+  }
+}
+
+/**
+ * Suas regras valem para o histórico inteiro, não só para o período sincronizado: categoria
+ * automática que diverge da regra passa a ser a da regra. Escolhas manuais ficam.
+ */
+async function regrasNoHistorico(
+  db: Firestore,
+  base: string,
+  regras: RegraRef[],
+  categorias: CategoriaRef[],
+  seco: boolean,
+): Promise<void> {
+  if (!regras.length) return;
+  const snap = await db.collection(`${base}/transactions`).get();
+  const mudar = reaplicarRegras(
+    snap.docs.map((d) => ({ id: d.id, ...d.data() }) as LancamentoGravado),
+    regras,
+    categorias,
+  );
+  console.log(
+    `Regras no histórico: ${mudar.length} lançamentos ${seco ? 'mudariam' : 'atualizados'} de categoria.`,
+  );
+  if (seco) return;
+  for (let i = 0; i < mudar.length; i += BATCH_LIMIT) {
+    const batch = db.batch();
+    for (const m of mudar.slice(i, i + BATCH_LIMIT))
+      batch.update(db.doc(`${base}/transactions/${m.id}`), {
+        categoryId: m.categoryId,
+      });
+    await batch.commit();
   }
 }
 

@@ -68,3 +68,36 @@ function slugify(name: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
+
+/** Lançamento como gravado, só com o que importa para reaplicar regras. */
+export interface LancamentoGravado {
+  id: string;
+  descriptionNorm: string;
+  categoryId: string | null;
+  categoryIsManual: boolean;
+  isTransfer: boolean;
+  splits?: unknown[];
+}
+
+/**
+ * Regras do usuário sobre o histórico inteiro: categoria automática (Pluggy, dicionário,
+ * ramo da loja ou nenhuma) que diverge da regra passa a ser a da regra. Escolha manual,
+ * divisão e transferência ficam como estão. Mesma ordem do app: vale a primeira regra que
+ * casa, e só se a categoria existe na conta.
+ */
+export function reaplicarRegras(
+  lancamentos: LancamentoGravado[],
+  regras: RegraRef[],
+  categorias: CategoriaRef[],
+): { id: string; categoryId: string }[] {
+  const catIds = new Set(categorias.map((c) => c.id));
+  const out: { id: string; categoryId: string }[] = [];
+  for (const t of lancamentos) {
+    if (t.categoryIsManual || t.isTransfer || t.splits?.length) continue;
+    const regra = regras.find((r) => t.descriptionNorm.includes(r.pattern));
+    if (!regra || !catIds.has(regra.categoryId)) continue;
+    if (t.categoryId !== regra.categoryId)
+      out.push({ id: t.id, categoryId: regra.categoryId });
+  }
+  return out;
+}

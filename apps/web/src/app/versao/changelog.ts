@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.10.2',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Suas regras de categoria passam a valer para o histórico inteiro na sincronização diária, corrigindo categorias automáticas antigas. O que você escolheu à mão não muda.',
+      },
+    ],
+  },
+  {
     version: '0.10.1',
     date: '2026-10-31',
     items: [
