@@ -13,3 +13,5 @@ export * from './lib/data/connections.repository';
 export * from './lib/cache/cache-local';
 export * from './lib/data/insights.repository';
 export * from './lib/data/scenarios.repository';
+export * from './lib/demo/dados-demo';
+export * from './lib/demo/modo-demo';

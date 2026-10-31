@@ -5,7 +5,11 @@ import {
 } from '@angular/core';
 import { provideServiceWorker } from '@angular/service-worker';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
-import { FIREBASE_CONFIG } from '@jano/data-access';
+import {
+  FIREBASE_CONFIG,
+  modoDemoAtivo,
+  provideModoDemo,
+} from '@jano/data-access';
 import { firebaseConfig } from '../environments/firebase';
 import { appRoutes } from './app.routes';
 
@@ -14,6 +18,8 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(appRoutes, withComponentInputBinding()),
     { provide: FIREBASE_CONFIG, useValue: firebaseConfig },
+    // Modo demonstração: login e dados fictícios na memória, sem ir ao Firebase.
+    ...(modoDemoAtivo() ? provideModoDemo() : []),
     // Guarda o app para abrir sem internet; os dados vêm do cache local (CacheLocal).
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

@@ -83,10 +83,11 @@ describe('Shell', () => {
       'Conta e dados',
       'Novidades',
       'Ocultar valores desligado',
+      'Modo demonstração desligado',
       'Sair',
     ]);
     const nav = vi.spyOn(TestBed.inject(Router), 'navigateByUrl');
-    (itens[3] as HTMLButtonElement).click();
+    (itens[4] as HTMLButtonElement).click();
     await f.whenStable();
     expect(signOut).toHaveBeenCalled();
     expect(nav).toHaveBeenCalledWith('/entrar');

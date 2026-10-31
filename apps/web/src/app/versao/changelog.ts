@@ -33,6 +33,11 @@ export const CHANGELOG: Versao[] = [
           'Visual revisado: cartões com mais profundidade, números maiores, ícones de categoria coloridos e saídas sem vermelho (o vermelho fica para o que pede atenção).',
       },
       {
+        tipo: 'novo',
+        texto:
+          'Modo demonstração: no login ou no menu do avatar, abre o app com dados fictícios, sem precisar do servidor. Dá para navegar e editar à vontade; tudo volta ao recarregar.',
+      },
+      {
         tipo: 'correcao',
         texto: 'O contorno de foco ao navegar pelo teclado voltou a aparecer.',
       },
