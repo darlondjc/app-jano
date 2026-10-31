@@ -127,63 +127,58 @@ interface Previa {
       color: var(--text-2);
       flex: none;
     }
+    /* Quebra de linha em vez de rolar: nenhum filtro fica escondido no celular. */
     .linha-chips {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 4px;
       align-items: center;
     }
     .linha-chips .j-chip {
       flex: none;
     }
-    .periodo {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 12px;
-    }
-    /* Controle segmentado: um grupo só, a opção ativa em destaque. */
-    .segmentos {
+    .selecionar {
       display: inline-flex;
-      padding: 3px;
-      gap: 2px;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-pill);
-    }
-    .segmentos button {
-      height: 32px;
-      padding: 0 14px;
-      border: 0;
-      border-radius: var(--radius-pill);
-      background: transparent;
-      color: var(--text-2);
-      font: 500 14px/20px var(--font-sans);
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .segmentos button:hover {
-      color: var(--text);
-    }
-    .segmentos button[aria-pressed='true'] {
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      margin-left: auto;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-sm);
       background: var(--surface);
-      color: var(--primary-text);
-      font-weight: 600;
-      box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+      color: var(--text-2);
+      cursor: pointer;
     }
-    .segmentos button:focus-visible {
+    .selecionar[aria-pressed='true'] {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+      color: var(--primary-text);
+    }
+    .selecionar:focus-visible {
       outline: 2px solid var(--focus);
       outline-offset: 2px;
     }
+    .selecionar svg,
+    .linha-chips svg {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .j-chip.pendente:not([aria-pressed='true']) {
+      border-color: var(--warning);
+      color: var(--warning-text);
+    }
+    .j-chip.ativo {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+      color: var(--primary-text);
+    }
     @media (max-width: 599px) {
-      .segmentos,
       jano-month-nav {
-        width: 100%;
         max-width: none;
-      }
-      .segmentos button {
-        flex: 1;
       }
     }
     .ocultar-largo {
@@ -223,11 +218,15 @@ interface Previa {
       bottom: 0;
       z-index: 60;
       max-height: 85vh;
+      /* dvh: no iPhone, 85vh passa da área visível e esconde o pé do painel. */
+      max-height: 85dvh;
       overflow: auto;
+      overscroll-behavior: contain;
       background: var(--surface);
       border-radius: var(--radius-lg) var(--radius-lg) 0 0;
       box-shadow: var(--shadow-sheet);
-      padding: 20px 16px 24px;
+      /* Sem respiro embaixo: o Salvar fica preso ao pé do painel. */
+      padding: 20px 16px 0;
       box-sizing: border-box;
     }
     .filtros.aberto {
@@ -467,6 +466,21 @@ interface Previa {
   template: `
     <header class="topo">
       <h1>Transações</h1>
+      <button
+        class="selecionar"
+        type="button"
+        [attr.aria-pressed]="selecionando()"
+        [attr.aria-label]="
+          selecionando() ? 'Parar de selecionar' : 'Selecionar transações'
+        "
+        [title]="selecionando() ? 'Parar de selecionar' : 'Selecionar'"
+        (click)="alternarSelecao()"
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="4" />
+          <path d="M8 12l3 3 5-6" />
+        </svg>
+      </button>
       <label class="imp">
         <input
           type="file"
@@ -514,14 +528,6 @@ interface Previa {
         <button
           class="j-chip"
           type="button"
-          [attr.aria-pressed]="!filtros().tipo && !filtros().semCategoria"
-          (click)="mudar({ tipo: null, semCategoria: false })"
-        >
-          Todas
-        </button>
-        <button
-          class="j-chip"
-          type="button"
           [attr.aria-pressed]="filtros().tipo === 'gastos'"
           (click)="alternarTipo('gastos')"
         >
@@ -535,64 +541,49 @@ interface Previa {
         >
           Receitas
         </button>
+        @if (semCategoriaN() || filtros().semCategoria) {
+          <button
+            class="j-chip pendente"
+            type="button"
+            [attr.aria-pressed]="filtros().semCategoria"
+            (click)="mudar({ semCategoria: !filtros().semCategoria })"
+          >
+            Sem categoria · {{ semCategoriaN() }}
+          </button>
+        }
         <button
           class="j-chip ocultar-largo"
           type="button"
           (click)="filtrosAbertos.set(true)"
         >
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path d="M4 6h16M7 12h10M10 18h4" />
+          </svg>
           Filtros
-          @if (nFiltros()) {
-            · {{ nFiltros() }}
-          }
         </button>
-        <button
-          class="j-chip"
-          type="button"
-          [attr.aria-pressed]="filtros().semCategoria"
-          (click)="mudar({ semCategoria: !filtros().semCategoria })"
-        >
-          Sem categoria · {{ semCategoriaN() }}
-        </button>
-        <button
-          class="j-chip"
-          type="button"
-          [attr.aria-pressed]="selecionando()"
-          (click)="alternarSelecao()"
-        >
-          Selecionar
-        </button>
+        @for (a of filtrosAtivos(); track a.chave) {
+          <button
+            class="j-chip ativo"
+            type="button"
+            [attr.aria-label]="'Remover filtro ' + a.rotulo"
+            (click)="removerFiltro(a.chave)"
+          >
+            {{ a.rotulo }}
+            <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        }
       </div>
-      <div class="periodo" role="group" aria-label="Período">
-        <div class="segmentos">
-          <button
-            type="button"
-            [attr.aria-pressed]="periodoAtivo() === 'este'"
-            (click)="irPara(mesAtualStr)"
-          >
-            Este mês
-          </button>
-          <button
-            type="button"
-            [attr.aria-pressed]="periodoAtivo() === 'passado'"
-            (click)="irPara(mesPassado)"
-          >
-            Mês passado
-          </button>
-          <button
-            type="button"
-            [attr.aria-pressed]="periodo().tipo === '3m'"
-            (click)="tresMeses()"
-          >
-            3 meses
-          </button>
-        </div>
-        <jano-month-nav
-          [rotulo]="rotulo()"
-          [navegavel]="periodo().tipo === 'mes'"
-          (anterior)="mudarMes(-1)"
-          (proximo)="mudarMes(1)"
-        />
-      </div>
+      <jano-month-nav
+        aria-label="Período"
+        [rotulo]="rotulo()"
+        [navegavel]="periodo().tipo === 'mes'"
+        [opcoes]="opcoesPeriodo()"
+        (anterior)="mudarMes(-1)"
+        (proximo)="mudarMes(1)"
+        (opcao)="escolherPeriodo($event)"
+      />
     </div>
 
     @if (erro()) {
@@ -1067,6 +1058,33 @@ export class Transacoes {
       ? rotuloMes(p.mes)
       : `${rotuloMes(mesAnterior(mesAnterior(mesAtual())))} a ${rotuloMes(mesAtual())}`;
   });
+  protected readonly opcoesPeriodo = computed(() => [
+    { id: 'este', rotulo: 'Este mês', ativo: this.periodoAtivo() === 'este' },
+    {
+      id: 'passado',
+      rotulo: 'Mês passado',
+      ativo: this.periodoAtivo() === 'passado',
+    },
+    {
+      id: '3m',
+      rotulo: 'Últimos 3 meses',
+      ativo: this.periodo().tipo === '3m',
+    },
+  ]);
+  /** Filtros do painel em uso, como chips removíveis ao lado dos rápidos. */
+  protected readonly filtrosAtivos = computed(() => {
+    const f = this.filtros();
+    const out: { chave: string; rotulo: string }[] = [];
+    if (f.tipo === 'transferencias')
+      out.push({ chave: 'tipo', rotulo: 'Transferências' });
+    if (f.conta) out.push({ chave: 'conta', rotulo: this.nomeConta(f.conta) });
+    for (const id of f.categorias)
+      out.push({
+        chave: `cat:${id}`,
+        rotulo: id ? (this.cat(id)?.name ?? 'Categoria') : 'Sem categoria',
+      });
+    return out;
+  });
   protected readonly periodoAtivo = computed(() => {
     const p = this.periodo();
     if (p.tipo !== 'mes') return null;
@@ -1197,6 +1215,18 @@ export class Transacoes {
   protected mudar(parcial: Partial<Filtros>): void {
     this.filtros.update((f) => ({ ...f, ...parcial }));
     this.limite.set(50);
+  }
+
+  protected escolherPeriodo(id: string): void {
+    if (id === 'este') this.irPara(this.mesAtualStr);
+    else if (id === 'passado') this.irPara(this.mesPassado);
+    else this.tresMeses();
+  }
+
+  protected removerFiltro(chave: string): void {
+    if (chave === 'tipo') this.mudar({ tipo: null });
+    else if (chave === 'conta') this.mudar({ conta: null });
+    else this.alternarCategoria(chave.slice(4));
   }
 
   protected alternarTipo(tipo: TipoFiltro): void {

@@ -61,6 +61,17 @@ interface LinhaDivisao {
   texto: string;
 }
 
+/**
+ * Prefixo de operação, data e hora que o banco põe antes do nome ("COMPRA C/CARTAO 30/10 14:26
+ * MO A MO", "PIX - ENVIADO 30/10 11:59 Fulano"). O título mostra só o nome.
+ */
+const PREFIXO_DO_BANCO =
+  /^(COMPRA (C\/|COM )?CARTAO|COMPRA NO DEBITO|PAGAMENTO (COM )?CARTAO|PIX\s*-\s*(ENVIADO|RECEBIDO))\s+(\d{2}\/\d{2}(\/\d{2,4})?\s+)?(\d{2}:\d{2}\s+)?/i;
+
+export function nomeSemPrefixo(description: string): string {
+  return description.replace(PREFIXO_DO_BANCO, '').trim() || description;
+}
+
 const emReais = (cents: number): string =>
   (Math.abs(cents) / 100).toFixed(2).replace('.', ',');
 
@@ -73,13 +84,17 @@ const emReais = (cents: number): string =>
     :host {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
     .topo {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       gap: 8px;
+    }
+    .topo > div {
+      flex: 1;
+      min-width: 0;
     }
     .nome {
       display: flex;
@@ -88,20 +103,57 @@ const emReais = (cents: number): string =>
     }
     h2 {
       margin: 0;
-      font: 600 20px/28px var(--font-sans);
-      word-break: break-word;
+      font: 600 18px/24px var(--font-sans);
+      overflow-wrap: anywhere;
+    }
+    .original {
+      margin-top: 2px;
+      font: 400 12px/16px var(--font-sans);
+      color: var(--text-2);
+      overflow-wrap: anywhere;
     }
     .valor {
-      font: 600 32px/40px var(--font-sans);
+      font: 600 28px/36px var(--font-sans);
       font-variant-numeric: tabular-nums;
+    }
+    .rotulo-linha {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .link {
+      border: 0;
+      padding: 4px 0;
+      background: none;
+      color: var(--primary-text);
+      font: 500 14px/20px var(--font-sans);
+      cursor: pointer;
+    }
+    .link:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
     }
     .chips {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
-      max-height: 220px;
+      max-height: 184px;
       overflow: auto;
       padding: 2px;
+    }
+    .chips .j-chip {
+      height: 30px;
+      padding: 0 10px;
+    }
+    /* Categorias de entrada em verde, como os valores que entram. */
+    .chips .j-chip.receita {
+      color: var(--positive);
+      border-color: var(--positive);
+    }
+    .chips .j-chip.receita[aria-pressed='true'] {
+      background: var(--positive-soft);
     }
     .regra {
       display: flex;
@@ -195,9 +247,17 @@ const emReais = (cents: number): string =>
       flex-wrap: wrap;
       margin-top: 4px;
     }
+    /* Salvar sempre à vista: fica preso ao pé do painel enquanto o resto rola. */
     .acoes {
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
       display: flex;
       gap: 8px;
+      margin: 0 -16px;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: var(--surface);
+      border-top: 1px solid var(--border);
     }
     .acoes button:first-child {
       flex: 1;
@@ -207,7 +267,7 @@ const emReais = (cents: number): string =>
     <div class="topo">
       <div>
         <div class="nome">
-          <h2>{{ tx().description }}</h2>
+          <h2>{{ nome() }}</h2>
           <button
             class="icone"
             [class.copiado]="copiado()"
@@ -240,17 +300,21 @@ const emReais = (cents: number): string =>
             }
           </button>
         </div>
+        @if (nome() !== tx().description) {
+          <div class="original">{{ tx().description }}</div>
+        }
         <div class="j-sub">{{ data() }} · {{ conta() }}</div>
       </div>
       <button
-        janoButton
-        variant="ghost"
-        [small]="true"
+        class="icone"
         type="button"
         aria-label="Fechar detalhe"
+        title="Fechar"
         (click)="fechar.emit()"
       >
-        Fechar
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
       </button>
     </div>
 
@@ -269,11 +333,19 @@ const emReais = (cents: number): string =>
 
     @if (!dividindo()) {
       <div>
-        <div class="j-field__label" style="margin-bottom: 8px">Categoria</div>
+        <div class="rotulo-linha">
+          <span class="j-field__label">Categoria</span>
+          @if (tx().amountCents < 0) {
+            <button class="link" type="button" (click)="dividir()">
+              Dividir em categorias
+            </button>
+          }
+        </div>
         <div class="chips" role="group" aria-label="Categoria">
-          @for (c of categorias(); track c.id) {
+          @for (c of categoriasNaOrdem(); track c.id) {
             <button
               class="j-chip"
+              [class.receita]="c.type === 'receita'"
               type="button"
               [attr.aria-pressed]="escolha() === c.id"
               (click)="escolher(c.id)"
@@ -293,93 +365,77 @@ const emReais = (cents: number): string =>
       </div>
     }
 
-    @if (tx().amountCents < 0) {
+    @if (dividindo()) {
       <div>
         <div class="dividir-topo">
           <span class="j-field__label">Dividir em categorias</span>
           <span class="j-cap">Total {{ money(-tx().amountCents) }}</span>
         </div>
-        @if (dividindo()) {
-          <div class="partes">
-            @for (l of linhas(); track $index; let i = $index) {
-              <div class="parte">
-                <span class="j-input">
-                  <select
-                    [attr.aria-label]="'Categoria ' + (i + 1)"
-                    (change)="
-                      mudarParte(i, {
-                        categoryId: $any($event.target).value || null,
-                      })
-                    "
-                  >
-                    <option value="" [selected]="!l.categoryId">
-                      Categoria
-                    </option>
-                    @for (c of categorias(); track c.id) {
-                      <option [value]="c.id" [selected]="l.categoryId === c.id">
-                        {{ c.name }}
-                      </option>
-                    }
-                  </select>
-                </span>
-                <span class="j-input">
-                  <span class="j-input__prefix">R$</span>
-                  <input
-                    inputmode="decimal"
-                    placeholder="0,00"
-                    [attr.aria-label]="'Valor ' + (i + 1)"
-                    [value]="l.texto"
-                    (input)="
-                      mudarParte(i, { texto: $any($event.target).value })
-                    "
-                  />
-                </span>
-                <button
-                  janoButton
-                  variant="ghost"
-                  [small]="true"
-                  type="button"
-                  [attr.aria-label]="'Remover parte ' + (i + 1)"
-                  [disabled]="linhas().length <= 2"
-                  (click)="removerParte(i)"
+        <div class="partes">
+          @for (l of linhas(); track $index; let i = $index) {
+            <div class="parte">
+              <span class="j-input">
+                <select
+                  [attr.aria-label]="'Categoria ' + (i + 1)"
+                  (change)="
+                    mudarParte(i, {
+                      categoryId: $any($event.target).value || null,
+                    })
+                  "
                 >
-                  ×
-                </button>
-              </div>
-            }
-          </div>
-          <div class="situacao">
-            <button
-              janoButton
-              variant="ghost"
-              [small]="true"
-              type="button"
-              (click)="adicionarParte()"
-            >
-              + Adicionar categoria
-            </button>
-            <span class="j-cap" aria-live="polite">{{ situacao() }}</span>
-          </div>
+                  <option value="" [selected]="!l.categoryId">Categoria</option>
+                  @for (c of categorias(); track c.id) {
+                    <option [value]="c.id" [selected]="l.categoryId === c.id">
+                      {{ c.name }}
+                    </option>
+                  }
+                </select>
+              </span>
+              <span class="j-input">
+                <span class="j-input__prefix">R$</span>
+                <input
+                  inputmode="decimal"
+                  placeholder="0,00"
+                  [attr.aria-label]="'Valor ' + (i + 1)"
+                  [value]="l.texto"
+                  (input)="mudarParte(i, { texto: $any($event.target).value })"
+                />
+              </span>
+              <button
+                janoButton
+                variant="ghost"
+                [small]="true"
+                type="button"
+                [attr.aria-label]="'Remover parte ' + (i + 1)"
+                [disabled]="linhas().length <= 2"
+                (click)="removerParte(i)"
+              >
+                ×
+              </button>
+            </div>
+          }
+        </div>
+        <div class="situacao">
           <button
             janoButton
             variant="ghost"
             [small]="true"
             type="button"
-            (click)="dividindo.set(false)"
+            (click)="adicionarParte()"
           >
-            {{ tx().splits?.length ? 'Desfazer divisão' : 'Cancelar divisão' }}
+            + Adicionar categoria
           </button>
-        } @else {
-          <button
-            janoButton
-            variant="secondary"
-            [small]="true"
-            type="button"
-            (click)="dividir()"
-          >
-            Dividir em categorias
-          </button>
-        }
+          <span class="j-cap" aria-live="polite">{{ situacao() }}</span>
+        </div>
+        <button
+          janoButton
+          variant="ghost"
+          [small]="true"
+          type="button"
+          (click)="dividindo.set(false)"
+        >
+          {{ tx().splits?.length ? 'Desfazer divisão' : 'Cancelar divisão' }}
+        </button>
       </div>
     }
 
@@ -531,6 +587,16 @@ export class DetalheTransacao {
   });
 
   protected readonly data = computed(() => dayLabel(this.tx().date));
+  protected readonly nome = computed(() =>
+    nomeSemPrefixo(this.tx().description),
+  );
+  /** As do tipo do lançamento primeiro (despesas num gasto, receitas numa entrada). */
+  protected readonly categoriasNaOrdem = computed(() => {
+    const tipo = this.tx().amountCents > 0 ? 'receita' : 'despesa';
+    return [...this.categorias()].sort(
+      (a, b) => Number(b.type === tipo) - Number(a.type === tipo),
+    );
+  });
   protected readonly cor = computed(
     () => classeValor(this.tx()).split(' ').pop() as string,
   );
