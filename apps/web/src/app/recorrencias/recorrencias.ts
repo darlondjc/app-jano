@@ -30,7 +30,9 @@ import { mesAtual, rotuloMes } from '../transacoes/agrupar';
 import { marcarTransferencias } from '../transacoes/transferencias';
 import {
   montarRecorrencias,
+  porGrupo,
   totalMensal,
+  type Grupo,
   type LinhaRecorrencia,
 } from './linhas';
 
@@ -100,6 +102,22 @@ const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
       gap: 12px;
       align-items: center;
       padding: 12px 16px;
+    }
+    .grupo {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      padding: 16px 0 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .grupo h3 {
+      margin: 0;
+      font: 600 15px/20px var(--font-sans);
+    }
+    .grupo span {
+      font: 500 13px/18px var(--font-sans);
+      color: var(--text-2);
     }
     .cab {
       font: 500 12px/16px var(--font-sans);
@@ -251,7 +269,8 @@ const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
   template: `
     <h1>Recorrências</h1>
     <div class="j-sub">
-      Assinaturas, contas fixas e entradas que se repetem todo mês.
+      Assinaturas, contas fixas, parcelamentos e entradas que se repetem todo
+      mês.
     </div>
 
     @if (erro()) {
@@ -288,9 +307,7 @@ const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
           [valueCents]="totalGastos()"
           tone="out"
         >
-          <span class="j-cap">{{
-            plural(qtd('gasto'), 'cobrança detectada', 'cobranças detectadas')
-          }}</span>
+          <span class="j-cap">{{ resumoGastos() }}</span>
         </jano-kpi-card>
         <jano-kpi-card
           label="Entradas fixas por mês"
@@ -317,43 +334,63 @@ const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
             <span>Próxima</span>
             <span>Situação</span>
           </div>
-          @for (l of linhas(); track l.tipo + l.nome) {
-            <div class="linha">
-              <div class="quem">
-                <jano-category-badge
-                  [icon]="cat(l.categoryId)?.icon ?? 'etiqueta'"
-                  [colorToken]="cat(l.categoryId)?.color ?? 'cat-1'"
-                  [size]="32"
-                />
-                <div>
-                  <b>{{ l.nome }}</b>
-                  <span class="sub"
-                    >{{
-                      l.tipo === 'entrada' ? 'Entrada' : nomeCat(l.categoryId)
-                    }}
-                    · {{ l.meses }} meses</span
-                  >
+          @for (g of grupos(); track g.grupo) {
+            <div class="grupo">
+              <h3>{{ g.titulo }}</h3>
+              <span class="j-num"
+                >{{ g.grupo === 'entradas' ? '+' : '−'
+                }}{{ money(g.total) }}/mês</span
+              >
+            </div>
+            @for (l of g.linhas; track l.tipo + l.nome + l.cents) {
+              <div class="linha">
+                <div class="quem">
+                  <jano-category-badge
+                    [icon]="cat(l.categoryId)?.icon ?? 'etiqueta'"
+                    [colorToken]="cat(l.categoryId)?.color ?? 'cat-1'"
+                    [size]="32"
+                  />
+                  <div>
+                    <b>{{ l.nome }}</b>
+                    @if (l.parcela; as p) {
+                      <span class="sub"
+                        >Parcela {{ p.n }} de {{ p.total }} · termina em
+                        {{ mesCurto(p.termina) }}</span
+                      >
+                    } @else {
+                      <span class="sub"
+                        >{{
+                          l.tipo === 'entrada'
+                            ? 'Entrada'
+                            : nomeCat(l.categoryId)
+                        }}
+                        · {{ l.meses }} meses</span
+                      >
+                    }
+                  </div>
+                </div>
+                <div
+                  [class]="'valor' + (l.tipo === 'entrada' ? ' entrada' : '')"
+                >
+                  {{ l.tipo === 'entrada' ? '+' : '−' }}{{ money(l.cents) }}
+                </div>
+                <div class="col-dia">dia {{ l.day }}</div>
+                <div class="col-prox">{{ dataCurta(l.proxima) }}</div>
+                <div class="col-etq">
+                  <ng-container
+                    [ngTemplateOutlet]="etq"
+                    [ngTemplateOutletContext]="{ l: l }"
+                  />
+                </div>
+                <div class="mobile-extra sub">
+                  Próxima {{ dataCurta(l.proxima) }} ·
+                  <ng-container
+                    [ngTemplateOutlet]="etq"
+                    [ngTemplateOutletContext]="{ l: l }"
+                  />
                 </div>
               </div>
-              <div [class]="'valor' + (l.tipo === 'entrada' ? ' entrada' : '')">
-                {{ l.tipo === 'entrada' ? '+' : '−' }}{{ money(l.cents) }}
-              </div>
-              <div class="col-dia">dia {{ l.day }}</div>
-              <div class="col-prox">{{ dataCurta(l.proxima) }}</div>
-              <div class="col-etq">
-                <ng-container
-                  [ngTemplateOutlet]="etq"
-                  [ngTemplateOutletContext]="{ l: l }"
-                />
-              </div>
-              <div class="mobile-extra sub">
-                Próxima {{ dataCurta(l.proxima) }} ·
-                <ng-container
-                  [ngTemplateOutlet]="etq"
-                  [ngTemplateOutletContext]="{ l: l }"
-                />
-              </div>
-            </div>
+            }
           }
         </section>
 
@@ -401,7 +438,11 @@ const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
     }
 
     <ng-template #etq let-l="l">
-      @if (l.reajustada) {
+      @if (l.parcela) {
+        <span class="etq estavel">{{
+          l.parcela.faltam === 1 ? 'Falta 1' : 'Faltam ' + l.parcela.faltam
+        }}</span>
+      } @else if (l.reajustada) {
         <span class="etq alta">Subiu {{ pct(l.pct) }}%</span>
       } @else if (l.nova) {
         <span class="etq nova">Nova</span>
@@ -432,8 +473,18 @@ export class Recorrencias {
     montarRecorrencias(
       this.historico(),
       `${this.month}-${String(this.hoje.getDate()).padStart(2, '0')}`,
+      this.categorias().find((c) => c.id === 'assinaturas')?.id ?? null,
     ),
   );
+  protected readonly grupos = computed(() => porGrupo(this.linhas()));
+  protected readonly resumoGastos = computed(() => {
+    const n = (g: Grupo) => this.linhas().filter((l) => l.grupo === g).length;
+    return [
+      this.plural(n('assinaturas'), 'assinatura', 'assinaturas'),
+      this.plural(n('contas'), 'conta fixa', 'contas fixas'),
+      this.plural(n('parcelamentos'), 'parcelamento', 'parcelamentos'),
+    ].join(' · ');
+  });
   protected readonly totalGastos = computed(() =>
     totalMensal(this.linhas(), 'gasto'),
   );
@@ -500,6 +551,11 @@ export class Recorrencias {
 
   protected nomeCat(id: string | null): string {
     return id ? (this.cat(id)?.name ?? id) : 'Sem categoria';
+  }
+
+  /** "mar 2027" a partir de AAAA-MM. */
+  protected mesCurto(mes: string): string {
+    return `${MESES_CURTOS[Number(mes.slice(5, 7)) - 1]} ${mes.slice(0, 4)}`;
   }
 
   protected dataCurta(iso: string): string {

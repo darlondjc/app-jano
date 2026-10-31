@@ -1,4 +1,9 @@
-import { montarRecorrencias, totalMensal, type TxRec } from './linhas';
+import {
+  montarRecorrencias,
+  porGrupo,
+  totalMensal,
+  type TxRec,
+} from './linhas';
 
 const tx = (
   date: string,
@@ -60,5 +65,49 @@ describe('montarRecorrencias', () => {
   it('soma o total mensal por tipo', () => {
     expect(totalMensal(linhas, 'gasto')).toBe(66124 + 4490);
     expect(totalMensal(linhas, 'entrada')).toBe(635000);
+  });
+
+  it('separa assinaturas, contas fixas e entradas', () => {
+    const grupos = porGrupo(linhas).map((g) => [
+      g.grupo,
+      g.linhas.map((l) => l.nome),
+      g.total,
+    ]);
+    expect(grupos).toEqual([
+      ['assinaturas', ['Netflix'], 4490],
+      ['contas', ['Aluguel'], 66124],
+      ['entradas', ['Salário'], 635000],
+    ]);
+  });
+});
+
+describe('parcelamentos', () => {
+  const parc = (date: string, n: number, total = 6, cents = -15000) => ({
+    ...tx(date, cents, 'LOJA X PARC', 'compras'),
+    accountId: 'cartao',
+    installment: { n, total },
+  });
+
+  it('mostra a parcela atual, quantas faltam e quando termina, fora das contas fixas', () => {
+    const l = montarRecorrencias(
+      [parc('2026-08-10', 2), parc('2026-09-10', 3), parc('2026-10-10', 4)],
+      '2026-10-27',
+    );
+    expect(l).toHaveLength(1);
+    expect(l[0]).toMatchObject({
+      grupo: 'parcelamentos',
+      cents: 15000,
+      proxima: '2026-11-10',
+      parcela: { n: 4, total: 6, faltam: 2, termina: '2026-12' },
+    });
+  });
+
+  it('some quando a última foi paga ou quando parou de aparecer', () => {
+    expect(montarRecorrencias([parc('2026-10-10', 6)], '2026-10-27')).toEqual(
+      [],
+    );
+    expect(montarRecorrencias([parc('2026-07-10', 2)], '2026-10-27')).toEqual(
+      [],
+    );
   });
 });

@@ -91,4 +91,6 @@ O categorizador da Pluggy vem ligado no trial e depois é recurso pago; sem ele,
 regras, o dicionário e o MCC. O `sync --seco` mostra quantos lançamentos vieram com sugestão.
 
 A cada sincronização, lançamentos dos últimos 45 dias que continuam sem categoria, e que você
-não editou, são reavaliados: uma regra criada no app passa a valer para eles no dia seguinte.
+não editou, são reavaliados. Além disso, suas regras valem para o histórico inteiro: onde uma
+regra casa e a categoria automática é outra, fica a da regra. Escolhas manuais, divisões e
+transferências nunca mudam. Uma regra criada no app passa a valer assim no dia seguinte.
