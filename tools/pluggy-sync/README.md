@@ -91,10 +91,13 @@ O categorizador da Pluggy vem ligado no trial e depois é recurso pago; sem ele,
 regras, o dicionário e o MCC. O `sync --seco` mostra quantos lançamentos vieram com sugestão.
 
 A cada sincronização, lançamentos dos últimos 45 dias que continuam sem categoria, e que você
-não editou, são reavaliados. Depois, o que segue sem categoria em todo o histórico recebe a
-categoria de outros lançamentos da mesma loja: a que você escolheu à mão ou, se nunca
+não editou, são reavaliados. Depois, o que segue sem categoria na janela recebe a categoria de
+outros lançamentos da mesma loja, também da janela: a que você escolheu à mão ou, se nunca
 escolheu, a mais frequente. A loja é a descrição sem o prefixo da operação nem a hora, então
 "COMPRA C/CARTAO 27/10 17:15 PADARIA X" e "PADARIA X" são a mesma.
+
+A sincronização só lê e altera a janela de 45 dias (uma consulta por execução). Meses
+anteriores ficam como estão, para não gastar a cota do Firestore nem obrigar o app a relê-los.
 
 A sincronização nunca troca uma categoria que já existe. Suas regras valem para o que chega
 (no app, "Alterar também as transações futuras"); para mudar as que já estão gravadas, use

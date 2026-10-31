@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.10.9',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'A sincronização diária só lê e altera os últimos 45 dias, numa consulta só: meses anteriores ficam como estão e não gastam leituras do servidor.',
+      },
+    ],
+  },
+  {
     version: '0.10.8',
     date: '2026-10-31',
     items: [

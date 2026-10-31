@@ -157,6 +157,22 @@ async function sync(
   const contasPluggy = await connector.listAccounts();
   // Meses com lançamento novo ou alterado: o app relê só esses (ver gravarMesesAlterados).
   const alterados = new Set<string>();
+  // Uma leitura só, da janela inteira: serve à deduplicação de todas as contas e à revisão
+  // pela mesma loja. Nada antes da janela é lido nem alterado (cota do plano gratuito).
+  const naJanela = await db
+    .collection(`${base}/transactions`)
+    .where('date', '>=', janela)
+    .where('date', '<=', ate)
+    .get();
+  const chavesGravadas = new Set(
+    naJanela.docs.map((d) => d.get('dedupeKey') as string),
+  );
+  const lancamentos = new Map(
+    naJanela.docs.map((d) => [
+      d.id,
+      { id: d.id, ...d.data() } as LancamentoGravado & { date: string },
+    ]),
+  );
   for (const account of contasPluggy) {
     const accountId = config.contas[account.externalId];
     if (!accountId) {
@@ -180,24 +196,35 @@ async function sync(
     // As duplicatas só são buscadas no período; algo fora dele seria regravado.
     const noPeriodo = raw.filter((t) => t.date >= desde && t.date <= ate);
     const keyed = addDedupeKeys(accountId, noPeriodo);
-    const snap = await db
-      .collection(`${base}/transactions`)
-      .where('date', '>=', desde)
-      .where('date', '<=', ate)
-      .get();
-    const plan = planImport(
-      keyed,
-      new Set(snap.docs.map((d) => d.get('dedupeKey') as string)),
-    );
+    const plan = planImport(keyed, chavesGravadas);
     const rows = categorizar(plan.fresh, categorias, regras);
     const semCategoria = rows.filter(
       (r) => !r.categoryId && !r.tx.isTransfer,
     ).length;
     const reavaliar = reavaliacoes(
       categorizar(plan.duplicates, categorias, regras),
-      snap.docs,
+      naJanela.docs,
     );
-    for (const r of rows) alterados.add(r.tx.date.slice(0, 7));
+    for (const r of reavaliar) {
+      const l = lancamentos.get(r.ref.id);
+      if (l)
+        Object.assign(l, {
+          categoryId: r.categoryId,
+          isTransfer: r.isTransfer,
+        });
+    }
+    for (const { tx, categoryId } of rows) {
+      alterados.add(tx.date.slice(0, 7));
+      const id = await hashKey(tx.dedupeKey);
+      lancamentos.set(id, {
+        id,
+        date: tx.date,
+        descriptionNorm: tx.descriptionNorm,
+        categoryId,
+        categoryIsManual: false,
+        isTransfer: tx.isTransfer ?? false,
+      });
+    }
     for (const r of reavaliar) alterados.add(r.date.slice(0, 7));
     console.log(
       `- ${account.name} → ${accountId}${desde > janela ? ` (desde ${desde})` : ''}: ` +
@@ -272,7 +299,13 @@ async function sync(
       createdAt: new Date().toISOString(),
     });
   }
-  for (const m of await revisarHistorico(db, base, categorias, seco))
+  for (const m of await revisarJanela(
+    db,
+    base,
+    [...lancamentos.values()],
+    categorias,
+    seco,
+  ))
     alterados.add(m);
   if (!seco) await gravarMesesAlterados(db, base, alterados);
   if (!seco) {
@@ -282,25 +315,23 @@ async function sync(
 }
 
 /**
- * O que continua sem categoria em todo o histórico recebe a da mesma loja em outros
- * lançamentos. Nada que já tem categoria muda: as regras valem só para o que chega, e as
- * transações passadas mudam quando você pede, no app.
+ * O que continua sem categoria na janela recebe a categoria de outros lançamentos da mesma
+ * loja, também da janela. Meses anteriores não são lidos nem alterados: assim a sincronização
+ * gasta só as leituras da janela, e o app não precisa reler meses antigos. Nada que já tem
+ * categoria muda: as transações passadas mudam quando você pede, no app.
  */
-async function revisarHistorico(
+async function revisarJanela(
   db: Firestore,
   base: string,
+  lancamentos: (LancamentoGravado & { date: string })[],
   categorias: CategoriaRef[],
   seco: boolean,
 ): Promise<string[]> {
-  const snap = await db.collection(`${base}/transactions`).get();
-  const porLoja = inferirPeloHistorico(
-    snap.docs.map((d) => ({ id: d.id, ...d.data() }) as LancamentoGravado),
-    categorias,
-  );
-  const data = new Map(snap.docs.map((d) => [d.id, d.get('date') as string]));
+  const porLoja = inferirPeloHistorico(lancamentos, categorias);
+  const data = new Map(lancamentos.map((l) => [l.id, l.date]));
   const meses = [...new Set(porLoja.map((m) => data.get(m.id)!.slice(0, 7)))];
   console.log(
-    `Mesma loja no histórico: ${porLoja.length} lançamentos sem categoria ${seco ? 'receberiam' : 'receberam'} categoria.`,
+    `Mesma loja na janela: ${porLoja.length} lançamentos sem categoria ${seco ? 'receberiam' : 'receberam'} categoria.`,
   );
   if (seco) return meses;
   for (let i = 0; i < porLoja.length; i += BATCH_LIMIT) {
