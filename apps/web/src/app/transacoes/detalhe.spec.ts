@@ -1,6 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import type { CategoryDoc, TransactionDoc } from '@jano/data-access';
-import { DetalheTransacao, TRANSFERENCIA, avisoDoSalvar } from './detalhe';
+import {
+  DetalheTransacao,
+  TRANSFERENCIA,
+  avisoDoSalvar,
+  nomeSemPrefixo,
+} from './detalhe';
 
 const tx: TransactionDoc = {
   id: 't1',
@@ -242,5 +247,45 @@ describe('DetalheTransacao', () => {
       botao(el, 'Salvar').click();
       expect(saidas).toEqual([{ escolha: 'mercado', regra: null }]);
     });
+  });
+});
+
+describe('nomeSemPrefixo', () => {
+  it('tira operação, data e hora do banco', () => {
+    expect(nomeSemPrefixo('COMPRA C/CARTAO 30/10 14:26 MO A MO')).toBe(
+      'MO A MO',
+    );
+    expect(
+      nomeSemPrefixo('PIX - ENVIADO 30/10 11:59 Diogo Duailibe da Silva'),
+    ).toBe('Diogo Duailibe da Silva');
+    expect(nomeSemPrefixo('MERCADOLIVRE*LOJA')).toBe('MERCADOLIVRE*LOJA');
+    expect(nomeSemPrefixo('COMPRA C/CARTAO')).toBe('COMPRA C/CARTAO');
+  });
+});
+
+describe('categorias no detalhe', () => {
+  it('as do tipo do lançamento vêm primeiro e as de receita ficam verdes', () => {
+    const f = TestBed.createComponent(DetalheTransacao);
+    f.componentRef.setInput('tx', { ...tx, amountCents: 50000 });
+    f.componentRef.setInput('categorias', [
+      ...cats,
+      {
+        id: 'receita',
+        name: 'Receita',
+        color: 'cat-1',
+        icon: 'salario',
+        type: 'receita',
+        position: 3,
+      },
+    ]);
+    f.detectChanges();
+    const chips = [
+      ...(f.nativeElement as HTMLElement).querySelectorAll(
+        '[aria-label="Categoria"] .j-chip',
+      ),
+    ];
+    expect(chips[0].textContent?.trim()).toBe('Receita');
+    expect(chips[0].classList).toContain('receita');
+    expect(chips[1].classList).not.toContain('receita');
   });
 });

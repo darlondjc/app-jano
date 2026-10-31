@@ -27,6 +27,16 @@ export const CHANGELOG: Versao[] = [
         texto:
           'Filtros em uso aparecem como chips com × para tirar; "Sem categoria" só aparece quando há algo para categorizar; Selecionar virou um botão ao lado de Importar.',
       },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Detalhe da transação mais compacto no celular: o Salvar fica sempre à vista no pé do painel, o título mostra só o nome (sem "COMPRA C/CARTAO 30/10 14:26") e "Dividir em categorias" virou um link ao lado de Categoria.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Categorias de receita aparecem em verde, e as do tipo do lançamento vêm primeiro.',
+      },
     ],
   },
   {

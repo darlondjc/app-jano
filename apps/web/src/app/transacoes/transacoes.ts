@@ -218,11 +218,15 @@ interface Previa {
       bottom: 0;
       z-index: 60;
       max-height: 85vh;
+      /* dvh: no iPhone, 85vh passa da área visível e esconde o pé do painel. */
+      max-height: 85dvh;
       overflow: auto;
+      overscroll-behavior: contain;
       background: var(--surface);
       border-radius: var(--radius-lg) var(--radius-lg) 0 0;
       box-shadow: var(--shadow-sheet);
-      padding: 20px 16px 24px;
+      /* Sem respiro embaixo: o Salvar fica preso ao pé do painel. */
+      padding: 20px 16px 0;
       box-sizing: border-box;
     }
     .filtros.aberto {
