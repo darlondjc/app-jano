@@ -53,6 +53,18 @@ const MESES_CURTOS = [
 const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
 /** Recorrências: assinaturas, contas fixas e entradas que se repetem todo mês. */
+const CHAVE_FECHADOS = 'jano.recorrencias.fechados';
+
+function lerFechados(): ReadonlySet<Grupo> {
+  try {
+    return new Set(
+      JSON.parse(localStorage.getItem(CHAVE_FECHADOS) ?? '[]') as Grupo[],
+    );
+  } catch {
+    return new Set();
+  }
+}
+
 @Component({
   selector: 'jano-recorrencias',
   imports: [
@@ -105,19 +117,40 @@ const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
     }
     .grupo {
       display: flex;
-      justify-content: space-between;
-      align-items: baseline;
+      align-items: center;
       gap: 8px;
-      padding: 16px 0 4px;
+      width: 100%;
+      min-height: 48px;
+      padding: 12px 16px;
+      border: 0;
       border-bottom: 1px solid var(--border);
-    }
-    .grupo h3 {
-      margin: 0;
+      background: var(--surface-2);
+      color: var(--text);
       font: 600 15px/20px var(--font-sans);
+      text-align: left;
+      cursor: pointer;
     }
-    .grupo span {
+    .grupo:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: -2px;
+    }
+    .grupo svg {
+      flex: none;
+      color: var(--text-2);
+      transition: transform 0.15s;
+    }
+    .grupo[aria-expanded='false'] svg {
+      transform: rotate(-90deg);
+    }
+    .grupo .qtd {
       font: 500 13px/18px var(--font-sans);
       color: var(--text-2);
+    }
+    .grupo .total {
+      margin-left: auto;
+      font: 500 14px/20px var(--font-sans);
+      color: var(--text-2);
+      white-space: nowrap;
     }
     .cab {
       font: 500 12px/16px var(--font-sans);
@@ -335,60 +368,88 @@ const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
             <span>Situação</span>
           </div>
           @for (g of grupos(); track g.grupo) {
-            <div class="grupo">
-              <h3>{{ g.titulo }}</h3>
-              <span class="j-num"
+            <button
+              type="button"
+              class="grupo"
+              [attr.aria-expanded]="!fechados().has(g.grupo)"
+              [attr.aria-controls]="'grupo-' + g.grupo"
+              (click)="alternar(g.grupo)"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  d="M6 9L12 15L18 9"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              {{ g.titulo }}
+              <span class="qtd">{{ g.linhas.length }}</span>
+              <span class="total j-num"
                 >{{ g.grupo === 'entradas' ? '+' : '−'
                 }}{{ money(g.total) }}/mês</span
               >
-            </div>
-            @for (l of g.linhas; track l.tipo + l.nome + l.cents) {
-              <div class="linha">
-                <div class="quem">
-                  <jano-category-badge
-                    [icon]="cat(l.categoryId)?.icon ?? 'etiqueta'"
-                    [colorToken]="cat(l.categoryId)?.color ?? 'cat-1'"
-                    [size]="32"
-                  />
-                  <div>
-                    <b>{{ l.nome }}</b>
-                    @if (l.parcela; as p) {
-                      <span class="sub"
-                        >Parcela {{ p.n }} de {{ p.total }} · termina em
-                        {{ mesCurto(p.termina) }}</span
-                      >
-                    } @else {
-                      <span class="sub"
-                        >{{
-                          l.tipo === 'entrada'
-                            ? 'Entrada'
-                            : nomeCat(l.categoryId)
-                        }}
-                        · {{ l.meses }} meses</span
-                      >
-                    }
+            </button>
+            @if (!fechados().has(g.grupo)) {
+              <div [id]="'grupo-' + g.grupo">
+                @for (l of g.linhas; track l.tipo + l.nome + l.cents) {
+                  <div class="linha">
+                    <div class="quem">
+                      <jano-category-badge
+                        [icon]="cat(l.categoryId)?.icon ?? 'etiqueta'"
+                        [colorToken]="cat(l.categoryId)?.color ?? 'cat-1'"
+                        [size]="32"
+                      />
+                      <div>
+                        <b>{{ l.nome }}</b>
+                        @if (l.parcela; as p) {
+                          <span class="sub"
+                            >Parcela {{ p.n }} de {{ p.total }} · termina em
+                            {{ mesCurto(p.termina) }}</span
+                          >
+                        } @else {
+                          <span class="sub"
+                            >{{
+                              l.tipo === 'entrada'
+                                ? 'Entrada'
+                                : nomeCat(l.categoryId)
+                            }}
+                            · {{ l.meses }} meses</span
+                          >
+                        }
+                      </div>
+                    </div>
+                    <div
+                      [class]="
+                        'valor' + (l.tipo === 'entrada' ? ' entrada' : '')
+                      "
+                    >
+                      {{ l.tipo === 'entrada' ? '+' : '−' }}{{ money(l.cents) }}
+                    </div>
+                    <div class="col-dia">dia {{ l.day }}</div>
+                    <div class="col-prox">{{ dataCurta(l.proxima) }}</div>
+                    <div class="col-etq">
+                      <ng-container
+                        [ngTemplateOutlet]="etq"
+                        [ngTemplateOutletContext]="{ l: l }"
+                      />
+                    </div>
+                    <div class="mobile-extra sub">
+                      Próxima {{ dataCurta(l.proxima) }} ·
+                      <ng-container
+                        [ngTemplateOutlet]="etq"
+                        [ngTemplateOutletContext]="{ l: l }"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div
-                  [class]="'valor' + (l.tipo === 'entrada' ? ' entrada' : '')"
-                >
-                  {{ l.tipo === 'entrada' ? '+' : '−' }}{{ money(l.cents) }}
-                </div>
-                <div class="col-dia">dia {{ l.day }}</div>
-                <div class="col-prox">{{ dataCurta(l.proxima) }}</div>
-                <div class="col-etq">
-                  <ng-container
-                    [ngTemplateOutlet]="etq"
-                    [ngTemplateOutletContext]="{ l: l }"
-                  />
-                </div>
-                <div class="mobile-extra sub">
-                  Próxima {{ dataCurta(l.proxima) }} ·
-                  <ng-container
-                    [ngTemplateOutlet]="etq"
-                    [ngTemplateOutletContext]="{ l: l }"
-                  />
-                </div>
+                }
               </div>
             }
           }
@@ -477,6 +538,8 @@ export class Recorrencias {
     ),
   );
   protected readonly grupos = computed(() => porGrupo(this.linhas()));
+  /** Grupos recolhidos; lembrados neste aparelho. */
+  protected readonly fechados = signal<ReadonlySet<Grupo>>(lerFechados());
   protected readonly resumoGastos = computed(() => {
     const n = (g: Grupo) => this.linhas().filter((l) => l.grupo === g).length;
     return [
@@ -535,6 +598,17 @@ export class Recorrencias {
 
   constructor() {
     void this.carregar();
+  }
+
+  protected alternar(g: Grupo): void {
+    const n = new Set(this.fechados());
+    if (!n.delete(g)) n.add(g);
+    this.fechados.set(n);
+    try {
+      localStorage.setItem(CHAVE_FECHADOS, JSON.stringify([...n]));
+    } catch {
+      // Sem armazenamento: vale só nesta visita.
+    }
   }
 
   protected qtd(tipo: 'gasto' | 'entrada'): number {
