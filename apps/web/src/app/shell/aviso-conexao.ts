@@ -1,10 +1,10 @@
 import type { ConnectionDoc } from '@jano/data-access';
 
 export interface AvisoConexao {
-  tom: 'warn' | 'danger';
+  tom: 'info' | 'warn' | 'danger';
   titulo: string;
   texto: string;
-  acao: { rotulo: string; href: string };
+  acao?: { rotulo: string; href: string };
 }
 
 /** Onde renovar: Applications → sua aplicação → Demo → Connect Account → MeuPluggy. */
@@ -37,6 +37,29 @@ const MESES = [
 function dataLonga(iso: string): string {
   const d = new Date(iso);
   return `${d.getDate()} de ${MESES[d.getMonth()]}`;
+}
+
+/** "há 5 minutos", "há 2 horas", "há 3 dias": idade dos dados mostrados sem internet. */
+export function haQuanto(iso: string, agora = new Date()): string {
+  const min = Math.max(
+    0,
+    Math.round((agora.getTime() - Date.parse(iso)) / 60_000),
+  );
+  if (min < 1) return 'agora há pouco';
+  if (min < 60) return min === 1 ? 'há 1 minuto' : `há ${min} minutos`;
+  const h = Math.round(min / 60);
+  if (h < 24) return h === 1 ? 'há 1 hora' : `há ${h} horas`;
+  const d = Math.round(h / 24);
+  return d === 1 ? 'há 1 dia' : `há ${d} dias`;
+}
+
+/** Sem internet o app mostra os últimos dados guardados no aparelho, só para leitura. */
+export function avisoOffline(desde: string, agora = new Date()): AvisoConexao {
+  return {
+    tom: 'info',
+    titulo: 'Sem conexão.',
+    texto: `Mostrando os dados de ${haQuanto(desde, agora)}. Importar e editar voltam com a internet.`,
+  };
 }
 
 /**

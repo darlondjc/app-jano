@@ -1,14 +1,22 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
 } from '@angular/core';
-import { AuthService, ConnectionsRepository } from '@jano/data-access';
+import {
+  AuthService,
+  CacheLocal,
+  ConnectionsRepository,
+} from '@jano/data-access';
 import { JanoBanner } from '@jano/ui';
-import { avisoConexao, type AvisoConexao } from './aviso-conexao';
+import { avisoConexao, avisoOffline, type AvisoConexao } from './aviso-conexao';
 
-/** Banner do Open Finance no topo de todas as telas: consentimento e sincronização. */
+/**
+ * Banner do topo de todas as telas: sem conexão (dados guardados no aparelho) ou, com
+ * internet, consentimento e sincronização do Open Finance. Um só, o mais urgente.
+ */
 @Component({
   selector: 'jano-aviso-conexao',
   imports: [JanoBanner],
@@ -33,9 +41,11 @@ import { avisoConexao, type AvisoConexao } from './aviso-conexao';
       <div class="aviso">
         <jano-banner [tone]="a.tom" [title]="a.titulo">
           {{ a.texto }}
-          <a [href]="a.acao.href" target="_blank" rel="noopener">{{
-            a.acao.rotulo
-          }}</a>
+          @if (a.acao; as acao) {
+            <a [href]="acao.href" target="_blank" rel="noopener">{{
+              acao.rotulo
+            }}</a>
+          }
         </jano-banner>
       </div>
     }
@@ -44,7 +54,12 @@ import { avisoConexao, type AvisoConexao } from './aviso-conexao';
 export class AvisoConexaoBanner {
   private readonly auth = inject(AuthService);
   private readonly repo = inject(ConnectionsRepository);
-  protected readonly aviso = signal<AvisoConexao | null>(null);
+  private readonly cache = inject(CacheLocal);
+  private readonly conexao = signal<AvisoConexao | null>(null);
+  protected readonly aviso = computed(() => {
+    const desde = this.cache.offlineDesde();
+    return desde ? avisoOffline(desde) : this.conexao();
+  });
 
   constructor() {
     void this.carregar();
@@ -55,6 +70,6 @@ export class AvisoConexaoBanner {
     if (!uid) return;
     // Aviso é complemento: se a leitura falhar, a tela segue sem ele.
     const conexoes = await this.repo.list(uid).catch(() => []);
-    this.aviso.set(avisoConexao(conexoes));
+    this.conexao.set(avisoConexao(conexoes));
   }
 }

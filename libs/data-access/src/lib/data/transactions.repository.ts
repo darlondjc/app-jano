@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore/lite';
 import { hashKey, type KeyedTransaction } from '@jano/import-file';
 import { paths } from '../firebase/paths';
+import { CacheLocal } from '../cache/cache-local';
 import { FirebaseService } from '../firebase/firebase.service';
 import { monthBounds, type TransactionDoc } from './models';
 
@@ -20,8 +21,18 @@ const BATCH_LIMIT = 400; // Firestore aceita 500 operações por lote.
 @Injectable({ providedIn: 'root' })
 export class TransactionsRepository {
   private readonly db = inject(FirebaseService).db;
+  private readonly cache = inject(CacheLocal);
 
-  async listMonth(uid: string, month: string): Promise<TransactionDoc[]> {
+  listMonth(uid: string, month: string): Promise<TransactionDoc[]> {
+    return this.cache.ler(`${uid}|tx|${month}`, () =>
+      this.listMonthDoServidor(uid, month),
+    );
+  }
+
+  private async listMonthDoServidor(
+    uid: string,
+    month: string,
+  ): Promise<TransactionDoc[]> {
     const { from, toExclusive } = monthBounds(month);
     const snap = await getDocs(
       query(
@@ -38,7 +49,17 @@ export class TransactionsRepository {
   }
 
   /** Do primeiro dia de `fromMonth` ao último de `toMonth` (AAAA-MM). */
-  async listRange(
+  listRange(
+    uid: string,
+    fromMonth: string,
+    toMonth: string,
+  ): Promise<TransactionDoc[]> {
+    return this.cache.ler(`${uid}|tx|${fromMonth}|${toMonth}`, () =>
+      this.listRangeDoServidor(uid, fromMonth, toMonth),
+    );
+  }
+
+  private async listRangeDoServidor(
     uid: string,
     fromMonth: string,
     toMonth: string,

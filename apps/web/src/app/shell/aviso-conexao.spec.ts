@@ -1,5 +1,11 @@
 import type { ConnectionDoc } from '@jano/data-access';
-import { RENOVAR_URL, SINCRONIZAR_URL, avisoConexao } from './aviso-conexao';
+import {
+  RENOVAR_URL,
+  SINCRONIZAR_URL,
+  avisoConexao,
+  avisoOffline,
+  haQuanto,
+} from './aviso-conexao';
 
 const agora = new Date('2026-10-30T12:00:00.000Z');
 
@@ -83,5 +89,15 @@ describe('avisoConexao', () => {
       agora,
     );
     expect(a?.titulo).toBe('A sincronização falhou.');
+  });
+
+  it('sem conexão: diz de quando são os dados', () => {
+    expect(haQuanto('2026-10-30T11:55:00.000Z', agora)).toBe('há 5 minutos');
+    expect(haQuanto('2026-10-30T10:00:00.000Z', agora)).toBe('há 2 horas');
+    expect(haQuanto('2026-10-28T12:00:00.000Z', agora)).toBe('há 2 dias');
+    const a = avisoOffline('2026-10-30T11:55:00.000Z', agora);
+    expect(a.titulo).toBe('Sem conexão.');
+    expect(a.texto).toContain('dados de há 5 minutos');
+    expect(a.acao).toBeUndefined();
   });
 });

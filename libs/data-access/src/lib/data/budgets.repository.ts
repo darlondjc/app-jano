@@ -6,6 +6,7 @@ import {
   getDocs,
   setDoc,
 } from 'firebase/firestore/lite';
+import { CacheLocal } from '../cache/cache-local';
 import { FirebaseService } from '../firebase/firebase.service';
 import { paths } from '../firebase/paths';
 
@@ -18,8 +19,13 @@ export interface BudgetDoc {
 @Injectable({ providedIn: 'root' })
 export class BudgetsRepository {
   private readonly db = inject(FirebaseService).db;
+  private readonly cache = inject(CacheLocal);
 
-  async list(uid: string): Promise<BudgetDoc[]> {
+  list(uid: string): Promise<BudgetDoc[]> {
+    return this.cache.ler(`${uid}|budgets`, () => this.listDoServidor(uid));
+  }
+
+  private async listDoServidor(uid: string): Promise<BudgetDoc[]> {
     const snap = await getDocs(collection(this.db, paths.budgets(uid)));
     return snap.docs.map((d) => ({
       categoryId: d.id,

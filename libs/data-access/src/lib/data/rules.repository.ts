@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { collection, doc, getDocs, setDoc } from 'firebase/firestore/lite';
 import { hashKey } from '@jano/import-file';
 import { paths } from '../firebase/paths';
+import { CacheLocal } from '../cache/cache-local';
 import { FirebaseService } from '../firebase/firebase.service';
 
 export interface RuleDoc {
@@ -16,8 +17,13 @@ export interface RuleDoc {
 @Injectable({ providedIn: 'root' })
 export class RulesRepository {
   private readonly db = inject(FirebaseService).db;
+  private readonly cache = inject(CacheLocal);
 
-  async list(uid: string): Promise<RuleDoc[]> {
+  list(uid: string): Promise<RuleDoc[]> {
+    return this.cache.ler(`${uid}|rules`, () => this.listDoServidor(uid));
+  }
+
+  private async listDoServidor(uid: string): Promise<RuleDoc[]> {
     const snap = await getDocs(collection(this.db, paths.rules(uid)));
     return snap.docs.map((d) => ({
       id: d.id,
