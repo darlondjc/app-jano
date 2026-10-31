@@ -13,6 +13,11 @@ export interface RawTransaction {
   installment?: { n: number; total: number };
   /** Grupo que o próprio banco usou na fatura ("Restaurantes", "Transporte"...). */
   bankCategory?: string;
+  /**
+   * Categoria padrão do Jano sugerida pela fonte (categorizador da Pluggy, ramo do
+   * estabelecimento). Vale depois das regras e do dicionário.
+   */
+  suggestedCategory?: string;
   /** Pagamento da fatura é transferência entre contas próprias, não gasto. */
   isTransfer?: boolean;
 }

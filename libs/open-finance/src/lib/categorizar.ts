@@ -24,8 +24,8 @@ export interface LancamentoPronto {
 
 /**
  * Mesma decisão da prévia de importação da tela Transações: transferência fica sem categoria;
- * senão regra do usuário, dicionário padrão e por fim o grupo do banco. Só aceita categoria
- * que existe na conta.
+ * senão regra do usuário, dicionário padrão, grupo do banco e por fim a sugestão da fonte
+ * (Pluggy ou ramo do estabelecimento). Só aceita categoria que existe na conta.
  */
 export function categorizar(
   rows: KeyedTransaction[],
@@ -42,14 +42,20 @@ export function categorizar(
     if (tx.isTransfer) return { tx, categoryId: null };
     const regra = regras.find((r) => tx.descriptionNorm.includes(r.pattern));
     const nomeDaRegra = regra && nomePorId.get(regra.categoryId);
-    const nome =
-      nomeDaRegra ||
-      suggestCategory(tx.descriptionNorm, DEFAULT_RULES) ||
-      bankCategoryToName(tx.bankCategory);
-    const id = nome
-      ? (categorias.find((c) => c.name === nome)?.id ?? slugify(nome))
-      : null;
-    return { tx, categoryId: id && catIds.has(id) ? id : null };
+    // Em ordem de confiança; vale a primeira cuja categoria existe na conta (quem apagou
+    // "Transporte" ainda recebe "Combustível" pelo ramo da loja).
+    const candidatos = [
+      nomeDaRegra,
+      suggestCategory(tx.descriptionNorm, DEFAULT_RULES),
+      bankCategoryToName(tx.bankCategory),
+      tx.suggestedCategory,
+    ];
+    for (const nome of candidatos) {
+      if (!nome) continue;
+      const id = categorias.find((c) => c.name === nome)?.id ?? slugify(nome);
+      if (catIds.has(id)) return { tx, categoryId: id };
+    }
+    return { tx, categoryId: null };
   });
 }
 
