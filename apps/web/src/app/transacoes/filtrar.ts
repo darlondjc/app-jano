@@ -11,6 +11,8 @@ export interface Filtros {
   conta: string | null;
   /** Só lançamentos sem categoria (fora transferências). */
   semCategoria: boolean;
+  /** Só os que chegaram categorizados sozinhos e você ainda não confirmou (ver `precisaRevisar`). */
+  revisar: boolean;
 }
 
 export const SEM_FILTROS: Filtros = {
@@ -19,7 +21,29 @@ export const SEM_FILTROS: Filtros = {
   categorias: [],
   conta: null,
   semCategoria: false,
+  revisar: false,
 };
+
+/** Dias para trás que contam como "chegou agora" em Para revisar. */
+export const DIAS_PARA_REVISAR = 30;
+
+/**
+ * Chegou nos últimos 30 dias com categoria automática (regra, dicionário, banco) ou sem
+ * nenhuma, e você ainda não confirmou nem mudou. Transferências ficam de fora.
+ */
+export function precisaRevisar(
+  t: { date: string; categoryIsManual: boolean; isTransfer: boolean },
+  desde: string,
+): boolean {
+  return !t.categoryIsManual && !t.isTransfer && t.date >= desde;
+}
+
+/** Data (AAAA-MM-DD) a partir da qual um lançamento conta para Para revisar. */
+export function inicioParaRevisar(hoje = new Date()): string {
+  const d = new Date(hoje);
+  d.setDate(d.getDate() - DIAS_PARA_REVISAR);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 interface Linha {
   accountId: string;
@@ -28,6 +52,8 @@ interface Linha {
   amountCents: number;
   categoryId: string | null;
   isTransfer: boolean;
+  categoryIsManual?: boolean;
+  date?: string;
   splits?: { categoryId: string | null; amountCents: number }[];
 }
 
@@ -39,7 +65,8 @@ export function totalDeFiltros(f: Filtros): number {
     (f.tipo ? 1 : 0) +
     (f.categorias.length ? 1 : 0) +
     (f.conta ? 1 : 0) +
-    (f.semCategoria ? 1 : 0)
+    (f.semCategoria ? 1 : 0) +
+    (f.revisar ? 1 : 0)
   );
 }
 
@@ -70,6 +97,8 @@ export function filtrar<T extends Linha>(
   f: Filtros,
   nomeCategoria: (id: string | null) => string,
   cartoes?: ReadonlySet<string>,
+  /** Início da janela de Para revisar; por padrão, 30 dias antes de hoje. */
+  revisarDesde?: string,
 ): T[] {
   return txs.filter((t) => {
     if (f.conta && t.accountId !== f.conta) return false;
@@ -86,6 +115,18 @@ export function filtrar<T extends Linha>(
       return false;
     if (f.tipo === 'transferencias' && !t.isTransfer) return false;
     if (f.semCategoria && (t.categoryId !== null || t.isTransfer)) return false;
+    if (
+      f.revisar &&
+      !precisaRevisar(
+        {
+          date: t.date ?? '',
+          categoryIsManual: !!t.categoryIsManual,
+          isTransfer: t.isTransfer,
+        },
+        revisarDesde ?? inicioParaRevisar(),
+      )
+    )
+      return false;
     // Lançamento dividido aparece no filtro de qualquer categoria das suas partes.
     if (
       f.categorias.length &&

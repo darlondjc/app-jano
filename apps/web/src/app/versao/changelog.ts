@@ -14,6 +14,27 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.13.0',
+    date: '2026-10-31',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Fatura do cartão no Início: o valor em aberto com o vencimento previsto e quanto a próxima já tem garantido (parcelas e assinaturas).',
+      },
+      {
+        tipo: 'novo',
+        texto:
+          'Para revisar: as transações que chegaram categorizadas sozinhas nos últimos 30 dias aparecem num filtro próprio, com um toque para confirmar cada uma ou todas. O Início avisa quantas há.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Gastos variáveis que se repetem no cartão (delivery, cinema) deixam de contar como conta fixa na renda comprometida de Projeções.',
+      },
+    ],
+  },
+  {
     version: '0.12.0',
     date: '2026-10-31',
     items: [

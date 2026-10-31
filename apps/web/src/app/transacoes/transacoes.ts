@@ -8,6 +8,7 @@ import {
   Injector,
   signal,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { Router } from '@angular/router';
 import {
   AuthService,
@@ -62,6 +63,8 @@ import {
 } from './detalhe';
 import {
   filtrar,
+  inicioParaRevisar,
+  precisaRevisar,
   SEM_FILTROS,
   totalDeFiltros,
   type Filtros,
@@ -91,6 +94,7 @@ interface Previa {
     JanoSkeletonGroup,
     JanoSkeletonRows,
     DetalheTransacao,
+    NgTemplateOutlet,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -343,6 +347,49 @@ interface Previa {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
     }
+    /* Para revisar: botão de confirmar ao lado de cada linha e barra de confirmar todas. */
+    .barra-revisar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 16px;
+      margin-bottom: 12px;
+    }
+    .linha-rev {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .linha-rev .linha-m.j-tx {
+      border-bottom: 0;
+    }
+    .confirmar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      margin-right: 8px;
+      border: 1px solid var(--primary);
+      border-radius: var(--radius-pill);
+      background: var(--primary-soft);
+      color: var(--primary-text);
+      cursor: pointer;
+    }
+    .confirmar svg {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.25;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .confirmar:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
     /* Chegou por um insight: pisca duas vezes e some. */
     .destaque {
       animation: destacar 2.4s ease-out;
@@ -570,6 +617,16 @@ interface Previa {
         >
           Receitas
         </button>
+        @if (revisarN() || filtros().revisar) {
+          <button
+            class="j-chip pendente"
+            type="button"
+            [attr.aria-pressed]="filtros().revisar"
+            (click)="mudar({ revisar: !filtros().revisar })"
+          >
+            Para revisar · {{ revisarN() }}
+          </button>
+        }
         @if (semCategoriaN() || filtros().semCategoria) {
           <button
             class="j-chip pendente"
@@ -846,6 +903,24 @@ interface Previa {
             </button>
           </div>
         } @else {
+          @if (filtros().revisar) {
+            <div class="barra-revisar">
+              <span class="j-sub"
+                >Chegaram sozinhas nos últimos 30 dias. Confira a categoria e
+                confirme; o que você confirmar a sincronização não troca.</span
+              >
+              <button
+                janoButton
+                variant="primary"
+                [small]="true"
+                type="button"
+                [disabled]="ocupado()"
+                (click)="confirmarTodas()"
+              >
+                Confirmar todas ({{ filtradas().length }})
+              </button>
+            </div>
+          }
           <div class="tabela-wrap">
             <table>
               <thead>
@@ -858,6 +933,9 @@ interface Previa {
                   <th scope="col">CATEGORIA</th>
                   <th scope="col">CONTA</th>
                   <th scope="col" class="num">VALOR</th>
+                  @if (filtros().revisar) {
+                    <th scope="col"><span class="j-cap">Confirmar</span></th>
+                  }
                 </tr>
               </thead>
               <tbody>
@@ -913,6 +991,16 @@ interface Previa {
                         }}{{ money(t.amountCents) }}</span
                       >
                     </td>
+                    @if (filtros().revisar) {
+                      <td>
+                        <ng-container
+                          *ngTemplateOutlet="
+                            confirmar;
+                            context: { $implicit: t }
+                          "
+                        />
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>
@@ -924,43 +1012,77 @@ interface Previa {
               <div class="j-day dia" style="padding-left: 0">{{ g.label }}</div>
               <div class="blocao">
                 @for (t of g.items; track t.id) {
-                  <button
-                    type="button"
-                    class="j-tx linha-m"
-                    [attr.data-tx]="t.id"
-                    [class.destaque]="destaque() === t.id"
-                    [class.sel]="selecionadas().has(t.id)"
-                    (click)="selecionando() ? marcar(t.id) : abrir(t)"
-                  >
-                    <jano-category-badge
-                      [icon]="
-                        t.isTransfer
-                          ? 'assinatura'
-                          : (cat(t.categoryId)?.icon ?? 'etiqueta')
-                      "
-                      [colorToken]="cat(t.categoryId)?.color ?? 'cat-1'"
-                      [size]="32"
+                  @if (filtros().revisar) {
+                    <div class="linha-rev">
+                      <ng-container
+                        *ngTemplateOutlet="linhaM; context: { $implicit: t }"
+                      />
+                      <ng-container
+                        *ngTemplateOutlet="confirmar; context: { $implicit: t }"
+                      />
+                    </div>
+                  } @else {
+                    <ng-container
+                      *ngTemplateOutlet="linhaM; context: { $implicit: t }"
                     />
-                    <span>
-                      <span class="j-tx__name" style="display: block">{{
-                        t.description
-                      }}</span>
-                      <span class="j-tx__sub" style="display: block">
-                        {{
-                          t.isTransfer ? 'Transferência' : rotuloCategoria(t)
-                        }}
-                        · {{ nomeConta(t.accountId) }}
-                      </span>
-                    </span>
-                    <span [class]="classeValor(t)"
-                      >{{ t.amountCents > 0 ? '+' : ''
-                      }}{{ money(t.amountCents) }}</span
-                    >
-                  </button>
+                  }
                 }
               </div>
             }
           </div>
+
+          <ng-template #linhaM let-t>
+            <button
+              type="button"
+              class="j-tx linha-m"
+              [attr.data-tx]="t.id"
+              [class.destaque]="destaque() === t.id"
+              [class.sel]="selecionadas().has(t.id)"
+              (click)="selecionando() ? marcar(t.id) : abrir(t)"
+            >
+              <jano-category-badge
+                [icon]="
+                  t.isTransfer
+                    ? 'assinatura'
+                    : (cat(t.categoryId)?.icon ?? 'etiqueta')
+                "
+                [colorToken]="cat(t.categoryId)?.color ?? 'cat-1'"
+                [size]="32"
+              />
+              <span>
+                <span class="j-tx__name" style="display: block">{{
+                  t.description
+                }}</span>
+                <span class="j-tx__sub" style="display: block">
+                  {{ t.isTransfer ? 'Transferência' : rotuloCategoria(t) }}
+                  · {{ nomeConta(t.accountId) }}
+                </span>
+              </span>
+              <span [class]="classeValor(t)"
+                >{{ t.amountCents > 0 ? '+' : ''
+                }}{{ money(t.amountCents) }}</span
+              >
+            </button>
+          </ng-template>
+          <ng-template #confirmar let-t>
+            <button
+              class="confirmar"
+              type="button"
+              [attr.aria-label]="'Confirmar categoria de ' + t.description"
+              title="Confirmar categoria"
+              [disabled]="ocupado()"
+              (click)="confirmarRevisao([t.id])"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                aria-hidden="true"
+              >
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </button>
+          </ng-template>
 
           @if (filtradas().length > visiveis().length) {
             <div class="mais">
@@ -1145,6 +1267,7 @@ export class Transacoes {
       this.filtros(),
       (id) => this.nomeCategoria2(id),
       this.cartoes(),
+      this.revisarDesde,
     ),
   );
   protected readonly visiveis = computed(() =>
@@ -1159,6 +1282,12 @@ export class Transacoes {
           .filter((c) => c.type === 'cartao')
           .map((c) => c.id),
       ),
+  );
+  /** `?revisar=1` (aviso do Início): abre já no filtro Para revisar. */
+  readonly revisar = input<string>();
+  private readonly revisarDesde = inicioParaRevisar();
+  protected readonly revisarN = computed(
+    () => this.txs().filter((t) => precisaRevisar(t, this.revisarDesde)).length,
   );
   protected readonly semCategoriaN = computed(
     () => this.txs().filter((t) => !t.categoryId && !t.isTransfer).length,
@@ -1205,6 +1334,7 @@ export class Transacoes {
         this.periodo.set({ tipo: 'mes', mes: lancamento.date.slice(0, 7) });
         this.filtros.set(SEM_FILTROS);
       }
+      if (this.revisar() === '1') this.mudar({ revisar: true });
       await this.carregar();
       if (lancamento) this.irParaLancamento(lancamento.id);
     } catch (e) {
@@ -1287,6 +1417,29 @@ export class Transacoes {
   protected mudar(parcial: Partial<Filtros>): void {
     this.filtros.update((f) => ({ ...f, ...parcial }));
     this.limite.set(50);
+  }
+
+  /** Confirma a categoria que veio sozinha; a linha sai de Para revisar. */
+  protected async confirmarRevisao(ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    this.ocupado.set(true);
+    try {
+      await this.repo.confirmar(this.uid, ids);
+      const set = new Set(ids);
+      this.txs.update((l) =>
+        l.map((t) => (set.has(t.id) ? { ...t, categoryIsManual: true } : t)),
+      );
+      if (ids.length > 1)
+        this.aviso.set(`${ids.length} lançamentos confirmados.`);
+    } catch (e) {
+      this.falha(e);
+    } finally {
+      this.ocupado.set(false);
+    }
+  }
+
+  protected confirmarTodas(): Promise<void> {
+    return this.confirmarRevisao(this.filtradas().map((t) => t.id));
   }
 
   protected escolherPeriodo(id: string): void {

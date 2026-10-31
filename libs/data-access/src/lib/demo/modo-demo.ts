@@ -199,6 +199,9 @@ class TransacoesDemo {
     this.loja.alterar(ids, { categoryId, categoryIsManual: true });
     return ids;
   }
+  async confirmar(_uid: string, ids: string[]): Promise<void> {
+    this.loja.alterar(ids, { categoryIsManual: true });
+  }
   async setTransfer(_uid: string, id: string): Promise<void> {
     this.loja.alterar([id], {
       categoryId: null,

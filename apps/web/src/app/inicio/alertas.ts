@@ -40,6 +40,8 @@ export interface EntradaAlertas {
   max?: number;
   /** Ids dispensados neste mês: saem e abrem espaço para o próximo. */
   dispensados?: ReadonlySet<string>;
+  /** Lançamentos dos últimos 30 dias com categoria automática ainda não confirmada. */
+  paraRevisar?: number;
 }
 
 const MAX = 4;
@@ -72,11 +74,34 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
             id: `meta-perto:${m.categoryId}`,
             tom: 'warn',
             titulo: `${nome} está em ${pct}% da meta`,
-            texto: `${e.moeda(m.spent)} de ${e.moeda(m.limitCents)}, faltando ${e.daysLeft} ${e.daysLeft === 1 ? 'dia' : 'dias'}.`,
+            texto: `${e.moeda(m.spent)} de ${e.moeda(m.limitCents)}, ${
+              e.daysLeft === 0
+                ? 'no último dia do mês'
+                : e.daysLeft === 1
+                  ? 'faltando 1 dia'
+                  : `faltando ${e.daysLeft} dias`
+            }.`,
             acao: { rotulo: 'Ajustar meta', rota: '/orcamento' },
           },
     );
   }
+
+  if (e.paraRevisar)
+    out.push({
+      id: 'revisar',
+      tom: 'info',
+      titulo:
+        e.paraRevisar === 1
+          ? '1 transação para revisar'
+          : `${e.paraRevisar} transações para revisar`,
+      texto:
+        'Chegaram sozinhas nos últimos 30 dias. Confira a categoria e confirme com um toque.',
+      acao: {
+        rotulo: 'Revisar',
+        rota: '/transacoes',
+        queryParams: { revisar: '1' },
+      },
+    });
 
   const acima = categoriesAboveNormal(e.txs, e.month)[0];
   if (acima)

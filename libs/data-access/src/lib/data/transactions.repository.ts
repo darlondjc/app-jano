@@ -394,6 +394,22 @@ export class TransactionsRepository {
     return ids;
   }
 
+  /**
+   * "Para revisar": confirma a categoria que veio sozinha, sem mudá-la. Passa a contar como
+   * escolha sua, que a sincronização não troca.
+   */
+  async confirmar(uid: string, ids: string[]): Promise<void> {
+    for (let i = 0; i < ids.length; i += BATCH_LIMIT) {
+      const batch = writeBatch(this.db);
+      for (const id of ids.slice(i, i + BATCH_LIMIT))
+        batch.update(doc(this.db, paths.transactions(uid), id), {
+          categoryIsManual: true,
+        });
+      await batch.commit();
+    }
+    await this.registrar(uid, ids, { categoryIsManual: true });
+  }
+
   /** Marca à mão como transferência (fora dos totais). */
   async setTransfer(uid: string, id: string): Promise<void> {
     await updateDoc(doc(this.db, paths.transactions(uid), id), {

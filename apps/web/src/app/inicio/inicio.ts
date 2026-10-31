@@ -52,6 +52,8 @@ import { deveLembrar } from './lembrete';
 import { saldoAtual, type SaldoAtual } from './saldo';
 import { podeGastar, type PodeGastar } from './pode-gastar';
 import { comparacaoNoDia, variacao } from './comparacao';
+import { faturaDoCartao, type FaturaCartao } from './fatura';
+import { inicioParaRevisar, precisaRevisar } from '../transacoes/filtrar';
 
 function hojeIso(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -113,6 +115,27 @@ function lerDispensado(): string | null {
     }
     .destaque {
       margin-top: 20px;
+    }
+    .fatura {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .fatura h2 {
+      margin: 0;
+    }
+    .fatura-linha {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12px;
+    }
+    .fatura-linha + .fatura-linha {
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .fatura-valor {
+      font: 600 22px/28px var(--font-sans);
     }
     /* Celular, em duas colunas: com número ímpar de indicadores, o último ocupa a linha. */
     @media (max-width: 599px) {
@@ -402,6 +425,40 @@ function lerDispensado(): string | null {
         </div>
 
         <div class="lateral">
+          @if (faturaCartao(); as fc) {
+            <section class="j-card fatura" aria-label="Fatura do cartão">
+              <h2>Fatura do cartão</h2>
+              <div class="fatura-linha">
+                <div>
+                  <div class="j-sub">Em aberto</div>
+                  <div class="fatura-valor j-num">
+                    {{ money(fc.abertaCents) }}
+                  </div>
+                </div>
+                <span class="j-cap">
+                  @if (fc.vence) {
+                    vence {{ diaMes(fc.vence) }}
+                  } @else {
+                    vencimento a confirmar
+                  }
+                </span>
+              </div>
+              @if (fc.proximaCents) {
+                <div class="fatura-linha">
+                  <div>
+                    <div class="j-sub">Próxima, já garantida</div>
+                    <div class="fatura-valor j-num">
+                      {{ money(fc.proximaCents) }}
+                    </div>
+                  </div>
+                </div>
+                <p class="j-cap" style="margin: -4px 0 0">
+                  {{ composicaoFatura(fc) }}, mais o que você comprar no cartão
+                  até o fechamento.
+                </p>
+              }
+            </section>
+          }
           @if (alertas().length) {
             <section class="alertas" aria-label="Alertas">
               <h2>Para ver hoje</h2>
@@ -466,6 +523,17 @@ function lerDispensado(): string | null {
                   <div>
                     <div class="j-insight__title">{{ a.titulo }}</div>
                     <div class="j-insight__text">{{ a.texto }}</div>
+                    @if (a.id === 'revisar' && a.acao; as ac) {
+                      <a
+                        janoButton
+                        variant="secondary"
+                        [small]="true"
+                        [routerLink]="ac.rota"
+                        [queryParams]="ac.queryParams"
+                        style="margin-top: 8px"
+                        >{{ ac.rotulo }}</a
+                      >
+                    }
                   </div>
                 </div>
               }
@@ -577,6 +645,14 @@ export class Inicio {
       hoje: hojeIso(this.hoje),
     });
   });
+  protected readonly faturaCartao = computed(() =>
+    faturaDoCartao({
+      faturaCents: this.fatura(),
+      txs: this.historico(),
+      cartoes: this.cartoes(),
+      hoje: hojeIso(this.hoje),
+    }),
+  );
   protected readonly comparacao = computed(() =>
     comparacaoNoDia(
       this.historico(),
@@ -622,6 +698,18 @@ export class Inicio {
     return g.livreCents > 0
       ? `Saldo menos ${lista}.`
       : `${lista[0].toUpperCase()}${lista.slice(1)} passam do saldo em ${formatBRL(-g.livreCents)}.`;
+  }
+  protected composicaoFatura(fc: FaturaCartao): string {
+    const partes = [
+      fc.parcelasCents
+        ? `${fc.nParcelas === 1 ? '1 parcela' : `${fc.nParcelas} parcelas`} (${formatBRL(fc.parcelasCents)})`
+        : '',
+      fc.assinaturasCents
+        ? `assinaturas (${formatBRL(fc.assinaturasCents)})`
+        : '',
+    ].filter(Boolean);
+    const texto = partes.join(' e ');
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
   }
   protected diaMes(iso: string): string {
     return `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
@@ -705,6 +793,9 @@ export class Inicio {
       nomeCategoria: (id) => this.nomeCategoria(id),
       moeda: formatBRL,
       dispensados: this.dispensados(),
+      paraRevisar: this.historico().filter((t) =>
+        precisaRevisar(t, inicioParaRevisar(this.hoje)),
+      ).length,
     }),
   );
 
