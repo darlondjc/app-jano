@@ -49,6 +49,8 @@ export interface CartaoFatura {
   seguinte: { totalCents: number; compras: number; desde: string } | null;
   /** Dias informados pelo usuário em uso (null = datas do banco ou desconhecidas). */
   diasInformados: DiasDaFatura | null;
+  /** O valor é o da fatura informada pelo banco (não a soma das compras). */
+  valorDoBanco: boolean;
   /** Saldo devedor total no banco, quando é maior que a fatura (parcelas futuras). */
   totalNoCartaoCents: number | null;
   /** O que cai no cartão todo mês: parcelas que continuam e assinaturas. */
@@ -317,8 +319,26 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
     base = dasTransacoes(doCartao, mesAntes(e.hoje), e.hoje);
   }
 
+  // Valor oficial: a fatura fechada como o banco informa (com encargos, créditos e
+  // parcelas do jeito do banco). Vale quando é a mesma fatura que o card mostra.
+  const oficial = !c?.fechamento ? (saldo?.faturasBanco?.[0] ?? null) : null;
+  let valorDoBanco = false;
+  if (oficial) {
+    const mesma =
+      manual && fase === 'fechada' && vence
+        ? Math.abs(dias(oficial.vencimento, vence)) <= 5
+        : !manual && oficial.vencimento >= e.hoje;
+    if (mesma) {
+      if (!manual) fase = 'fechada';
+      vence = oficial.vencimento;
+      valorCents = oficial.totalCents;
+      minimoCents = oficial.minimoCents;
+      valorDoBanco = true;
+    }
+  }
+
   const totalNoCartaoCents =
-    manual && saldo && saldo.balanceCents > valorCents + 100
+    (manual || valorDoBanco) && saldo && saldo.balanceCents > valorCents + 100
       ? saldo.balanceCents
       : null;
 
@@ -379,6 +399,7 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
     situacao,
     limite,
     diasInformados: e.dias ?? null,
+    valorDoBanco,
     totalNoCartaoCents,
     composicao: partes(base.porCategoria),
     compras: base.compras,

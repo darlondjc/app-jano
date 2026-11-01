@@ -274,6 +274,12 @@ const MESES = [
         <div class="rotulo">{{ rotuloValor() }}</div>
         <div class="valor">{{ money(f.valorCents) }}</div>
         <div class="sub">{{ datas() }}</div>
+        @if (!f.valorDoBanco && f.diasInformados && f.fase === 'fechada') {
+          <div class="sub">
+            Soma das compras do ciclo; pode diferir do banco (encargos,
+            ajustes).
+          </div>
+        }
         @if (f.totalNoCartaoCents; as total) {
           <div class="sub">
             Total no cartão, com parcelas futuras: {{ money(total) }}
@@ -286,6 +292,9 @@ const MESES = [
           >
             <label class="j-field">
               <span class="j-field__label">Fecha no dia</span>
+              <span class="j-field__hint"
+                >Véspera do "melhor dia de compra" do app do banco</span
+              >
               <span class="j-input"
                 ><input
                   #fecha

@@ -68,6 +68,16 @@ export interface PluggyTransaction {
   } | null;
 }
 
+/** Fatura do cartão (`/bills`): vem do padrão de faturas do Open Finance. */
+export interface PluggyBill {
+  id: string;
+  /** ISO 8601. */
+  dueDate: string;
+  /** Em reais. */
+  totalAmount: number;
+  minimumPaymentAmount?: number | null;
+}
+
 /** Uma conexão (um banco). No Meu Pluggy, espelha a autorização dada em meu.pluggy.ai. */
 export interface PluggyItem {
   id: string;
@@ -125,6 +135,14 @@ export class PluggyClient {
       `/accounts?itemId=${encodeURIComponent(itemId)}`,
     );
     return page.results;
+  }
+
+  /** Faturas fechadas do cartão, como o banco informa. */
+  async listBills(accountId: string): Promise<PluggyBill[]> {
+    const page = await this.get<{ results?: PluggyBill[] }>(
+      `/bills?accountId=${encodeURIComponent(accountId)}`,
+    );
+    return page.results ?? [];
   }
 
   /** Todas as transações da conta no período, seguindo o cursor de `/v2/transactions`. */

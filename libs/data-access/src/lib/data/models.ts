@@ -1,4 +1,8 @@
-import type { CreditoCartao, ResumoFatura } from '@jano/open-finance';
+import type {
+  CreditoCartao,
+  FaturaBanco,
+  ResumoFatura,
+} from '@jano/open-finance';
 export interface TransactionDoc {
   id: string;
   accountId: string;
@@ -56,6 +60,8 @@ export interface BalanceDoc {
   credito?: CreditoCartao | null;
   /** Só cartões: resumo da fatura aberta, com as compras ainda pendentes. */
   faturaAberta?: ResumoFatura | null;
+  /** Cartão: faturas fechadas como o banco informa, da mais recente (valor oficial). */
+  faturasBanco?: FaturaBanco[] | null;
 }
 
 /** Estado de uma conexão Open Finance (um banco), gravado pela sincronização. */

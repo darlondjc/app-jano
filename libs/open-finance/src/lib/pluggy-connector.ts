@@ -4,10 +4,12 @@ import type {
   BankConnector,
   ConnectedAccount,
   CreditoCartao,
+  FaturaBanco,
   FetchRange,
 } from './bank-connector';
 import type {
   PluggyAccount,
+  PluggyBill,
   PluggyClient,
   PluggyItem,
   PluggyTransaction,
@@ -49,6 +51,22 @@ export class PluggyConnector implements BankConnector {
   }
 
   /**
+   * Faturas fechadas do cartão, da mais recente à mais antiga. Nem todo banco manda: sem
+   * elas (ou com a consulta indisponível), devolve lista vazia e o app soma as compras.
+   */
+  async fetchFaturas(account: ConnectedAccount): Promise<FaturaBanco[]> {
+    try {
+      const bills = await this.client.listBills(account.externalId);
+      return bills
+        .map(toFaturaBanco)
+        .filter((f): f is FaturaBanco => f !== null)
+        .sort((a, b) => b.vencimento.localeCompare(a.vencimento));
+    } catch {
+      return [];
+    }
+  }
+
+  /**
    * Compras do cartão no período, inclusive as pendentes da fatura aberta. Só para resumir a
    * fatura: pendentes mudam de id no fechamento e nunca são gravadas como transação.
    */
@@ -59,6 +77,17 @@ export class PluggyConnector implements BankConnector {
     const rows = await this.client.listTransactions(account.externalId, range);
     return rows.map((t) => toRawTransaction(t, account.kind));
   }
+}
+
+/** Fatura da Pluggy → formato do app; descarta as que vierem sem data ou valor. */
+export function toFaturaBanco(b: PluggyBill): FaturaBanco | null {
+  if (!b.dueDate || typeof b.totalAmount !== 'number') return null;
+  return {
+    vencimento: dataLocal(b.dueDate),
+    totalCents: toCents(b.totalAmount),
+    minimoCents:
+      b.minimumPaymentAmount == null ? null : toCents(b.minimumPaymentAmount),
+  };
 }
 
 const SUBTIPOS: Record<string, string> = {
