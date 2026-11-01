@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.21.1',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Trocar de tela pelo menu abre a página do começo; tocar no menu da tela em que você já está volta ao topo. Atualizar o app abre a versão nova com a tela de abertura. No celular, o app não dá mais zoom com pinça, toque duplo ou ao tocar num campo.',
+      },
+    ],
+  },
+  {
     version: '0.21.0',
     date: '2026-11-01',
     items: [
