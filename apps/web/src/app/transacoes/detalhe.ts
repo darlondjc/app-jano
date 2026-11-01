@@ -11,6 +11,7 @@ import {
 import type { CategoryDoc, TransactionDoc } from '@jano/data-access';
 import { formatBRL, validarDivisao } from '@jano/engine';
 import {
+  ehPagamentoDeFatura,
   estabelecimento,
   nomeDeExibicao,
   normalizeDescription,
@@ -273,6 +274,9 @@ const emReais = (cents: number): string =>
       border-radius: var(--radius-md);
       background: var(--surface-2);
     }
+    .explica {
+      margin: 8px 0 0;
+    }
     .apelido-link {
       align-self: flex-start;
     }
@@ -431,6 +435,14 @@ const emReais = (cents: number): string =>
             Transferência (fora dos totais)
           </button>
         </div>
+        @if (pagamentoDeFatura() && escolha() === transferencia) {
+          <p class="j-cap explica">
+            É o pagamento da fatura: o dinheiro sai da conta, mas as compras do
+            cartão já contam como gasto, uma a uma. Contar o pagamento também
+            dobraria o gasto do mês. O saldo da conta continua certo, porque vem
+            do banco.
+          </p>
+        }
       </div>
     }
 
@@ -622,6 +634,9 @@ export class DetalheTransacao {
     () => this.podeRegra() && (this.passadas() || this.futuras()),
   );
   protected readonly copiado = signal(false);
+  protected readonly pagamentoDeFatura = computed(() =>
+    ehPagamentoDeFatura(this.tx().descriptionNorm),
+  );
 
   private readonly apelidos = inject(ApelidosService);
   /** Apelido que já vale para este lançamento (por algum trecho da descrição). */

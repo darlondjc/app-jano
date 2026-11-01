@@ -224,6 +224,15 @@ class CatalogoDemo {
   async accounts() {
     return copia(this.loja.dados.accounts);
   }
+  async salvarDiasDaFatura(
+    _uid: string,
+    accountId: string,
+    fatura: { fecha: number; vence: number },
+  ): Promise<void> {
+    this.loja.dados.accounts = this.loja.dados.accounts.map((a) =>
+      a.id === accountId ? { ...a, fatura } : a,
+    );
+  }
   async categories() {
     return copia(this.loja.dados.categories);
   }

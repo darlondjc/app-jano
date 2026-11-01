@@ -30,6 +30,8 @@ export interface AccountDoc {
   id: string;
   nickname: string;
   type: 'conta' | 'cartao';
+  /** Cartão: dias de fechamento e vencimento informados pelo usuário (o banco pode não mandar). */
+  fatura?: { fecha: number; vence: number };
 }
 
 /** Saldo de uma conta no banco, gravado pela sincronização Open Finance (tools/pluggy-sync). */

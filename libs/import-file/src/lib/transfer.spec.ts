@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeDescription } from './normalize';
-import { isLikelyTransfer } from './transfer';
+import { ehPagamentoDeFatura, isLikelyTransfer } from './transfer';
 
 const t = (s: string) => isLikelyTransfer(normalizeDescription(s));
 
@@ -22,5 +22,21 @@ describe('isLikelyTransfer', () => {
     expect(t('Pix enviado Mercadinho Souza')).toBe(false);
     expect(t('Salário')).toBe(false);
     expect(t('Pagamento Energia Enel')).toBe(false);
+  });
+});
+
+describe('ehPagamentoDeFatura', () => {
+  it.each([
+    'PGTO CARTAO',
+    'PGTO CARTAO CREDITO',
+    'PAGTO CARTAO CREDITO',
+    'PAGAMENTO DE FATURA',
+    'OUROCARD PAGAMENTO',
+  ])('%s é pagamento de fatura', (d) => {
+    expect(ehPagamentoDeFatura(d)).toBe(true);
+  });
+  it('compra e aplicação não são', () => {
+    expect(ehPagamentoDeFatura('MERCADO')).toBe(false);
+    expect(ehPagamentoDeFatura('BB RENDE FACIL')).toBe(false);
   });
 });

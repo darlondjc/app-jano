@@ -77,6 +77,19 @@ export class CatalogRepository {
     }));
   }
 
+  /** Guarda os dias de fechamento e vencimento do cartão, sem mexer no resto da conta. */
+  async salvarDiasDaFatura(
+    uid: string,
+    accountId: string,
+    fatura: { fecha: number; vence: number },
+  ): Promise<void> {
+    await setDoc(
+      doc(this.db, paths.accounts(uid), accountId),
+      { fatura },
+      { merge: true },
+    );
+  }
+
   categories(uid: string): Promise<CategoryDoc[]> {
     return this.cache.ler(`${uid}|categories`, () =>
       this.categoriesDoServidor(uid),
