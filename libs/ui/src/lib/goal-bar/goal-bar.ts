@@ -4,9 +4,15 @@ import {
   computed,
   input,
 } from '@angular/core';
-import { formatBRL, goalStatus } from '@jano/engine';
+import { formatBRL, goalStatus, type ContaDoMes } from '@jano/engine';
 
-/** Barra de meta mensal: gasto × limite, marcador de ritmo e frase de estado (cor nunca sozinha). */
+/** Gastar mais que o ritmo do mês por esta folga já pede atenção. */
+const FOLGA_RITMO = 0.15;
+
+/**
+ * Barra de meta mensal: gasto × limite, marcador de ritmo e frase de estado (cor nunca sozinha).
+ * Categoria de contas do mês (`conta`) não tem ritmo: a frase diz se já foram pagas.
+ */
 @Component({
   selector: 'jano-goal-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,7 +31,7 @@ import { formatBRL, goalStatus } from '@jano/engine';
         [attr.aria-label]="name()"
       >
         <div class="j-goal__fill" [style.width.%]="fill()"></div>
-        @if (pace() !== undefined) {
+        @if (comRitmo()) {
           <div
             class="j-goal__pace"
             [style.left.%]="paceLeft()"
@@ -35,7 +41,7 @@ import { formatBRL, goalStatus } from '@jano/engine';
       </div>
       <div class="j-goal__meta">
         <span>{{ money(spentCents()) }} de {{ money(limitCents()) }}</span>
-        @if (pace() !== undefined) {
+        @if (comRitmo()) {
           <span>Ritmo ideal: {{ paceLeft() }}%</span>
         }
       </div>
@@ -53,10 +59,31 @@ export class JanoGoalBar {
   readonly pace = input<number>();
   /** Dias que faltam no mês, para a mensagem de atenção. */
   readonly daysLeft = input<number>();
+  /** Contas do mês (aluguel, escola): esperado, pago e o que falta. */
+  readonly conta = input<ContaDoMes>();
 
-  protected readonly status = computed(() =>
-    goalStatus(this.spentCents(), this.limitCents()),
+  protected readonly comRitmo = computed(
+    () => this.pace() !== undefined && !this.conta(),
   );
+  /** Gasto bem à frente do ritmo do mês, ainda abaixo de 80% da meta. */
+  protected readonly adiantada = computed(() => {
+    const pace = this.pace();
+    const limit = this.limitCents();
+    if (!this.comRitmo() || pace === undefined || pace >= 1 || limit <= 0)
+      return false;
+    const ratio = this.spentCents() / limit;
+    return ratio >= 0.25 && ratio < 0.8 && ratio > pace + FOLGA_RITMO;
+  });
+  /** Contas do mês: só passa a alertar se o que já saiu mais o que falta passar da meta. */
+  protected readonly status = computed(() => {
+    const conta = this.conta();
+    if (conta)
+      return this.spentCents() + conta.faltaCents > this.limitCents()
+        ? 'over'
+        : 'ok';
+    const s = goalStatus(this.spentCents(), this.limitCents());
+    return s === 'ok' && this.adiantada() ? 'warning' : s;
+  });
   protected readonly modifier = computed(
     () => ({ ok: 'ok', warning: 'warn', over: 'over' })[this.status()],
   );
@@ -79,6 +106,20 @@ export class JanoGoalBar {
 
   protected readonly message = computed(() => {
     const left = this.limitCents() - this.spentCents();
+    const conta = this.conta();
+    if (conta) {
+      if (left < 0) return `Passou ${formatBRL(-left)} da meta.`;
+      if (!conta.faltaCents)
+        return `Contas do mês pagas. Sobram ${formatBRL(left)}.`;
+      const depois = left - conta.faltaCents;
+      return depois < 0
+        ? `Falta pagar cerca de ${formatBRL(conta.faltaCents)}; com isso passa ${formatBRL(-depois)} da meta.`
+        : `Falta pagar cerca de ${formatBRL(conta.faltaCents)}.`;
+    }
+    if (this.adiantada()) {
+      const dias = (this.daysLeft() ?? 0) + 1;
+      return `Acima do ritmo: para fechar na meta, até ${formatBRL(Math.floor(left / dias))} por dia.`;
+    }
     switch (this.status()) {
       case 'ok':
         return `No ritmo. Sobram ${formatBRL(left)}.`;

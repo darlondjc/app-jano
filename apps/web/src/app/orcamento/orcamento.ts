@@ -15,7 +15,9 @@ import {
 } from '@jano/data-access';
 import {
   budgetRows,
+  contasDoMes,
   daysLeftInMonth,
+  type ContaDoMes,
   limitesComSobra,
   formatBRL,
   monthPace,
@@ -173,6 +175,7 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
               [limitCents]="l.limitCents"
               [pace]="pace()"
               [daysLeft]="daysLeft()"
+              [conta]="contas().get(l.categoryId)"
             />
             <div class="sobra">
               <label>
@@ -276,6 +279,8 @@ export class Orcamento {
   protected readonly budgets = signal<BudgetDoc[]>([]);
   private cartoes: ReadonlySet<string> = new Set();
   protected readonly totais = signal(monthTotals([]));
+  /** Contas do mês (aluguel, escola): frase de pago/falta pagar no lugar do ritmo. */
+  protected readonly contas = signal(new Map<string, ContaDoMes>());
   /** Gasto por categoria no mês anterior; `null` quando ele não tem dados. */
   private readonly gastoAnterior = signal<Record<string, number> | null>(null);
   /** Metas do mês com a sobra do anterior somada ao limite (rollover). */
@@ -361,11 +366,16 @@ export class Orcamento {
   private async carregarMes(): Promise<void> {
     this.carregando.set(true);
     try {
-      const [doMes, doAnterior] = await Promise.all([
+      const anterior = mesAnterior(this.month());
+      const [doMes, doAnterior, antesDele] = await Promise.all([
         this.txRepo.listMonth(this.uid, this.month()),
-        this.txRepo.listMonth(this.uid, mesAnterior(this.month())),
+        this.txRepo.listMonth(this.uid, anterior),
+        this.txRepo.listMonth(this.uid, mesAnterior(anterior)),
       ]);
       this.totais.set(monthTotals(doMes, this.cartoes));
+      this.contas.set(
+        contasDoMes([...doMes, ...doAnterior, ...antesDele], this.month()),
+      );
       this.gastoAnterior.set(
         doAnterior.length
           ? monthTotals(doAnterior, this.cartoes).spentByCategory

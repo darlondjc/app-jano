@@ -55,6 +55,7 @@ function montar() {
       {
         provide: CatalogRepository,
         useValue: {
+          accounts: vi.fn().mockResolvedValue([]),
           categories: vi.fn().mockResolvedValue([
             {
               id: 'assinaturas',

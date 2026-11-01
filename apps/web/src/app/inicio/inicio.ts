@@ -21,6 +21,7 @@ import {
 } from '@jano/data-access';
 import {
   budgetRows,
+  contasDoMes,
   cumulativeSpend,
   daysLeftInMonth,
   formatBRL,
@@ -28,7 +29,7 @@ import {
   monthPace,
   monthTotals,
   previousMonths,
-  projectMonthEnd,
+  previsaoDoMes,
   tightestGoals,
   valoresOcultos,
 } from '@jano/engine';
@@ -500,6 +501,7 @@ function lerDispensado(): string | null {
                     [limitCents]="m.limitCents"
                     [pace]="pace"
                     [daysLeft]="diasRestantes"
+                    [conta]="contas().get(m.categoryId)"
                   />
                 }
               </div>
@@ -672,18 +674,47 @@ export class Inicio {
   protected readonly linhasMetas = computed(() =>
     budgetRows(this.metas(), this.totais().spentByCategory),
   );
-  protected readonly apertadas = computed(() =>
-    tightestGoals(this.linhasMetas(), 4),
+  protected readonly contas = computed(() =>
+    contasDoMes(this.historico(), this.month),
   );
+  /** Metas mais apertadas; contas do mês só entram se forem passar da meta. */
+  protected readonly apertadas = computed(() => {
+    const contas = this.contas();
+    return tightestGoals(
+      this.linhasMetas().filter((m) => {
+        const c = contas.get(m.categoryId);
+        return !c || m.spentCents + c.faltaCents > m.limitCents;
+      }),
+      4,
+    );
+  });
   protected readonly limiteTotal = computed(() => {
     const soma = this.metas().reduce((s, b) => s + b.limitCents, 0);
     return soma > 0 ? soma : null;
   });
-  protected readonly gastoProjetado = computed(() =>
-    projectMonthEnd(this.totais().spent, this.pace),
+  /** Gasto e receita previstos para o fim do mês (ver `previsaoDoMes`). */
+  private readonly previsao = computed(() => {
+    const anteriores = previousMonths(this.month, 3)
+      .map((m) =>
+        monthTotals(
+          this.historico().filter((t) => t.date.startsWith(m)),
+          this.cartoes(),
+        ),
+      )
+      .filter((t) => t.spent > 0 || t.income > 0);
+    return previsaoDoMes({
+      gastoCents: this.totais().spent,
+      receitaCents: this.totais().income,
+      pace: this.pace,
+      gastosAnteriores: anteriores.map((t) => t.spent),
+      receitasAnteriores: anteriores.map((t) => t.income),
+    });
+  });
+  protected readonly gastoProjetado = computed(
+    () => this.previsao().gastoCents,
   );
   protected readonly sobraPrevista = computed(
-    () => this.totais().income - this.gastoProjetado(),
+    () => this.previsao().receitaCents - this.gastoProjetado(),
   );
   protected readonly serie = computed(() =>
     cumulativeSpend(this.txs(), this.diaAtual, this.cartoes()),
@@ -693,7 +724,8 @@ export class Inicio {
     if (!limite) return null;
     return {
       pct: Math.round((this.totais().spent / limite) * 100),
-      noRitmo: this.totais().spent <= limite * this.pace,
+      // Mesma folga das metas: uma compra no começo do mês não põe tudo "acima do ritmo".
+      noRitmo: this.totais().spent <= limite * Math.min(1, this.pace + 0.15),
     };
   });
   protected readonly resumoRitmo = computed(() => {
@@ -702,6 +734,8 @@ export class Inicio {
       return 'Defina metas no Orçamento para ver o ritmo ideal de gasto.';
     const ideal = Math.round(limite * this.pace);
     const dif = this.totais().spent - ideal;
+    if (dif > 0 && this.totais().spent <= limite * (this.pace + 0.15))
+      return `Você gastou ${formatBRL(this.totais().spent)} até o dia ${this.diaAtual}, perto do ritmo ideal.`;
     return dif <= 0
       ? `Você está ${formatBRL(-dif)} abaixo do ritmo ideal para o dia ${this.diaAtual}.`
       : `Você está ${formatBRL(dif)} acima do ritmo ideal para o dia ${this.diaAtual}.`;

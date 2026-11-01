@@ -21,10 +21,11 @@ import {
   categoriesAboveNormal,
   daysLeftInMonth,
   formatBRL,
+  previousMonths,
   goalStreaks,
   monthPace,
   monthScore,
-  projectMonthEnd,
+  previsaoDoMes,
 } from '@jano/engine';
 import {
   JanoBanner,
@@ -42,12 +43,16 @@ import {
   compararComAnterior,
   distribuicao,
   explicarNota,
+  fraseMesFechado,
   fraseResumo,
   gastoDoMes,
   maioresEstabelecimentos,
   serieMensal,
   ultimosMeses,
 } from './avaliar';
+
+/** Até este dia, Avaliações lê o mês que fechou e não dá nota ao atual. */
+const DIAS_COMECO = 5;
 
 const MESES_ABREV = [
   'Jan',
@@ -595,7 +600,19 @@ export class Avaliacoes {
   private readonly acima = computed(() =>
     categoriesAboveNormal(this.historico(), this.month),
   );
+  /** Nos primeiros dias o mês ainda não diz nada: a leitura é a do mês que fechou. */
+  private readonly comecoDoMes = this.dia <= DIAS_COMECO;
   protected readonly frase = computed(() => {
+    if (this.comecoDoMes) {
+      const fechado = previousMonths(this.month, 1)[0];
+      const topo = categoriesAboveNormal(this.historico(), fechado)[0];
+      return fraseMesFechado(
+        compararComAnterior(this.historico(), fechado, 31, this.cartoes()),
+        fechado,
+        topo ? { nome: this.nomeCat(topo.categoryId), pct: topo.pct } : null,
+        formatBRL,
+      );
+    }
     const topo = this.acima()[0];
     return fraseResumo(
       compararComAnterior(
@@ -610,6 +627,7 @@ export class Avaliacoes {
   });
 
   protected readonly nota = computed(() => {
+    if (this.comecoDoMes) return null;
     const spent = this.gastoMes().total;
     const income = this.historico()
       .filter(
@@ -625,11 +643,32 @@ export class Avaliacoes {
       .slice(0, -1)
       .map((m) => gastoDoMes(this.historico(), m, this.cartoes()).total)
       .filter((v) => v > 0);
+    const receitas = this.meses
+      .slice(0, -1)
+      .map((m) =>
+        this.historico()
+          .filter(
+            (t) =>
+              t.date.startsWith(m) &&
+              !t.isTransfer &&
+              t.amountCents > 0 &&
+              !this.cartoes().has(t.accountId),
+          )
+          .reduce((s, t) => s + t.amountCents, 0),
+      )
+      .filter((v) => v > 0);
+    const previsto = previsaoDoMes({
+      gastoCents: spent,
+      receitaCents: income,
+      pace: this.pace,
+      gastosAnteriores: passados.slice(-3),
+      receitasAnteriores: receitas.slice(-3),
+    });
     const r = monthScore({
       goals: metas,
       pace: this.pace,
       incomeCents: income,
-      projectedNetCents: income - projectMonthEnd(spent, this.pace),
+      projectedNetCents: previsto.receitaCents - previsto.gastoCents,
       pastMonthlySpends: passados,
     });
     return r.parts.length

@@ -14,6 +14,32 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.14.1',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'correcao',
+        texto:
+          'A fatura do cartão não aparece mais como "vencida" depois de paga: o cartão mostra "Fatura anterior paga em" e passa para a fatura aberta, com quando fecha. O "pode gastar" deixa de descontar a fatura que já foi paga.',
+      },
+      {
+        tipo: 'correcao',
+        texto:
+          'Metas seguem o ritmo do mês: quem gasta bem à frente do ritmo vê "Acima do ritmo" e quanto dá por dia para fechar na meta. Contas que vêm uma vez por mês (aluguel, escola, luz) mostram "Contas do mês pagas" ou quanto falta pagar, sem alerta de 100%.',
+      },
+      {
+        tipo: 'correcao',
+        texto:
+          'Começo do mês sem alarme falso: a sobra prevista usa o seu gasto e a sua receita típicos até o meio do mês, em vez de multiplicar as primeiras compras pelo mês inteiro. Nos primeiros dias, Avaliações mostra como fechou o mês anterior e não dá nota ao atual.',
+      },
+      {
+        tipo: 'correcao',
+        texto:
+          'Gasto fixo é um número só: Recorrências e Projeções usam a mesma regra. Posto e farmácia no cartão, que mudam de valor todo mês, vão para "Gastos frequentes" e não contam como conta fixa.',
+      },
+    ],
+  },
+  {
     version: '0.14.0',
     date: '2026-10-31',
     items: [

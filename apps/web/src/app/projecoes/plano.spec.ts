@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { gerarDadosDemo } from '@jano/data-access';
 import { diaDaFatura, planoDoMes } from './plano';
+import { montarRecorrencias, totalMensal } from '../recorrencias/linhas';
 
 const hoje = new Date(2026, 9, 31, 10);
 const dados = gerarDadosDemo(hoje);
@@ -87,5 +88,34 @@ describe('diaDaFatura', () => {
   });
   it('sem pagamento de fatura, não há dia', () => {
     expect(diaDaFatura([])).toBeNull();
+  });
+});
+
+describe('gasto fixo: uma regra só', () => {
+  it('Recorrências e Projeções somam o mesmo; posto e farmácia no cartão ficam de fora', () => {
+    const hoje = '2026-10-31';
+    const linhas = montarRecorrencias(
+      dados.transactions,
+      hoje,
+      'assinaturas',
+      cartoes,
+    );
+    const frequentes = linhas
+      .filter((l) => l.grupo === 'frequentes')
+      .map((l) => l.nome);
+    expect(frequentes).toEqual(
+      expect.arrayContaining(['POSTO IPIRANGA CENTRO']),
+    );
+    const p = planoDoMes({
+      saldoCents: 0,
+      faturaCents: 0,
+      txs: dados.transactions,
+      cartoes,
+      hoje,
+    });
+    const proximo = p.comprometido[0];
+    expect(totalMensal(linhas, 'gasto')).toBe(
+      proximo.fixasCents + proximo.parcelasCents,
+    );
   });
 });

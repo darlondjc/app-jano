@@ -82,7 +82,26 @@ export function gerarDadosDemo(hoje = new Date()): DadosDemo {
     });
   };
 
-  let faturaAnterior = 0;
+  /** Fatura que fechou no dia 27 do mês anterior: compras de 28 de dois meses atrás até lá. */
+  const faturaFechada = (ano: number, mes: number) => {
+    const fecha = isoLocal(new Date(ano, mes - 2, DIA_FECHAMENTO));
+    const abre = isoLocal(new Date(ano, mes - 3, DIA_FECHAMENTO));
+    const cents = transactions
+      .filter(
+        (t) =>
+          t.accountId === CARTAO &&
+          !t.isTransfer &&
+          t.date > abre &&
+          t.date <= fecha,
+      )
+      .reduce((s, t) => s - t.amountCents, 0);
+    // A primeira fatura do histórico fica incompleta: sem pagamento.
+    return k0(ano, mes) ? 0 : cents / 100;
+  };
+  const primeiro = new Date(hoje.getFullYear(), hoje.getMonth() - MESES, 1);
+  const k0 = (ano: number, mes: number) =>
+    ano === primeiro.getFullYear() && mes === primeiro.getMonth() + 1;
+
   for (let k = MESES; k >= 0; k--) {
     const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - k, 1);
     const ano = inicio.getFullYear();
@@ -98,7 +117,8 @@ export function gerarDadosDemo(hoje = new Date()): DadosDemo {
 
     // Conta corrente: salário, contas fixas, pagamento da fatura e compras no débito.
     lancar(dia(5), 9850, 'SALARIO EMPRESA EXEMPLO LTDA', 'receita', CONTA);
-    if (faturaAnterior)
+    const faturaAnterior = faturaFechada(ano, mes);
+    if (faturaAnterior > 0)
       lancar(dia(7), -faturaAnterior, 'PAGTO CARTAO CREDITO', null, CONTA, {
         isTransfer: true,
       });
@@ -147,18 +167,13 @@ export function gerarDadosDemo(hoje = new Date()): DadosDemo {
     );
 
     // Cartão: mercado, combustível, restaurantes, assinaturas, farmácia, lazer e uma compra parcelada.
-    let cartao = 0;
     const noCartao = (
       d: number,
       reais: number,
       desc: string,
       cat: string | null,
       extra: Partial<TransactionDoc> = {},
-    ) => {
-      const antes = transactions.length;
-      lancar(dia(d), -reais, desc, cat, CARTAO, extra);
-      if (transactions.length > antes) cartao += reais;
-    };
+    ) => lancar(dia(d), -reais, desc, cat, CARTAO, extra);
     for (const d of [3, 11, 19, 26])
       noCartao(d, entre(150, 290), 'MATEUS SUPERMERCADOS', 'mercado');
     for (const d of [6, 21])
@@ -186,7 +201,6 @@ export function gerarDadosDemo(hoje = new Date()): DadosDemo {
         'mercado',
       );
     }
-    faturaAnterior = Math.round(cartao * 100) / 100;
   }
 
   transactions.sort((a, b) => b.date.localeCompare(a.date));
@@ -245,7 +259,7 @@ export function gerarDadosDemo(hoje = new Date()): DadosDemo {
         detail: 'cartão de crédito',
         number: '8670',
         accountId: CARTAO,
-        balanceCents: fatura.fechadaCents,
+        balanceCents: fatura.saldoCents,
         bankUpdatedAt: syncedAt,
         syncedAt,
         credito: fatura.credito,
@@ -304,12 +318,17 @@ function faturaDemo(transactions: TransactionDoc[], hoje: Date) {
     desde,
   );
   const limiteCents = 800000;
+  // Paga no dia 7 (ver "PAGTO CARTAO CREDITO"): o banco passa a dever só a aberta.
+  const paga = !fechou && hoje.getDate() >= 7;
+  const devidoCents = paga
+    ? aberta.totalCents
+    : fechadaCents + aberta.totalCents;
   return {
-    fechadaCents,
+    saldoCents: paga ? aberta.totalCents : fechadaCents,
     aberta,
     credito: {
       limiteCents,
-      disponivelCents: limiteCents - fechadaCents - aberta.totalCents,
+      disponivelCents: limiteCents - devidoCents,
       fechamento,
       vencimento,
       minimoCents: Math.round(fechadaCents * 0.15),
