@@ -26,6 +26,10 @@ import {
 import { TransactionsRepository } from '../data/transactions.repository';
 import { GoalsRepository, type GoalDoc } from '../data/goals.repository';
 import {
+  ApelidosRepository,
+  type ApelidoDoc,
+} from '../data/apelidos.repository';
+import {
   monthBounds,
   slugify,
   type CategoryDoc,
@@ -63,6 +67,7 @@ export class LojaDemo {
   dispensados = new Map<string, string[]>();
   cenarios: CenariosDoc | null = null;
   objetivos: GoalDoc[] = objetivosDemo();
+  apelidos: ApelidoDoc[] = [];
 
   alterar(ids: Iterable<string>, mudanca: Partial<TransactionDoc>): void {
     const alvo = new Set(ids);
@@ -283,6 +288,34 @@ class OrcamentoDemo {
   }
 }
 
+class ApelidosDemo {
+  private readonly loja = inject(LojaDemo);
+  async list(): Promise<ApelidoDoc[]> {
+    return copia(this.loja.apelidos);
+  }
+  async save(
+    _uid: string,
+    pattern: string,
+    apelido: string,
+  ): Promise<ApelidoDoc> {
+    const p = pattern.trim().toUpperCase();
+    const a = {
+      id: `apelido-${p}`,
+      pattern: p,
+      apelido: apelido.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    this.loja.apelidos = [
+      ...this.loja.apelidos.filter((x) => x.id !== a.id),
+      a,
+    ];
+    return copia(a);
+  }
+  async remove(_uid: string, id: string): Promise<void> {
+    this.loja.apelidos = this.loja.apelidos.filter((x) => x.id !== id);
+  }
+}
+
 class RegrasDemo {
   private readonly loja = inject(LojaDemo);
   async list(): Promise<RuleDoc[]> {
@@ -440,6 +473,7 @@ export function provideModoDemo(): Provider[] {
     { provide: CatalogRepository, useClass: CatalogoDemo },
     { provide: BudgetsRepository, useClass: OrcamentoDemo },
     { provide: RulesRepository, useClass: RegrasDemo },
+    { provide: ApelidosRepository, useClass: ApelidosDemo },
     { provide: BalancesRepository, useClass: SaldosDemo },
     { provide: ConnectionsRepository, useClass: ConexoesDemo },
     { provide: InsightsRepository, useClass: InsightsDemo },

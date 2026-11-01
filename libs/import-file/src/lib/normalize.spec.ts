@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { nomeDeExibicao, tipoDeOperacao } from './normalize';
+import {
+  apelidoDe,
+  definirApelidos,
+  nomeDeExibicao,
+  tipoDeOperacao,
+} from './normalize';
 
 describe('nomeDeExibicao', () => {
   it.each([
@@ -31,5 +36,26 @@ describe('tipoDeOperacao', () => {
       'Débito',
     );
     expect(tipoDeOperacao('NETFLIX.COM')).toBeNull();
+  });
+});
+
+describe('apelidos', () => {
+  afterEach(() => definirApelidos([]));
+
+  it('trocam o nome de exibição de toda transação com o trecho', () => {
+    definirApelidos([{ pattern: 'JIM DAVI', apelido: 'Academia' }]);
+    expect(nomeDeExibicao('PIX - ENVIADO 10/10 08:30 JIM DAVI SILVA')).toBe(
+      'Academia',
+    );
+    expect(nomeDeExibicao('MERCADO')).toBe('Mercado');
+    expect(apelidoDe('pix enviado jim davi')?.apelido).toBe('Academia');
+  });
+
+  it('o trecho mais longo vence', () => {
+    definirApelidos([
+      { pattern: 'PIX', apelido: 'Pix' },
+      { pattern: 'PIX ENVIADO JIM', apelido: 'Academia' },
+    ]);
+    expect(nomeDeExibicao('PIX - ENVIADO JIM DAVI')).toBe('Academia');
   });
 });

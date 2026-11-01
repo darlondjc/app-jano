@@ -13,6 +13,7 @@ import {
   rotuloDoPeriodo,
 } from '@jano/engine';
 import { calendarioDoHistorico } from './salario';
+import { ApelidosService } from '../apelidos/apelidos.service';
 
 /** Meses de histórico olhados para reconhecer o salário. */
 const MESES_HISTORICO = 6;
@@ -30,6 +31,7 @@ export class PeriodoService {
   private readonly auth = inject(AuthService);
   private readonly txRepo = inject(TransactionsRepository);
   private readonly catalog = inject(CatalogRepository);
+  private readonly apelidos = inject(ApelidosService);
   private carregando: Promise<void> | null = null;
 
   /** Chave do período de hoje ('AAAA-MM'). */
@@ -39,8 +41,12 @@ export class PeriodoService {
   /** Salário reconhecido: nome como aparece no extrato e o dia de costume. */
   readonly salario = signal<{ nome: string; dia: number } | null>(null);
 
+  /** Prepara o contexto da sessão: período financeiro e apelidos dos lançamentos. */
   garantir(): Promise<void> {
-    this.carregando ??= this.descobrir();
+    this.carregando ??= Promise.all([
+      this.descobrir(),
+      this.apelidos.garantir(),
+    ]).then(() => undefined);
     return this.carregando;
   }
 

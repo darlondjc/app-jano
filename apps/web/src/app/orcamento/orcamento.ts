@@ -360,6 +360,8 @@ import { PeriodoService } from '../periodo/periodo.service';
               janoButton
               variant="ghost"
               type="button"
+              [carregando]="acao() === 'remover'"
+              textoCarregando="Removendo…"
               (click)="remover(ed.categoryId)"
             >
               Remover meta
@@ -371,6 +373,8 @@ import { PeriodoService } from '../periodo/periodo.service';
             janoButton
             variant="primary"
             type="button"
+            [carregando]="acao() === 'salvar'"
+            textoCarregando="Salvando…"
             (click)="
               salvar(ed.categoryId ?? novaCategoria(), lim.value, sobra.checked)
             "
@@ -416,6 +420,8 @@ export class Orcamento {
     null,
   );
   protected readonly novaCategoria = signal('');
+  /** Ação da folha em andamento, para o botão dela mostrar o retorno. */
+  protected readonly acao = signal<'salvar' | 'remover' | null>(null);
   /** Do que pede mais atenção ao que pede menos: estado da meta primeiro, depois a proporção. */
   protected readonly linhas = computed(() => {
     const contas = this.contas();
@@ -638,6 +644,7 @@ export class Orcamento {
       this.erro.set('Informe um limite maior que zero, por exemplo 900,00.');
       return;
     }
+    this.acao.set('salvar');
     try {
       await this.budgetRepo.save(this.uid, categoryId, cents, rollover);
       this.budgets.update((list) => [
@@ -647,10 +654,13 @@ export class Orcamento {
       this.fechar();
     } catch (e) {
       this.falha(e);
+    } finally {
+      this.acao.set(null);
     }
   }
 
   protected async remover(categoryId: string): Promise<void> {
+    this.acao.set('remover');
     try {
       await this.budgetRepo.remove(this.uid, categoryId);
       this.budgets.update((list) =>
@@ -659,6 +669,8 @@ export class Orcamento {
       this.fechar();
     } catch (e) {
       this.falha(e);
+    } finally {
+      this.acao.set(null);
     }
   }
 

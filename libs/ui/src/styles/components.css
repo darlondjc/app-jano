@@ -71,6 +71,32 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+/* Ação em andamento: o botão fica firme (sem o cinza de desabilitado) e não aceita toques. */
+.j-btn--carregando,
+.j-btn--carregando[disabled] {
+  opacity: 1;
+  cursor: progress;
+  pointer-events: none;
+}
+.j-btn__gira {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: j-gira 0.8s linear infinite;
+}
+@keyframes j-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .j-btn__gira {
+    animation-duration: 2.4s;
+  }
+}
 @media (pointer: coarse) {
   .j-btn {
     height: 48px;

@@ -172,24 +172,22 @@ import { haQuantoTempo } from './tempo';
           <button
             janoButton
             type="button"
-            [disabled]="atualizacao.estado() === 'aplicando'"
+            [carregando]="atualizacao.estado() === 'aplicando'"
+            textoCarregando="Atualizando…"
             (click)="atualizacao.atualizar()"
           >
-            {{
-              atualizacao.estado() === 'aplicando'
-                ? 'Atualizando…'
-                : 'Atualizar agora'
-            }}
+            Atualizar agora
           </button>
         } @else {
           <button
             janoButton
             variant="secondary"
             type="button"
-            [disabled]="verificando()"
+            [carregando]="verificando()"
+            textoCarregando="Verificando…"
             (click)="verificar()"
           >
-            {{ verificando() ? 'Verificando…' : 'Verificar atualização' }}
+            Verificar atualização
           </button>
         }
         <a janoButton variant="ghost" routerLink="/novidades">Novidades</a>
@@ -226,7 +224,9 @@ import { haQuantoTempo } from './tempo';
           janoButton
           variant="secondary"
           type="button"
-          [disabled]="ocupado()"
+          [disabled]="ocupado() && acao() !== 'csv'"
+          [carregando]="acao() === 'csv'"
+          textoCarregando="Preparando…"
           (click)="exportar('csv')"
         >
           Exportar transações (CSV)
@@ -235,7 +235,9 @@ import { haQuantoTempo } from './tempo';
           janoButton
           variant="secondary"
           type="button"
-          [disabled]="ocupado()"
+          [disabled]="ocupado() && acao() !== 'json'"
+          [carregando]="acao() === 'json'"
+          textoCarregando="Preparando…"
           (click)="exportar('json')"
         >
           Exportar tudo (JSON)
@@ -277,7 +279,9 @@ import { haQuantoTempo } from './tempo';
             janoButton
             variant="danger"
             type="button"
-            [disabled]="texto().trim().toUpperCase() !== 'APAGAR' || ocupado()"
+            [disabled]="texto().trim().toUpperCase() !== 'APAGAR'"
+            [carregando]="acao() === 'apagar'"
+            textoCarregando="Apagando tudo…"
             (click)="apagar()"
           >
             Apagar definitivamente
@@ -304,6 +308,8 @@ export class Conta {
   protected readonly verificando = signal(false);
   protected readonly resultado = signal<'atual' | 'nova' | 'erro' | null>(null);
   protected readonly ocupado = signal(false);
+  /** Ação em andamento, para o botão dela mostrar o retorno. */
+  protected readonly acao = signal<'csv' | 'json' | 'apagar' | null>(null);
   protected readonly aviso = signal('');
   protected readonly confirmando = signal(false);
   protected readonly texto = signal('');
@@ -342,6 +348,7 @@ export class Conta {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     this.ocupado.set(true);
+    this.acao.set(formato);
     this.aviso.set('');
     try {
       const dados = await this.repo.exportar(uid);
@@ -363,6 +370,7 @@ export class Conta {
       this.aviso.set('Não foi possível exportar agora. Tente de novo.');
     } finally {
       this.ocupado.set(false);
+      this.acao.set(null);
     }
   }
 
@@ -375,6 +383,7 @@ export class Conta {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     this.ocupado.set(true);
+    this.acao.set('apagar');
     try {
       const n = await this.repo.apagarTudo(uid);
       this.ultima.set(null);
@@ -384,6 +393,7 @@ export class Conta {
       this.aviso.set('Não foi possível apagar tudo. Tente de novo.');
     } finally {
       this.ocupado.set(false);
+      this.acao.set(null);
     }
   }
 }

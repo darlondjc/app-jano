@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.18.0',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Apelidos: no detalhe da transação, "Dar um apelido" troca o nome do banco por um seu (por exemplo, "JIM DAVI" vira "Academia") em todas as transações com aquele trecho, as passadas e as que ainda vão chegar. Vale em todas as telas e na busca.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Retorno ao tocar: os botões que gravam ou buscam algo mostram que estão trabalhando ("Salvando…", "Apagando…", "Importando…", "Aplicando…") e não aceitam um segundo toque até terminar.',
+      },
+    ],
+  },
+  {
     version: '0.17.0',
     date: '2026-11-01',
     items: [

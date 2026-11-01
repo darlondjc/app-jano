@@ -65,7 +65,9 @@ describe('DetalheTransacao', () => {
     botao(el, 'Lazer').click();
     f.detectChanges();
     botao(el, 'Salvar').click();
-    expect(saidas).toEqual([{ escolha: 'lazer', regra: null }]);
+    expect(saidas).toEqual([
+      { escolha: 'lazer', regra: null, mudouCategoria: true },
+    ]);
   });
 
   const marcar = (f: { detectChanges(): void }, el: HTMLElement, n: number) => {
@@ -91,6 +93,7 @@ describe('DetalheTransacao', () => {
     expect(saidas).toEqual([
       {
         escolha: 'mercado',
+        mudouCategoria: true,
         regra: {
           pattern: 'PIX MERCADINHO SOUZA',
           categoryId: 'mercado',
@@ -119,6 +122,7 @@ describe('DetalheTransacao', () => {
     expect(saidas).toEqual([
       {
         escolha: 'mercado',
+        mudouCategoria: true,
         regra: {
           pattern: 'MERCADINHO SOUZA',
           categoryId: 'mercado',
@@ -180,7 +184,9 @@ describe('DetalheTransacao', () => {
     f.detectChanges();
     expect(el.querySelector('input[type="checkbox"]')).toBeNull();
     botao(el, 'Salvar').click();
-    expect(saidas).toEqual([{ escolha: TRANSFERENCIA, regra: null }]);
+    expect(saidas).toEqual([
+      { escolha: TRANSFERENCIA, regra: null, mudouCategoria: true },
+    ]);
   });
 
   describe('dividir em categorias', () => {
@@ -213,6 +219,7 @@ describe('DetalheTransacao', () => {
       expect(saidas).toEqual([
         {
           escolha: null,
+          mudouCategoria: true,
           regra: null,
           divisao: [
             { categoryId: 'mercado', amountCents: -3000 },
@@ -241,7 +248,9 @@ describe('DetalheTransacao', () => {
       botao(el, 'Desfazer divisão').click();
       f.detectChanges();
       botao(el, 'Salvar').click();
-      expect(saidas).toEqual([{ escolha: 'mercado', regra: null }]);
+      expect(saidas).toEqual([
+        { escolha: 'mercado', regra: null, mudouCategoria: true },
+      ]);
     });
   });
 });
@@ -283,5 +292,51 @@ describe('categorias no detalhe', () => {
     expect(chips[0].textContent?.trim()).toBe('Receita');
     expect(chips[0].classList).toContain('receita');
     expect(chips[1].classList).not.toContain('receita');
+  });
+});
+
+describe('DetalheTransacao: apelido', () => {
+  it('dá um apelido para as transações com o trecho, sem mexer na categoria', () => {
+    const { f, el, saidas } = montar({
+      ...tx,
+      description: 'PIX - ENVIADO 10/10 08:30 JIM DAVI SILVA',
+      descriptionNorm: 'PIX ENVIADO 08 30 JIM DAVI SILVA',
+    });
+    botao(el, 'Dar um apelido').click();
+    f.detectChanges();
+    const campo = el.querySelector('#apelido') as HTMLInputElement;
+    campo.value = 'Academia';
+    campo.dispatchEvent(new Event('input'));
+    f.detectChanges();
+    const trecho = el.querySelector('#apelido-trecho') as HTMLInputElement;
+    trecho.value = 'jim davi';
+    trecho.dispatchEvent(new Event('input'));
+    f.detectChanges();
+    botao(el, 'Salvar').click();
+    expect(saidas).toEqual([
+      expect.objectContaining({
+        mudouCategoria: false,
+        apelido: { pattern: 'JIM DAVI', apelido: 'Academia' },
+      }),
+    ]);
+  });
+
+  it('trecho genérico não deixa salvar', () => {
+    const { f, el } = montar({
+      ...tx,
+      description: 'PIX - ENVIADO 10/10 08:30 JIM DAVI',
+      descriptionNorm: 'PIX ENVIADO 08 30 JIM DAVI',
+    });
+    botao(el, 'Dar um apelido').click();
+    f.detectChanges();
+    const campo = el.querySelector('#apelido') as HTMLInputElement;
+    campo.value = 'Academia';
+    campo.dispatchEvent(new Event('input'));
+    f.detectChanges();
+    const trecho = el.querySelector('#apelido-trecho') as HTMLInputElement;
+    trecho.value = 'PIX';
+    trecho.dispatchEvent(new Event('input'));
+    f.detectChanges();
+    expect(botao(el, 'Salvar').disabled).toBe(true);
   });
 });

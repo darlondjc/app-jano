@@ -366,7 +366,8 @@ interface Rascunho {
             janoButton
             variant="primary"
             type="submit"
-            [disabled]="ocupado()"
+            [carregando]="acao() === 'salvar'"
+            textoCarregando="Salvando…"
           >
             Salvar
           </button>
@@ -384,7 +385,8 @@ interface Rascunho {
               variant="ghost"
               type="button"
               style="margin-left: auto; color: var(--danger)"
-              [disabled]="ocupado()"
+              [carregando]="acao() === 'apagar'"
+              textoCarregando="Apagando…"
               (click)="apagar(r.id)"
             >
               Apagar
@@ -407,6 +409,8 @@ export class ObjetivosCard {
   protected readonly rascunho = signal<Rascunho | null>(null);
   protected readonly erro = signal('');
   protected readonly ocupado = signal(false);
+  /** Ação em andamento, para o botão dela mostrar o retorno. */
+  protected readonly acao = signal<'salvar' | 'apagar' | null>(null);
 
   protected readonly avaliados = computed(() =>
     this.objetivos().map((g) => {
@@ -531,6 +535,7 @@ export class ObjetivosCard {
     if (!/^\d{4}-\d{2}$/.test(r.prazo))
       return this.erro.set('Escolha até quando.');
     this.ocupado.set(true);
+    this.acao.set('salvar');
     try {
       const salvo = await this.repo.save(this.uid, {
         ...(r.id ? { id: r.id, criadoEm: r.criadoEm } : {}),
@@ -552,11 +557,13 @@ export class ObjetivosCard {
       );
     } finally {
       this.ocupado.set(false);
+      this.acao.set(null);
     }
   }
 
   protected async apagar(id: string): Promise<void> {
     this.ocupado.set(true);
+    this.acao.set('apagar');
     try {
       await this.repo.remove(this.uid, id);
       this.objetivos.update((l) => l.filter((o) => o.id !== id));
@@ -567,6 +574,7 @@ export class ObjetivosCard {
       );
     } finally {
       this.ocupado.set(false);
+      this.acao.set(null);
     }
   }
 }
