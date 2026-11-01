@@ -39,6 +39,7 @@ import { Progresso } from '../shell/progresso';
 import { marcarTransferencias } from '../transacoes/transferencias';
 import { mesAtual, rotuloMes } from '../transacoes/agrupar';
 import { PeriodoService } from '../periodo/periodo.service';
+import { META_FATURA } from '../inicio/fatura';
 import {
   compararComAnterior,
   distribuicao,
@@ -613,7 +614,7 @@ export class Avaliacoes {
       txs: this.historico(),
       month: mes,
       today: hoje,
-      budgets: this.budgets(),
+      budgets: this.budgets().filter((b) => b.categoryId !== META_FATURA),
       spentByCategory: this.gastoMes().porCategoria,
       daysLeft: this.fechado() ? 0 : this.periodo.diasRestantes(mes),
       assinaturasId:
@@ -625,7 +626,7 @@ export class Avaliacoes {
     });
     const sequencias: Alerta[] = goalStreaks(
       this.historico(),
-      this.budgets(),
+      this.budgets().filter((b) => b.categoryId !== META_FATURA),
       mes,
     )
       .map((s): Alerta => ({

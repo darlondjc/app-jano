@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { gerarDadosDemo } from '@jano/data-access';
-import { cartaoDaFatura } from './fatura';
+import { cartaoDaFatura, cicloDaFatura } from './fatura';
 
 const dados = gerarDadosDemo(new Date(2026, 9, 31, 10));
 const cartoes = new Set(['cartao-de-credito']);
@@ -268,5 +268,50 @@ describe('valor oficial quando o banco manda também a próxima fatura', () => {
     const f = cartaoDaFatura(base)!;
     expect(f.valorCents).toBe(885433);
     expect(f.vence).toBe('2026-11-05');
+  });
+});
+
+describe('cicloDaFatura (meta da fatura)', () => {
+  const t = (date: string, reais: number, extra = {}) => ({
+    accountId: 'cartao',
+    date,
+    amountCents: -reais * 100,
+    isTransfer: false,
+    ...extra,
+  });
+  const txs = [
+    t('2026-10-26', 100), // fechou neste dia: é da fatura anterior
+    t('2026-10-27', 200),
+    t('2026-11-01', 300),
+    t('2026-11-01', -50), // estorno abate
+    t('2026-10-30', 999, { isTransfer: true }),
+    { ...t('2026-10-30', 70), accountId: 'conta' },
+  ];
+  const cartoes = new Set(['cartao']);
+
+  it('com os dias: do dia seguinte ao fechamento até o próximo', () => {
+    const c = cicloDaFatura({
+      txs,
+      cartoes,
+      dias: { fecha: 26, vence: 5 },
+      hoje: '2026-11-01',
+      semDias: { inicio: '2026-10-05', fim: '2026-11-04' },
+    });
+    expect(c.gastoCents).toBe(45000);
+    expect(c.fecha).toBe('2026-11-26');
+    expect(c.diasRestantes).toBe(25);
+    expect(c.ritmo).toBeCloseTo(6 / 31);
+  });
+
+  it('sem os dias: o período financeiro', () => {
+    const c = cicloDaFatura({
+      txs,
+      cartoes,
+      dias: null,
+      hoje: '2026-11-01',
+      semDias: { inicio: '2026-10-27', fim: '2026-11-04' },
+    });
+    expect(c.gastoCents).toBe(45000);
+    expect(c.fecha).toBeNull();
   });
 });

@@ -65,7 +65,12 @@ import { deveLembrar } from './lembrete';
 import { saldoAtual, type SaldoAtual } from './saldo';
 import { podeGastar, type PodeGastar } from './pode-gastar';
 import { comparacaoNoDia, variacao } from './comparacao';
-import { cartaoDaFatura, type DiasDaFatura } from './fatura';
+import {
+  META_FATURA,
+  cartaoDaFatura,
+  cicloDaFatura,
+  type DiasDaFatura,
+} from './fatura';
 import { FaturaCartaoCard } from './fatura-cartao';
 
 function hojeIso(d: Date): string {
@@ -572,8 +577,16 @@ function lerDispensado(): string | null {
                     [name]="nomeCategoria(m.categoryId)"
                     [spentCents]="m.spentCents"
                     [limitCents]="m.limitCents"
-                    [pace]="pace()"
-                    [daysLeft]="diasRestantes()"
+                    [pace]="
+                      m.categoryId === metaFatura
+                        ? cicloFatura()?.ritmo
+                        : pace()
+                    "
+                    [daysLeft]="
+                      m.categoryId === metaFatura
+                        ? cicloFatura()?.diasRestantes
+                        : diasRestantes()
+                    "
                     [conta]="contas().get(m.categoryId)"
                     [ritmoNoTexto]="false"
                   />
@@ -795,8 +808,34 @@ export class Inicio {
         : null,
     );
   });
-  protected readonly linhasMetas = computed(() =>
-    budgetRows(this.metas(), this.totais().spentByCategory),
+  protected readonly metaFatura = META_FATURA;
+  /** Ciclo aberto da fatura, para a meta "Fatura do cartão" (fechamento a fechamento). */
+  protected readonly cicloFatura = computed(() => {
+    const cartoes = this.cartoes();
+    if (!cartoes.size) return null;
+    const id = [...cartoes][0];
+    const cal = calendario();
+    return cicloDaFatura({
+      txs: this.historico(),
+      cartoes,
+      dias: this.diasDosCartoes().get(id) ?? null,
+      hoje: hojeIso(this.hoje),
+      semDias: { inicio: cal.inicio(this.month()), fim: cal.fim(this.month()) },
+    });
+  });
+  protected readonly linhasMetas = computed(() => {
+    const ciclo = this.cicloFatura();
+    return budgetRows(
+      this.metas().filter((b) => b.categoryId !== META_FATURA || ciclo),
+      {
+        ...this.totais().spentByCategory,
+        ...(ciclo ? { [META_FATURA]: ciclo.gastoCents } : {}),
+      },
+    );
+  });
+  /** Metas de categoria: a da fatura junta compras que já estão nelas. */
+  private readonly metasDeCategoria = computed(() =>
+    this.metas().filter((b) => b.categoryId !== META_FATURA),
   );
   protected readonly contas = computed(() =>
     contasDoMes(this.historico(), this.month()),
@@ -813,7 +852,7 @@ export class Inicio {
     );
   });
   protected readonly limiteTotal = computed(() => {
-    const soma = this.metas().reduce((s, b) => s + b.limitCents, 0);
+    const soma = this.metasDeCategoria().reduce((s, b) => s + b.limitCents, 0);
     return soma > 0 ? soma : null;
   });
   /** Gasto e receita previstos para o fim do mês (ver `previsaoDoMes`). */
@@ -877,7 +916,7 @@ export class Inicio {
       txs: this.historico(),
       month: this.month(),
       today: hojeIso(this.hoje),
-      budgets: this.metas(),
+      budgets: this.metasDeCategoria(),
       spentByCategory: this.totais().spentByCategory,
       daysLeft: this.diasRestantes(),
       assinaturasId: this.cat('assinaturas')?.id ?? null,
@@ -910,6 +949,7 @@ export class Inicio {
   }
 
   protected nomeCategoria(id: string | null): string {
+    if (id === META_FATURA) return 'Fatura do cartão';
     return id
       ? (this.categorias().find((c) => c.id === id)?.name ?? id)
       : 'Sem categoria';

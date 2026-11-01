@@ -419,3 +419,59 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
     todoMes: { totalCents: itens.reduce((s, i) => s + i.cents, 0), itens },
   };
 }
+
+/** Id reservado da meta de orçamento da fatura do cartão (não é uma categoria). */
+export const META_FATURA = '__fatura__';
+
+export interface CicloDaFatura {
+  /** Compras do cartão no ciclo aberto, menos estornos. */
+  gastoCents: number;
+  /** Fração do ciclo decorrida (0–1). */
+  ritmo: number;
+  /** Dias até o fechamento. */
+  diasRestantes: number;
+  /** AAAA-MM-DD do fechamento; null quando o ciclo é o período (sem dias informados). */
+  fecha: string | null;
+}
+
+/**
+ * Ciclo aberto da fatura, para a meta "Fatura do cartão": do dia seguinte ao último
+ * fechamento até o próximo. Sem os dias informados, vale o período financeiro passado em
+ * `semDias` (a fatura não tem como ser separada).
+ */
+export function cicloDaFatura(e: {
+  txs: {
+    accountId: string;
+    date: string;
+    amountCents: number;
+    isTransfer: boolean;
+  }[];
+  cartoes: ReadonlySet<string>;
+  dias: DiasDaFatura | null;
+  hoje: string;
+  semDias: { inicio: string; fim: string };
+}): CicloDaFatura {
+  const de = e.dias
+    ? datasPelosDias(e.dias, e.hoje).fechou
+    : somarDias(e.semDias.inicio, -1);
+  const ate = e.dias ? datasPelosDias(e.dias, e.hoje).proxima : e.semDias.fim;
+  const gastoCents = Math.max(
+    0,
+    -e.txs
+      .filter(
+        (t) =>
+          e.cartoes.has(t.accountId) &&
+          !t.isTransfer &&
+          t.date > de &&
+          t.date <= e.hoje,
+      )
+      .reduce((s, t) => s + t.amountCents, 0),
+  );
+  const total = Math.max(1, dias(de, ate));
+  return {
+    gastoCents,
+    ritmo: Math.min(1, Math.max(0, dias(de, e.hoje) / total)),
+    diasRestantes: Math.max(0, dias(e.hoje, ate)),
+    fecha: e.dias ? ate : null,
+  };
+}

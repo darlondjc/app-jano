@@ -38,6 +38,13 @@ import {
 } from '@jano/ui';
 import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
 import { PeriodoService } from '../periodo/periodo.service';
+import {
+  META_FATURA,
+  cicloDaFatura,
+  datasPelosDias,
+  type CicloDaFatura,
+  type DiasDaFatura,
+} from '../inicio/fatura';
 
 @Component({
   selector: 'jano-orcamento',
@@ -246,10 +253,10 @@ import { PeriodoService } from '../periodo/periodo.service';
                 [name]="nome(l.categoryId)"
                 [spentCents]="l.spentCents"
                 [limitCents]="l.limitCents"
-                [pace]="pace()"
-                [daysLeft]="daysLeft()"
+                [pace]="paceDe(l.categoryId)"
+                [daysLeft]="diasDe(l.categoryId)"
                 [conta]="contas().get(l.categoryId)"
-                [ritmoNoTexto]="false"
+                [ritmoNoTexto]="l.categoryId === metaFatura"
               />
             </button>
           }
@@ -265,7 +272,7 @@ import { PeriodoService } from '../periodo/periodo.service';
         </div>
       }
 
-      @if (semMeta().length) {
+      @if (opcoesNova().length) {
         <div class="rodape">
           <button
             janoButton
@@ -311,7 +318,7 @@ import { PeriodoService } from '../periodo/periodo.service';
               [value]="novaCategoria()"
               (change)="novaCategoria.set($any($event.target).value)"
             >
-              @for (c of semMeta(); track c.id) {
+              @for (c of opcoesNova(); track c.id) {
                 <option [value]="c.id">{{ c.name }}</option>
               }
             </select>
@@ -344,7 +351,10 @@ import { PeriodoService } from '../periodo/periodo.service';
         @if (referencia(ed.categoryId ?? novaCategoria()); as r) {
           <p class="j-cap referencia">{{ r }}</p>
         }
-        <label class="sobra">
+        <label
+          class="sobra"
+          [hidden]="(ed.categoryId ?? novaCategoria()) === metaFatura"
+        >
           <input
             #sobra
             id="sobra-meta"
@@ -404,6 +414,11 @@ export class Orcamento {
   protected readonly categorias = signal<CategoryDoc[]>([]);
   protected readonly budgets = signal<BudgetDoc[]>([]);
   private cartoes: ReadonlySet<string> = new Set();
+  protected readonly metaFatura = META_FATURA;
+  /** Dias de fechamento e vencimento do cartão, se informados. */
+  private diasFatura: DiasDaFatura | null = null;
+  /** Ciclo aberto da fatura (só no período de hoje): gasto, ritmo e dias até fechar. */
+  protected readonly ciclo = signal<CicloDaFatura | null>(null);
   protected readonly totais = signal(monthTotals([]));
   /** Contas do mês (aluguel, escola): frase de pago/falta pagar no lugar do ritmo. */
   protected readonly contas = signal(new Map<string, ContaDoMes>());
@@ -440,12 +455,24 @@ export class Orcamento {
       limitCents: number;
     }) => {
       const conta = contas.get(b.categoryId);
-      const { status } = estadoDaMeta({ ...b, pace: this.pace(), conta });
+      const { status } = estadoDaMeta({
+        ...b,
+        pace: this.paceDe(b.categoryId),
+        conta,
+      });
       const proporcao =
         (b.spentCents + (conta?.faltaCents ?? 0)) / (b.limitCents || 1);
       return { peso: peso[status], proporcao };
     };
-    return budgetRows(this.efetivas(), this.totais().spentByCategory)
+    const ciclo = this.ciclo();
+    const gastos = {
+      ...this.totais().spentByCategory,
+      ...(ciclo ? { [META_FATURA]: ciclo.gastoCents } : {}),
+    };
+    return budgetRows(
+      this.efetivas().filter((b) => b.categoryId !== META_FATURA || ciclo),
+      gastos,
+    )
       .map((b) => ({ b, k: chave(b) }))
       .sort((x, y) => x.k.peso - y.k.peso || y.k.proporcao - x.k.proporcao)
       .map(({ b }) => b);
@@ -464,18 +491,20 @@ export class Orcamento {
     const atencao: string[] = [];
     for (const l of this.linhas()) {
       const conta = contas.get(l.categoryId);
+      const { status } = estadoDaMeta({
+        spentCents: l.spentCents,
+        limitCents: l.limitCents,
+        pace: this.paceDe(l.categoryId),
+        conta,
+      });
+      if (status !== 'ok') atencao.push(this.nome(l.categoryId));
+      // A fatura junta compras que já estão nas categorias: fica fora da soma.
+      if (l.categoryId === META_FATURA) continue;
       gastoCents += l.spentCents;
       cabeCents += Math.max(
         0,
         l.limitCents - l.spentCents - (conta?.faltaCents ?? 0),
       );
-      const { status } = estadoDaMeta({
-        spentCents: l.spentCents,
-        limitCents: l.limitCents,
-        pace: this.pace(),
-        conta,
-      });
-      if (status !== 'ok') atencao.push(this.nome(l.categoryId));
     }
     const fim = calendario().fim(this.month());
     return {
@@ -489,7 +518,9 @@ export class Orcamento {
     };
   });
   protected readonly limiteTotal = computed(() =>
-    this.efetivas().reduce((s, b) => s + b.limitCents, 0),
+    this.efetivas()
+      .filter((b) => b.categoryId !== META_FATURA)
+      .reduce((s, b) => s + b.limitCents, 0),
   );
   /** "novembro" ou, pelo salário, "o próximo período". */
   protected readonly proximoMes = computed(() =>
@@ -508,6 +539,17 @@ export class Orcamento {
       (c) => c.type === 'despesa' && !usadas.has(c.id),
     );
   });
+  /** Opções de nova meta: a fatura do cartão (com cartão e sem meta ainda) e as categorias. */
+  protected readonly opcoesNova = computed(() => {
+    const temFatura =
+      this.temCartao() &&
+      !this.budgets().some((b) => b.categoryId === META_FATURA);
+    return [
+      ...(temFatura ? [{ id: META_FATURA, name: 'Fatura do cartão' }] : []),
+      ...this.semMeta(),
+    ];
+  });
+  private readonly temCartao = signal(false);
 
   /** Período de hoje: só nele há ritmo e dias restantes. */
   private readonly mesAtual = this.periodo.atual;
@@ -521,6 +563,14 @@ export class Orcamento {
       ? this.periodo.diasRestantes(this.month())
       : undefined,
   );
+
+  /** A fatura segue o próprio ciclo (fechamento a fechamento); as categorias, o período. */
+  protected paceDe(id: string): number | undefined {
+    return id === META_FATURA ? this.ciclo()?.ritmo : this.pace();
+  }
+  protected diasDe(id: string): number | undefined {
+    return id === META_FATURA ? this.ciclo()?.diasRestantes : this.daysLeft();
+  }
 
   constructor() {
     void this.iniciar();
@@ -542,6 +592,9 @@ export class Orcamento {
       this.cartoes = new Set(
         contas.filter((c) => c.type === 'cartao').map((c) => c.id),
       );
+      this.temCartao.set(this.cartoes.size > 0);
+      this.diasFatura =
+        contas.find((c) => c.type === 'cartao' && c.fatura)?.fatura ?? null;
       this.categorias.set(cats);
       this.budgets.set(budgets);
       await this.periodo.garantir();
@@ -573,14 +626,65 @@ export class Orcamento {
       this.contas.set(
         contasDoMes([...doMes, ...doAnterior, ...antesDele], this.month()),
       );
+      // Fatura: o ciclo aberto (só no período de hoje) e os dois fechados, para a sugestão.
+      const hoje = this.periodo.hoje();
+      const doCartao = (de: string, ate: string) =>
+        Math.max(
+          0,
+          -todas
+            .filter(
+              (t) =>
+                this.cartoes.has(t.accountId) &&
+                !t.isTransfer &&
+                t.date > de &&
+                t.date <= ate,
+            )
+            .reduce((s, t) => s + t.amountCents, 0),
+        );
+      const cal = calendario();
+      const fechadas = (n: 1 | 2): number => {
+        if (this.diasFatura) {
+          const d = datasPelosDias(this.diasFatura, hoje);
+          let fechou = d.fechou;
+          let antes = d.anterior;
+          if (n === 2) {
+            fechou = d.anterior;
+            antes = datasPelosDias(this.diasFatura, d.anterior).fechou;
+          }
+          return doCartao(antes, fechou);
+        }
+        const k = n === 1 ? anterior : mesAnterior(anterior);
+        return doCartao(
+          new Date(Date.parse(`${cal.inicio(k)}T00:00:00Z`) - 86_400_000)
+            .toISOString()
+            .slice(0, 10),
+          cal.fim(k),
+        );
+      };
+      this.ciclo.set(
+        this.cartoes.size && chave === this.mesAtual()
+          ? cicloDaFatura({
+              txs: todas,
+              cartoes: this.cartoes,
+              dias: this.diasFatura,
+              hoje,
+              semDias: { inicio: cal.inicio(chave), fim: cal.fim(chave) },
+            })
+          : null,
+      );
+      const comFatura = (
+        m: Record<string, number>,
+        n: 1 | 2,
+      ): Record<string, number> =>
+        this.cartoes.size ? { ...m, [META_FATURA]: fechadas(n) } : m;
       this.gastoAntesDele.set(
         antesDele.length
-          ? monthTotals(antesDele, this.cartoes).spentByCategory
+          ? comFatura(monthTotals(antesDele, this.cartoes).spentByCategory, 2)
           : null,
       );
       this.gastoAnterior.set(
         doAnterior.length
-          ? monthTotals(doAnterior, this.cartoes).spentByCategory
+          ? comFatura(monthTotals(doAnterior, this.cartoes).spentByCategory, 1)
           : null,
       );
     } catch (e) {
@@ -598,7 +702,7 @@ export class Orcamento {
   protected editar(categoryId: string | null): void {
     this.erro.set('');
     if (categoryId === null)
-      this.novaCategoria.set(this.semMeta()[0]?.id ?? '');
+      this.novaCategoria.set(this.opcoesNova()[0]?.id ?? '');
     this.editando.set({ categoryId });
   }
 
@@ -626,9 +730,12 @@ export class Orcamento {
     const ultimo = this.gastoAnterior();
     if (!ultimo) return '';
     const a = ultimo[categoryId] ?? 0;
-    const quando = this.periodo.peloSalario()
-      ? 'No período anterior'
-      : `Em ${this.mesPassado()}`;
+    const quando =
+      categoryId === META_FATURA && this.diasFatura
+        ? 'Na fatura anterior'
+        : this.periodo.peloSalario()
+          ? 'No período anterior'
+          : `Em ${this.mesPassado()}`;
     if (!a) return `${quando}, nada gasto nesta categoria.`;
     const antes = this.gastoAntesDele();
     const media = antes ? Math.round((a + (antes[categoryId] ?? 0)) / 2) : null;
@@ -638,6 +745,14 @@ export class Orcamento {
   }
 
   protected contextoMeta(id: string): string {
+    if (id === META_FATURA) {
+      const c = this.ciclo();
+      if (!c) return '';
+      const fecha = c.fecha
+        ? `fecha em ${c.fecha.slice(8, 10)}/${c.fecha.slice(5, 7)}`
+        : 'informe o fechamento no cartão do Início para seguir o ciclo da fatura';
+      return `${formatBRL(c.gastoCents)} na fatura aberta · ${fecha}.`;
+    }
     const l = this.linhas().find((x) => x.categoryId === id);
     if (!l) return '';
     const partes = [
@@ -661,6 +776,7 @@ export class Orcamento {
   }
 
   protected nome(id: string): string {
+    if (id === META_FATURA) return 'Fatura do cartão';
     return this.categorias().find((c) => c.id === id)?.name ?? id;
   }
 
