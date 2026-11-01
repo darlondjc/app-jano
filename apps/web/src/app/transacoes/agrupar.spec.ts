@@ -41,6 +41,14 @@ describe('agrupar', () => {
     expect(g.map((x) => x.date)).toEqual(['2026-10-22', '2026-10-05']);
     expect(g[0].items).toHaveLength(2);
   });
+  it('total do dia sem transferências', () => {
+    const [dia] = agruparPorDia([
+      tx('a', '2026-10-22', -1000),
+      tx('b', '2026-10-22', 300),
+      tx('c', '2026-10-22', -5000, { isTransfer: true }),
+    ]);
+    expect(dia.totalCents).toBe(-700);
+  });
   it('navega entre meses virando o ano', () => {
     expect(mesAnterior('2026-01')).toBe('2025-12');
     expect(mesSeguinte('2026-12')).toBe('2027-01');

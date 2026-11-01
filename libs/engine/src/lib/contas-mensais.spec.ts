@@ -65,3 +65,17 @@ describe('contasDoMes', () => {
     expect(c.has('moradia')).toBe(false);
   });
 });
+
+it('duas idas ao mesmo lugar no mês não são conta', () => {
+  const m = (d: string, v: number) => tx(d, v, 'mercado', 'MERCADO');
+  const c = contasDoMes(
+    [
+      m('2026-08-03', 100),
+      m('2026-08-15', 110),
+      m('2026-09-03', 100),
+      m('2026-09-15', 105),
+    ],
+    '2026-10',
+  );
+  expect(c.has('mercado')).toBe(false);
+});

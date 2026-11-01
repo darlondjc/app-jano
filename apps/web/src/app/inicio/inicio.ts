@@ -6,6 +6,7 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { nomeDeExibicao } from '@jano/import-file';
 import {
   AuthService,
   BalancesRepository,
@@ -387,7 +388,9 @@ function lerDispensado(): string | null {
                     [size]="32"
                   />
                   <div>
-                    <div class="j-tx__name">{{ t.description }}</div>
+                    <div class="j-tx__name" [title]="t.description">
+                      {{ nomeTx(t.description) }}
+                    </div>
                     <div class="j-tx__sub">
                       {{ dia(t.date) }} ·
                       {{
@@ -740,6 +743,7 @@ export class Inicio {
       ? `Você está ${formatBRL(-dif)} abaixo do ritmo ideal para o dia ${this.diaAtual}.`
       : `Você está ${formatBRL(dif)} acima do ritmo ideal para o dia ${this.diaAtual}.`;
   });
+  protected readonly nomeTx = nomeDeExibicao;
   protected readonly recentes = computed(() =>
     [...this.txs()].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6),
   );

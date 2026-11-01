@@ -91,12 +91,50 @@ describe('montarAlertas', () => {
         }),
       ],
     });
-    const incomum = r.find((a) => a.id.startsWith('incomum:'));
-    expect(incomum?.titulo).toBe('Gasto fora do padrão: JULIO BEZERRA');
-    expect(incomum?.acao).toEqual({
+    // A categoria também ficou acima da média: vira um aviso só, que leva à transação.
+    expect(r).toHaveLength(1);
+    const [aviso] = r;
+    expect(aviso.titulo).toMatch(/^moradia está \d+% acima da média$/i);
+    expect(aviso.texto).toContain('A maior foi Julio Bezerra, R$ 3460.00.');
+    expect(aviso.acao).toEqual({
       rotulo: 'Ver transação',
       rota: '/transacoes',
       queryParams: { tx: 'abc' },
     });
+  });
+});
+
+describe('montarAlertas: um aviso por assunto', () => {
+  it('meta, média e compra fora do padrão da mesma categoria viram um aviso', () => {
+    const tx = (date: string, reais: number, extra = {}) => ({
+      date,
+      amountCents: -reais * 100,
+      categoryId: 'mercado',
+      descriptionNorm: 'MERCADO',
+      isTransfer: false,
+      ...extra,
+    });
+    const historico = [5, 6, 7, 8, 9].flatMap((m) => [
+      tx(`2026-0${m}-03`, 100),
+      tx(`2026-0${m}-15`, 110),
+    ]);
+    const r = montarAlertas({
+      ...base,
+      txs: [
+        ...historico,
+        tx('2026-10-02', 120),
+        tx('2026-10-10', 690, {
+          id: 'x1',
+          description: 'MATEUS SUPERMERCADOS ATACADO',
+        }),
+      ],
+      budgets: [{ categoryId: 'mercado', limitCents: 90000 }],
+      spentByCategory: { mercado: 81000 },
+      daysLeft: 12,
+    });
+    expect(r).toHaveLength(1);
+    expect(r[0].titulo).toBe('MERCADO está em 90% da meta');
+    expect(r[0].texto).toContain('acima do normal');
+    expect(r[0].texto).toContain('a maior foi Mateus Supermercados Atacado');
   });
 });

@@ -44,9 +44,9 @@ describe('cartaoDaFatura', () => {
 
   it('todo mês no cartão: parcela com a próxima e assinaturas com nome', () => {
     expect(f.todoMes.itens.map((i) => `${i.nome} · ${i.detalhe}`)).toEqual([
-      'MAGAZINE LUIZA · parcela 6 de 10',
-      'NETFLIX.COM · todo mês',
-      'SPOTIFY · todo mês',
+      'Magazine Luiza · parcela 6 de 10',
+      'Netflix.com · todo mês',
+      'Spotify · todo mês',
     ]);
   });
 

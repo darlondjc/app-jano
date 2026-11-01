@@ -14,6 +14,27 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.15.0',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Nomes legíveis em todas as listas: "PIX - ENVIADO 10/10 08:30 ESCOLA PEQUENO PRINCIPE" vira "Escola Pequeno Principe", sem data, hora, código de loja nem tudo em maiúsculas. No celular, a linha diz se foi Pix ou débito; a descrição original continua no detalhe do lançamento.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Transações no celular numa lista só, com o dia fixo no topo ao rolar e o total do dia ao lado. Cabem mais lançamentos por tela.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Um aviso por assunto: meta, gasto acima do normal e compra fora do padrão da mesma categoria viram um aviso só, com os números juntos. O Início mostra no máximo três; Avaliações tem a lista completa.',
+      },
+    ],
+  },
+  {
     version: '0.14.1',
     date: '2026-11-01',
     items: [

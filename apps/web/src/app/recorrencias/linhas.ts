@@ -4,7 +4,7 @@ import {
   type HistTx,
   type RecurringSeries,
 } from '@jano/engine';
-import { estabelecimento } from '@jano/import-file';
+import { estabelecimento, nomeDeExibicao } from '@jano/import-file';
 
 export interface TxRec extends HistTx {
   description: string;
@@ -80,7 +80,7 @@ export function parcelamentos(txs: TxRec[], hoje: string): LinhaRecorrencia[] {
     if (faltam <= 0 || t.date < limite) continue;
     const day = Number(t.date.slice(8));
     out.push({
-      nome: t.description,
+      nome: nomeDeExibicao(t.description),
       categoryId: t.categoryId,
       cents: -t.amountCents,
       previousCents: -t.amountCents,
@@ -153,7 +153,7 @@ export function montarRecorrencias(
           : 'contas';
       };
       return {
-        nome: t?.description ?? s.description,
+        nome: nomeDeExibicao(t?.description ?? s.description),
         categoryId,
         cents: s.amountCents,
         previousCents: s.previousCents,

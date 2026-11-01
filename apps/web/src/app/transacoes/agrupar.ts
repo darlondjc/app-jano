@@ -4,6 +4,8 @@ export interface DayGroup {
   date: string;
   label: string;
   items: TransactionDoc[];
+  /** Soma do dia sem transferências (negativo = saiu mais do que entrou). */
+  totalCents: number;
 }
 
 const WEEKDAYS = [
@@ -47,6 +49,9 @@ export function agruparPorDia(txs: TransactionDoc[]): DayGroup[] {
     date,
     label: dayLabel(date),
     items,
+    totalCents: items
+      .filter((t) => !t.isTransfer)
+      .reduce((s, t) => s + t.amountCents, 0),
   }));
 }
 
