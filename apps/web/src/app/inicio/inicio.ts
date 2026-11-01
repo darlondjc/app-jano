@@ -172,6 +172,9 @@ function lerDispensado(): string | null {
         min-width: 0;
       }
     }
+    .sem-mes {
+      margin: -4px 0 12px;
+    }
     .acao {
       display: inline-block;
       margin-top: 6px;
@@ -275,7 +278,7 @@ function lerDispensado(): string | null {
           </div>
         </div>
       </jano-skeleton-group>
-    } @else if (!txs().length) {
+    } @else if (!historico().length) {
       <div class="j-card vazio">
         <h2 style="margin: 0 0 8px">Vamos começar</h2>
         <p class="j-sub" style="margin: 0 0 16px">
@@ -489,6 +492,12 @@ function lerDispensado(): string | null {
                 >Ver todas ›</a
               >
             </div>
+            @if (!txs().length) {
+              <p class="j-sub sem-mes">
+                Nada em {{ mesCurto }} ainda; a sincronização diária traz os
+                lançamentos novos. Abaixo, os mais recentes.
+              </p>
+            }
             <div class="lista">
               @for (t of recentes(); track t.id) {
                 <div class="j-tx" style="grid-template-columns: auto 1fr auto">
@@ -610,7 +619,7 @@ export class Inicio {
   );
 
   /** Mês atual e os três anteriores: o histórico alimenta os alertas. */
-  private readonly historico = signal<TransactionDoc[]>([]);
+  protected readonly historico = signal<TransactionDoc[]>([]);
   protected readonly txs = computed(() =>
     this.historico().filter((t) => t.date.startsWith(this.month)),
   );
@@ -790,8 +799,11 @@ export class Inicio {
       : `Você está ${formatBRL(dif)} acima do ritmo ideal para o dia ${this.diaAtual}.`;
   });
   protected readonly nomeTx = nomeDeExibicao;
+  /** As mais recentes de todo o histórico: no dia 1, sem nada no mês, mostra as do anterior. */
   protected readonly recentes = computed(() =>
-    [...this.txs()].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6),
+    [...this.historico()]
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 6),
   );
   protected readonly alertas = computed(() =>
     montarAlertas({

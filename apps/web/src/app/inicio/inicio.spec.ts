@@ -30,7 +30,7 @@ const tx: TransactionDoc = {
   importId: null,
 };
 
-function montar(saldos: BalanceDoc[]) {
+function montar(saldos: BalanceDoc[], txs: TransactionDoc[] = [tx]) {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
@@ -40,7 +40,7 @@ function montar(saldos: BalanceDoc[]) {
       },
       {
         provide: TransactionsRepository,
-        useValue: { listRange: vi.fn().mockResolvedValue([tx]) },
+        useValue: { listRange: vi.fn().mockResolvedValue(txs) },
       },
       {
         provide: BudgetsRepository,
@@ -109,5 +109,27 @@ describe('Inicio', () => {
     await pronto(f);
     expect(kpis(el)[0]).toContain('Sobra do mês');
     expect(el.querySelector('.j-hero')).toBeNull();
+  });
+
+  it('dia 1 sem lançamentos no mês, mas com histórico: tela normal, não "Vamos começar"', async () => {
+    const [a, m] = mesAtual(new Date()).split('-').map(Number);
+    const anterior = new Date(a, m - 2, 28);
+    const data = `${anterior.getFullYear()}-${String(anterior.getMonth() + 1).padStart(2, '0')}-28`;
+    const { f, el } = montar([], [{ ...tx, date: data }]);
+    await vi.waitFor(() => {
+      f.detectChanges();
+      expect(el.textContent).toContain('Últimas transações');
+    });
+    expect(el.textContent).not.toContain('Vamos começar');
+    expect(el.textContent).toContain('ainda; a sincronização diária');
+    expect(el.textContent).toContain('Padaria');
+  });
+
+  it('sem nenhum lançamento: "Vamos começar"', async () => {
+    const { f, el } = montar([], []);
+    await vi.waitFor(() => {
+      f.detectChanges();
+      expect(el.textContent).toContain('Vamos começar');
+    });
   });
 });

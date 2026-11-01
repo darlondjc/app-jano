@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.16.1',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'correcao',
+        texto:
+          'Virada do mês sem susto: no dia 1, antes de cair qualquer lançamento, o Início mostra o saldo, a fatura, as metas e as últimas transações do mês anterior, em vez de pedir para importar. Avaliações lê o mês que acabou de fechar, e Transações oferece "Ver outubro".',
+      },
+    ],
+  },
+  {
     version: '0.16.0',
     date: '2026-11-01',
     items: [

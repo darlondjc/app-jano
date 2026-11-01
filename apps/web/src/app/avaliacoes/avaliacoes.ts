@@ -274,7 +274,7 @@ const CIRC = 2 * Math.PI * RAIO;
   `,
   template: `
     <h1>Avaliações</h1>
-    <div class="j-sub">{{ mes }}</div>
+    <div class="j-sub">{{ mes() }}</div>
 
     @if (erro()) {
       <jano-banner tone="danger" title="Algo deu errado.">{{
@@ -536,7 +536,23 @@ export class Avaliacoes {
     this.hoje.getMonth() + 1,
     this.dia,
   );
-  protected readonly mes = rotuloMes(this.month);
+  /** Nos primeiros dias o mês ainda não diz nada: a leitura é a do mês que fechou. */
+  private readonly comecoDoMes = this.dia <= DIAS_COMECO;
+  /**
+   * Mês que a tela lê: o atual; nos primeiros dias, sem lançamentos ainda, o que acabou de
+   * fechar (dia 1 sem nada importado não é "sem dados").
+   */
+  private readonly mesAnalise = computed(() =>
+    !this.comecoDoMes ||
+    this.historico().some((t) => t.date.startsWith(this.month))
+      ? this.month
+      : previousMonths(this.month, 1)[0],
+  );
+  private readonly fechado = computed(() => this.mesAnalise() !== this.month);
+  protected readonly mes = computed(
+    () =>
+      rotuloMes(this.mesAnalise()) + (this.fechado() ? ' · mês fechado' : ''),
+  );
   private readonly meses = ultimosMeses(this.month, 6);
 
   private readonly historico = signal<TransactionDoc[]>([]);
@@ -546,18 +562,14 @@ export class Avaliacoes {
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
 
-  protected readonly temDados = computed(() =>
-    this.historico().some((t) => t.date.startsWith(this.month)),
-  );
+  protected readonly temDados = computed(() => this.historico().length > 0);
   private readonly gastoMes = computed(() =>
-    gastoDoMes(this.historico(), this.month, this.cartoes()),
+    gastoDoMes(this.historico(), this.mesAnalise(), this.cartoes()),
   );
 
   private readonly acima = computed(() =>
-    categoriesAboveNormal(this.historico(), this.month),
+    categoriesAboveNormal(this.historico(), this.mesAnalise()),
   );
-  /** Nos primeiros dias o mês ainda não diz nada: a leitura é a do mês que fechou. */
-  private readonly comecoDoMes = this.dia <= DIAS_COMECO;
   protected readonly frase = computed(() => {
     if (this.comecoDoMes) {
       const fechado = previousMonths(this.month, 1)[0];
@@ -583,17 +595,17 @@ export class Avaliacoes {
   });
 
   protected readonly insights = computed<Alerta[]>(() => {
+    const mes = this.mesAnalise();
+    const [ano, m] = mes.split('-').map(Number);
+    const ultimo = new Date(ano, m, 0).getDate();
+    const dia = this.fechado() ? ultimo : this.dia;
     const base = montarAlertas({
       txs: this.historico(),
-      month: this.month,
-      today: `${this.month}-${String(this.dia).padStart(2, '0')}`,
+      month: mes,
+      today: `${mes}-${String(dia).padStart(2, '0')}`,
       budgets: this.budgets(),
       spentByCategory: this.gastoMes().porCategoria,
-      daysLeft: daysLeftInMonth(
-        this.hoje.getFullYear(),
-        this.hoje.getMonth() + 1,
-        this.dia,
-      ),
+      daysLeft: daysLeftInMonth(ano, m, dia),
       assinaturasId:
         this.categorias().find((c) => c.id === 'assinaturas')?.id ?? null,
       nomeCategoria: (id) => this.nomeCat(id),
@@ -604,7 +616,7 @@ export class Avaliacoes {
     const sequencias: Alerta[] = goalStreaks(
       this.historico(),
       this.budgets(),
-      this.month,
+      mes,
     )
       .map((s): Alerta => ({
         id: `sequencia:${s.categoryId}`,
@@ -618,7 +630,7 @@ export class Avaliacoes {
   });
 
   protected readonly estabelecimentos = computed(() =>
-    maioresEstabelecimentos(this.historico(), this.month),
+    maioresEstabelecimentos(this.historico(), this.mesAnalise()),
   );
 
   // Barras agrupadas: 6 meses × até 3 categorias.
