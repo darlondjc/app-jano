@@ -7,11 +7,15 @@ import {
 } from '@angular/core';
 import {
   AuthService,
+  BudgetsRepository,
   CATEGORY_COLORS,
   CatalogRepository,
+  RulesRepository,
+  TransactionsRepository,
   missingDefaults,
   type CategoryDoc,
 } from '@jano/data-access';
+import { formatBRL, monthTotals } from '@jano/engine';
 import {
   ICON_NAMES,
   ICONS,
@@ -78,7 +82,12 @@ const NOVA: Form = {
       background: var(--surface);
     }
     .item {
-      display: flex;
+      all: unset;
+      box-sizing: border-box;
+      width: 100%;
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
       gap: 12px;
       padding: 10px 16px;
@@ -87,13 +96,59 @@ const NOVA: Form = {
     .item:last-child {
       border-bottom: 0;
     }
-    .item .nome {
-      flex: 1;
-      font: 500 16px/24px var(--font-sans);
+    .item:hover {
+      background: var(--surface-2);
     }
-    .item .acoes {
-      display: flex;
-      gap: 4px;
+    .item:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: -2px;
+    }
+    .item .nome {
+      display: block;
+      font: 500 16px/22px var(--font-sans);
+    }
+    .item .uso {
+      display: block;
+      font: 400 13px/18px var(--font-sans);
+      color: var(--text-2);
+    }
+    .item .seta {
+      color: var(--text-2);
+      font-size: 18px;
+    }
+    .escurece {
+      border: 0;
+      padding: 0;
+      cursor: default;
+      position: fixed;
+      inset: 0;
+      background: var(--overlay);
+      z-index: 55;
+    }
+    .folha {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 60;
+      max-height: 85dvh;
+      overflow: auto;
+      overscroll-behavior: contain;
+      padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+    }
+    @media (min-width: 720px) {
+      .folha {
+        left: 50%;
+        right: auto;
+        bottom: auto;
+        top: 50%;
+        width: 520px;
+        transform: translate(-50%, -50%);
+        border-radius: var(--radius-lg);
+      }
+      .folha .j-sheet__handle {
+        display: none;
+      }
     }
     .conf {
       background: var(--danger-soft);
@@ -106,7 +161,6 @@ const NOVA: Form = {
       font: 400 14px/20px var(--font-sans);
     }
     .form {
-      margin-top: 16px;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -166,6 +220,14 @@ const NOVA: Form = {
       display: flex;
       gap: 8px;
       justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    .rodape .apagar {
+      margin-right: auto;
+      color: var(--danger);
+    }
+    .conf {
+      border-radius: var(--radius-sm);
     }
     .sug {
       margin-top: 16px;
@@ -210,10 +272,20 @@ const NOVA: Form = {
     }
 
     @if (form(); as f) {
+      <button
+        type="button"
+        class="escurece"
+        aria-label="Fechar"
+        (click)="cancelar()"
+      ></button>
       <section
-        class="j-card form"
+        class="j-sheet folha form"
+        role="dialog"
+        aria-modal="true"
         [attr.aria-label]="f.id ? 'Editar categoria' : 'Nova categoria'"
+        (keydown.escape)="cancelar()"
       >
+        <div class="j-sheet__handle" aria-hidden="true"></div>
         <h2 style="margin:0">
           {{ f.id ? 'Editar categoria' : 'Nova categoria' }}
         </h2>
@@ -294,7 +366,51 @@ const NOVA: Form = {
           </div>
         </div>
 
+        @if (f.id && apagando()?.id === f.id) {
+          <div
+            class="conf"
+            role="alertdialog"
+            [attr.aria-label]="'Confirmar exclusão de ' + f.name"
+          >
+            <span
+              >As transações de “{{ f.name }}” ficam sem categoria e a meta dela
+              é removida. Isso não pode ser desfeito.</span
+            >
+            <span style="display:flex;gap:8px">
+              <button
+                janoButton
+                variant="secondary"
+                type="button"
+                (click)="apagando.set(null)"
+              >
+                Manter
+              </button>
+              <button
+                janoButton
+                variant="danger"
+                type="button"
+                [disabled]="ocupado()"
+                (click)="apagarPorId(f.id)"
+              >
+                Apagar
+              </button>
+            </span>
+          </div>
+        }
+
         <div class="rodape">
+          @if (f.id && apagando()?.id !== f.id) {
+            <button
+              janoButton
+              variant="ghost"
+              type="button"
+              class="apagar"
+              [attr.aria-label]="'Apagar ' + f.name"
+              (click)="pedirApagarPorId(f.id)"
+            >
+              Apagar
+            </button>
+          }
           <button
             janoButton
             variant="secondary"
@@ -326,61 +442,21 @@ const NOVA: Form = {
         <h2>{{ grupo.titulo }}</h2>
         <div class="lista">
           @for (c of grupo.itens; track c.id) {
-            <div class="item">
+            <button
+              type="button"
+              class="item"
+              [attr.aria-label]="'Editar ' + c.name"
+              (click)="editar(c)"
+            >
               <jano-category-badge [icon]="c.icon" [colorToken]="c.color" />
-              <span class="nome">{{ c.name }}</span>
-              <span class="acoes">
-                <button
-                  janoButton
-                  variant="ghost"
-                  type="button"
-                  [attr.aria-label]="'Editar ' + c.name"
-                  (click)="editar(c)"
-                >
-                  Editar
-                </button>
-                <button
-                  janoButton
-                  variant="ghost"
-                  type="button"
-                  [attr.aria-label]="'Apagar ' + c.name"
-                  (click)="pedirApagar(c)"
-                >
-                  Apagar
-                </button>
+              <span>
+                <span class="nome">{{ c.name }}</span>
+                @if (uso(c); as u) {
+                  <span class="uso">{{ u }}</span>
+                }
               </span>
-            </div>
-            @if (apagando()?.id === c.id) {
-              <div
-                class="conf"
-                role="alertdialog"
-                [attr.aria-label]="'Confirmar exclusão de ' + c.name"
-              >
-                <span
-                  >As transações de “{{ c.name }}” ficam sem categoria e a meta
-                  dela é removida. Isso não pode ser desfeito.</span
-                >
-                <span style="display:flex;gap:8px">
-                  <button
-                    janoButton
-                    variant="secondary"
-                    type="button"
-                    (click)="apagando.set(null)"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    janoButton
-                    variant="danger"
-                    type="button"
-                    [disabled]="ocupado()"
-                    (click)="apagar(c)"
-                  >
-                    Apagar
-                  </button>
-                </span>
-              </div>
-            }
+              <span class="seta" aria-hidden="true">›</span>
+            </button>
           }
         </div>
       }
@@ -390,6 +466,9 @@ const NOVA: Form = {
 export class Categorias {
   private readonly auth = inject(AuthService);
   private readonly catalog = inject(CatalogRepository);
+  private readonly txRepo = inject(TransactionsRepository);
+  private readonly budgetRepo = inject(BudgetsRepository);
+  private readonly rulesRepo = inject(RulesRepository);
 
   protected readonly cores = CATEGORY_COLORS;
   protected readonly icones = ICON_NAMES;
@@ -400,6 +479,15 @@ export class Categorias {
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
   protected readonly aviso = signal('');
+
+  /** Gasto do mês atual por categoria, metas e regras: o que a lista mostra em cada linha. */
+  private readonly gastoMes = signal<Record<string, number>>({});
+  private readonly metas = signal(new Map<string, number>());
+  private readonly regras = signal(new Map<string, number>());
+  private readonly mesAtual = new Date().toISOString().slice(0, 7);
+  private readonly nomeMes = new Date().toLocaleDateString('pt-BR', {
+    month: 'long',
+  });
 
   protected readonly faltam = computed(
     () => missingDefaults(this.categorias()).length,
@@ -429,9 +517,53 @@ export class Categorias {
     return ICONS[icon]?.label ?? icon;
   }
 
+  /** "R$ 1.348 em outubro · meta R$ 1.400 · 2 regras"; nada quando não há o que dizer. */
+  protected uso(c: CategoryDoc): string {
+    const partes: string[] = [];
+    const gasto = this.gastoMes()[c.id];
+    if (gasto) partes.push(`${formatBRL(gasto)} em ${this.nomeMes}`);
+    const meta = this.metas().get(c.id);
+    if (meta) partes.push(`meta ${formatBRL(meta)}`);
+    const n = this.regras().get(c.id);
+    if (n) partes.push(n === 1 ? '1 regra' : `${n} regras`);
+    return partes.join(' · ');
+  }
+
   private async carregar(): Promise<void> {
     try {
-      this.categorias.set(await this.catalog.categories(this.uid));
+      const uid = this.uid;
+      const [cats, txs, budgets, regras, contas] = await Promise.all([
+        this.catalog.categories(uid),
+        // O resto é contexto: sem ele a lista funciona igual.
+        this.txRepo.listMonth(uid, this.mesAtual).catch(() => []),
+        this.budgetRepo.list(uid).catch(() => []),
+        this.rulesRepo.list(uid).catch(() => []),
+        this.catalog.accounts(uid).catch(() => []),
+      ]);
+      this.categorias.set(cats);
+      const cartoes = new Set(
+        contas.filter((c) => c.type === 'cartao').map((c) => c.id),
+      );
+      // Despesas pelo gasto; receitas pelo que entrou (sem transferências nem estornos).
+      const valores = { ...monthTotals(txs, cartoes).spentByCategory };
+      const receitas = new Set(
+        cats.filter((c) => c.type === 'receita').map((c) => c.id),
+      );
+      for (const t of txs)
+        if (
+          !t.isTransfer &&
+          t.amountCents > 0 &&
+          t.categoryId &&
+          receitas.has(t.categoryId) &&
+          !cartoes.has(t.accountId)
+        )
+          valores[t.categoryId] = (valores[t.categoryId] ?? 0) + t.amountCents;
+      this.gastoMes.set(valores);
+      this.metas.set(new Map(budgets.map((b) => [b.categoryId, b.limitCents])));
+      const porCat = new Map<string, number>();
+      for (const r of regras)
+        porCat.set(r.categoryId, (porCat.get(r.categoryId) ?? 0) + 1);
+      this.regras.set(porCat);
     } catch (e) {
       this.falha(e);
     } finally {
@@ -461,6 +593,7 @@ export class Categorias {
 
   protected cancelar(): void {
     this.form.set(null);
+    this.apagando.set(null);
   }
 
   protected async salvar(): Promise<void> {
@@ -492,16 +625,19 @@ export class Categorias {
     }
   }
 
-  protected pedirApagar(c: CategoryDoc): void {
-    this.limpar();
-    this.apagando.set(c);
+  protected pedirApagarPorId(id: string): void {
+    const c = this.categorias().find((x) => x.id === id);
+    if (c) this.apagando.set(c);
   }
 
-  protected async apagar(c: CategoryDoc): Promise<void> {
+  protected async apagarPorId(id: string): Promise<void> {
+    const c = this.categorias().find((x) => x.id === id);
+    if (!c) return;
     this.ocupado.set(true);
     try {
       await this.catalog.deleteCategory(this.uid, c.id);
       this.apagando.set(null);
+      this.form.set(null);
       this.aviso.set(`Categoria “${c.name}” apagada.`);
       await this.carregar();
     } catch (e) {

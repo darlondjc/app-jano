@@ -4,7 +4,7 @@ import { provideModoDemo } from '@jano/data-access';
 import { Projecoes } from './projecoes';
 
 describe('Projeções no modo demonstração', () => {
-  it('abre com o plano do mês acima do longo prazo', async () => {
+  it('abre com o plano do mês; abaixo, os cenários sem o gráfico de longo prazo', async () => {
     TestBed.configureTestingModule({
       providers: [provideRouter([]), ...provideModoDemo()],
     });
@@ -18,7 +18,8 @@ describe('Projeções no modo demonstração', () => {
     expect(texto).toContain('O que vem nos próximos 30 dias');
     expect(texto).toContain('Fatura do cartão');
     expect(texto).toContain('Renda já comprometida');
-    expect(texto).toContain('Longo prazo');
+    expect(texto).toContain('E se…');
+    expect(texto).not.toContain('Saldo projetado');
     expect(texto).not.toContain('(R$ 0,00)');
   });
 

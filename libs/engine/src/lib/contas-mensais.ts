@@ -1,5 +1,5 @@
-import type { Cents } from './engine';
-import { partes } from './engine';
+import type { Cents, GoalStatus } from './engine';
+import { goalStatus, partes } from './engine';
 import { monthOf, previousMonths, type HistTx } from './insights';
 
 export interface ContaDoMes {
@@ -85,4 +85,36 @@ export function contasDoMes(
     });
   }
   return out;
+}
+
+/** Gastar mais que o ritmo do mês por esta folga já pede atenção. */
+const FOLGA_RITMO = 0.15;
+
+/**
+ * Estado de uma meta, numa regra só para a barra, o resumo do Orçamento e os avisos.
+ * Contas do mês só alertam se o que já saiu mais o que falta passar do limite. As outras
+ * seguem o percentual (atenção a partir de 80%) e, abaixo disso, o ritmo do mês.
+ */
+export function estadoDaMeta(e: {
+  spentCents: Cents;
+  limitCents: Cents;
+  /** Fração do mês decorrida; omitir em meses encerrados. */
+  pace?: number;
+  conta?: ContaDoMes;
+}): { status: GoalStatus; adiantada: boolean } {
+  if (e.conta)
+    return {
+      status: e.spentCents + e.conta.faltaCents > e.limitCents ? 'over' : 'ok',
+      adiantada: false,
+    };
+  const s = goalStatus(e.spentCents, e.limitCents);
+  const ratio = e.limitCents > 0 ? e.spentCents / e.limitCents : 0;
+  const adiantada =
+    e.pace !== undefined &&
+    e.pace < 1 &&
+    e.limitCents > 0 &&
+    ratio >= 0.25 &&
+    ratio < 0.8 &&
+    ratio > e.pace + FOLGA_RITMO;
+  return { status: s === 'ok' && adiantada ? 'warning' : s, adiantada };
 }

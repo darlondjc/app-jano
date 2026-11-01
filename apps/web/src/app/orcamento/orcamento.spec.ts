@@ -72,6 +72,11 @@ function montar(metas: BudgetDoc[], anterior: TransactionDoc[]) {
   return { f, el: f.nativeElement as HTMLElement, budgets };
 }
 
+function abrirMeta(f: ReturnType<typeof montar>['f']) {
+  (f.nativeElement.querySelector('button.meta') as HTMLButtonElement).click();
+  f.detectChanges();
+}
+
 async function pronto(f: ReturnType<typeof montar>['f']) {
   await vi.waitFor(() => {
     f.detectChanges();
@@ -86,7 +91,8 @@ describe('Orcamento: levar a sobra para o mês seguinte', () => {
       [tx(`${mesAnterior(mes)}-10`, -70000)],
     );
     await pronto(f);
-    expect(el.textContent).toMatch(/Inclui R\$\s200,00 que sobraram/);
+    abrirMeta(f);
+    expect(el.textContent).toMatch(/inclui R\$\s200,00 que sobraram/);
     // O campo de edição mostra o limite gravado, sem a sobra.
     expect((el.querySelector('#lim-mercado') as HTMLInputElement).value).toBe(
       '900,00',
@@ -102,19 +108,35 @@ describe('Orcamento: levar a sobra para o mês seguinte', () => {
     expect(el.textContent).not.toContain('que sobraram');
   });
 
-  it('ligar a opção grava a meta com rollover', async () => {
+  it('ligar a opção e salvar grava a meta com rollover e fecha a folha', async () => {
     const { f, el, budgets } = montar(
       [{ categoryId: 'mercado', limitCents: 90000, rollover: false }],
       [],
     );
     await pronto(f);
-    const chk = el.querySelector(
-      '.sobra input[type=checkbox]',
-    ) as HTMLInputElement;
-    chk.checked = true;
-    chk.dispatchEvent(new Event('change'));
+    abrirMeta(f);
+    (el.querySelector('#sobra-meta') as HTMLInputElement).checked = true;
+    const salvar = [
+      ...el.querySelectorAll<HTMLButtonElement>('.folha button'),
+    ].find((b) => b.textContent?.trim() === 'Salvar')!;
+    salvar.click();
     await vi.waitFor(() =>
       expect(budgets.save).toHaveBeenCalledWith('u1', 'mercado', 90000, true),
+    );
+    await vi.waitFor(() => {
+      f.detectChanges();
+      expect(el.querySelector('.folha')).toBeNull();
+    });
+  });
+
+  it('resumo: quanto ainda cabe nas metas', async () => {
+    const { f, el } = montar(
+      [{ categoryId: 'mercado', limitCents: 90000, rollover: false }],
+      [],
+    );
+    await pronto(f);
+    expect(el.querySelector('.resumo .j-hero__valor')?.textContent).toMatch(
+      /R\$\s600,00/,
     );
   });
 });

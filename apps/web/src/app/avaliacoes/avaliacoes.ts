@@ -17,15 +17,12 @@ import {
   type TransactionDoc,
 } from '@jano/data-access';
 import {
-  budgetRows,
   categoriesAboveNormal,
   daysLeftInMonth,
   formatBRL,
   previousMonths,
   goalStreaks,
   monthPace,
-  monthScore,
-  previsaoDoMes,
 } from '@jano/engine';
 import {
   JanoBanner,
@@ -42,7 +39,6 @@ import { mesAtual, rotuloMes } from '../transacoes/agrupar';
 import {
   compararComAnterior,
   distribuicao,
-  explicarNota,
   fraseMesFechado,
   fraseResumo,
   gastoDoMes,
@@ -111,26 +107,6 @@ const CIRC = 2 * Math.PI * RAIO;
       margin: 0;
       font: 600 24px/32px var(--font-sans);
       max-width: 640px;
-    }
-    .nota {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px 20px;
-    }
-    .nota .num {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      font: 600 24px/1 var(--font-sans);
-      color: var(--primary-text);
-      background: var(--primary-soft);
-    }
-    .nota b {
-      display: block;
-      font: 600 14px/20px var(--font-sans);
     }
     details {
       font: 400 14px/20px var(--font-sans);
@@ -334,26 +310,6 @@ const CIRC = 2 * Math.PI * RAIO;
     } @else {
       <section class="resumo" aria-label="Resumo do mês">
         <p class="frase">{{ frase() }}</p>
-        @if (nota(); as n) {
-          <div class="j-card nota">
-            <div class="num" aria-hidden="true">{{ n.score }}</div>
-            <div>
-              <b>Nota do mês: {{ n.score }} de 100</b>
-              <details>
-                <summary>Como calculamos</summary>
-                <ul>
-                  @for (l of n.linhas; track l) {
-                    <li>{{ l }}</li>
-                  }
-                </ul>
-                <p class="sub">
-                  Só orientação: combina metas no ritmo, sobra prevista e
-                  estabilidade do gasto.
-                </p>
-              </details>
-            </div>
-          </div>
-        }
       </section>
 
       <div class="colunas">
@@ -624,56 +580,6 @@ export class Avaliacoes {
       this.month,
       topo ? { nome: this.nomeCat(topo.categoryId), pct: topo.pct } : null,
     );
-  });
-
-  protected readonly nota = computed(() => {
-    if (this.comecoDoMes) return null;
-    const spent = this.gastoMes().total;
-    const income = this.historico()
-      .filter(
-        (t) =>
-          t.date.startsWith(this.month) &&
-          !t.isTransfer &&
-          t.amountCents > 0 &&
-          !this.cartoes().has(t.accountId),
-      )
-      .reduce((s, t) => s + t.amountCents, 0);
-    const metas = budgetRows(this.budgets(), this.gastoMes().porCategoria);
-    const passados = this.meses
-      .slice(0, -1)
-      .map((m) => gastoDoMes(this.historico(), m, this.cartoes()).total)
-      .filter((v) => v > 0);
-    const receitas = this.meses
-      .slice(0, -1)
-      .map((m) =>
-        this.historico()
-          .filter(
-            (t) =>
-              t.date.startsWith(m) &&
-              !t.isTransfer &&
-              t.amountCents > 0 &&
-              !this.cartoes().has(t.accountId),
-          )
-          .reduce((s, t) => s + t.amountCents, 0),
-      )
-      .filter((v) => v > 0);
-    const previsto = previsaoDoMes({
-      gastoCents: spent,
-      receitaCents: income,
-      pace: this.pace,
-      gastosAnteriores: passados.slice(-3),
-      receitasAnteriores: receitas.slice(-3),
-    });
-    const r = monthScore({
-      goals: metas,
-      pace: this.pace,
-      incomeCents: income,
-      projectedNetCents: previsto.receitaCents - previsto.gastoCents,
-      pastMonthlySpends: passados,
-    });
-    return r.parts.length
-      ? { score: r.score, linhas: explicarNota(r.parts) }
-      : null;
   });
 
   protected readonly insights = computed<Alerta[]>(() => {

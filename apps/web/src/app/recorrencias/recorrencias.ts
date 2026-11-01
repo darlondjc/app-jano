@@ -26,7 +26,7 @@ import {
   JanoSkeletonRows,
 } from '@jano/ui';
 import { Progresso } from '../shell/progresso';
-import { mesAtual, rotuloMes } from '../transacoes/agrupar';
+import { mesAtual } from '../transacoes/agrupar';
 import { marcarTransferencias } from '../transacoes/transferencias';
 import {
   montarRecorrencias,
@@ -50,7 +50,6 @@ const MESES_CURTOS = [
   'nov',
   'dez',
 ];
-const DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
 /** Recorrências: assinaturas, contas fixas e entradas que se repetem todo mês. */
 const CHAVE_FECHADOS = 'jano.recorrencias.fechados';
@@ -103,9 +102,8 @@ function lerFechados(): ReadonlySet<Grupo> {
     }
     .colunas {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 340px;
+      grid-template-columns: minmax(0, 1fr);
       gap: 24px;
-      align-items: start;
     }
     .cab,
     .linha {
@@ -211,66 +209,6 @@ function lerFechados(): ReadonlySet<Grupo> {
     .mobile-extra {
       display: none;
     }
-    .calendario {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-      text-align: center;
-    }
-    .calendario .sem {
-      font: 500 11px/16px var(--font-sans);
-      color: var(--text-2);
-      text-transform: uppercase;
-    }
-    .dia {
-      min-height: 44px;
-      padding: 4px 0;
-      border-radius: var(--radius-sm);
-      font: 400 13px/16px var(--font-sans);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-    }
-    .dia.hoje {
-      background: var(--primary-soft);
-      color: var(--primary-text);
-      font-weight: 600;
-    }
-    .dia.tem {
-      border: 1px solid var(--border);
-    }
-    .pontos {
-      display: flex;
-      gap: 3px;
-    }
-    .pontos i {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--danger);
-    }
-    .pontos i.entrada {
-      background: var(--positive);
-    }
-    .legenda {
-      margin-top: 12px;
-      display: flex;
-      gap: 16px;
-      font: 400 12px/16px var(--font-sans);
-      color: var(--text-2);
-    }
-    .legenda i {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 6px;
-      background: var(--danger);
-    }
-    .legenda i.entrada {
-      background: var(--positive);
-    }
     @media (max-width: 1099px) {
       .colunas {
         grid-template-columns: 1fr;
@@ -321,7 +259,6 @@ function lerFechados(): ReadonlySet<Grupo> {
         </div>
         <div class="colunas">
           <jano-skeleton-rows [count]="5" />
-          <jano-skeleton-card altura="220px" />
         </div>
       </jano-skeleton-group>
     } @else if (!linhas().length) {
@@ -454,47 +391,6 @@ function lerFechados(): ReadonlySet<Grupo> {
             }
           }
         </section>
-
-        <section class="j-card" aria-label="Calendário do mês">
-          <h2>{{ mes }}</h2>
-          <div
-            class="calendario"
-            role="grid"
-            [attr.aria-label]="'Calendário de ' + mes"
-          >
-            @for (d of semana; track d) {
-              <span class="sem" aria-hidden="true">{{ d }}</span>
-            }
-            @for (v of vazios(); track $index) {
-              <span aria-hidden="true"></span>
-            }
-            @for (d of dias(); track d.n) {
-              <div
-                role="gridcell"
-                [class]="
-                  'dia' +
-                  (d.hoje ? ' hoje' : '') +
-                  (d.itens.length ? ' tem' : '')
-                "
-                [attr.title]="d.titulo"
-                [attr.aria-label]="d.titulo || null"
-              >
-                {{ d.n }}
-                @if (d.itens.length) {
-                  <span class="pontos" aria-hidden="true">
-                    @for (i of d.itens; track i.nome) {
-                      <i [class]="i.tipo"></i>
-                    }
-                  </span>
-                }
-              </div>
-            }
-          </div>
-          <div class="legenda">
-            <span><i></i>Cobrança</span>
-            <span><i class="entrada"></i>Entrada</span>
-          </div>
-        </section>
       </div>
     }
 
@@ -521,10 +417,8 @@ export class Recorrencias {
   private readonly cartoes = signal<ReadonlySet<string>>(new Set());
 
   protected readonly money = formatBRL;
-  protected readonly semana = DIAS_SEMANA;
   private readonly hoje = new Date();
   private readonly month = mesAtual(this.hoje);
-  protected readonly mes = rotuloMes(this.month);
 
   private readonly historico = signal<TransactionDoc[]>([]);
   private readonly categorias = signal<CategoryDoc[]>([]);
@@ -558,44 +452,6 @@ export class Recorrencias {
   );
   protected readonly reajustadas = computed(
     () => this.linhas().filter((l) => l.reajustada).length,
-  );
-
-  // Calendário do mês atual (domingo primeiro).
-  private readonly diasNoMes = new Date(
-    this.hoje.getFullYear(),
-    this.hoje.getMonth() + 1,
-    0,
-  ).getDate();
-  protected readonly vazios = computed(() =>
-    Array.from(
-      {
-        length: new Date(
-          this.hoje.getFullYear(),
-          this.hoje.getMonth(),
-          1,
-        ).getDay(),
-      },
-      (_, i) => i,
-    ),
-  );
-  protected readonly dias = computed(() =>
-    Array.from({ length: this.diasNoMes }, (_, i) => {
-      const n = i + 1;
-      const itens = this.linhas().filter(
-        (l) => Math.min(l.day, this.diasNoMes) === n,
-      );
-      return {
-        n,
-        hoje: n === this.hoje.getDate(),
-        itens,
-        titulo: itens
-          .map(
-            (l) =>
-              `${l.nome} (${l.tipo === 'entrada' ? '+' : '−'}${formatBRL(l.cents)})`,
-          )
-          .join(', '),
-      };
-    }),
   );
 
   constructor() {

@@ -14,6 +14,32 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.16.0',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Orçamento mais direto: no topo, quanto ainda cabe nas metas até o fim do mês e quais pedem atenção; as metas vêm da que pede mais atenção à que pede menos. Para mudar o limite, levar a sobra ou remover, toque na meta.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Início na ordem do que pede decisão: avisos, fatura, metas, gráfico e últimas transações. Os avisos levam direto ao que falam ("Ver transação", "Ajustar meta"). Na fatura, maiores compras, próxima fatura e o que vem todo mês ficam em "Ver…", a um toque.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Categorias mostram o gasto do mês, a meta e quantas regras usam cada uma. Toque para editar; apagar fica dentro da edição.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Menos coisa que não ajuda a decidir: saem o gráfico de saldo projetado de longo prazo (os cenários "E se…" continuam), a nota do mês em Avaliações e o calendário de Recorrências, que repetia os próximos 30 dias de Projeções.',
+      },
+    ],
+  },
+  {
     version: '0.15.0',
     date: '2026-11-01',
     items: [
