@@ -90,7 +90,7 @@ export function fraseResumo(
   destaque: { nome: string; pct: number } | null,
 ): string {
   if (c.pct === null)
-    return 'Ainda não há um mês anterior para comparar. Continue importando para ver a leitura do mês.';
+    return 'Ainda não há gastos do mês anterior até este dia para comparar.';
   const mesAnterior = MESES[(Number(month.slice(5, 7)) + 10) % 12];
   const base =
     c.pct === 0
@@ -99,6 +99,25 @@ export function fraseResumo(
   if (!destaque) return `${base}.`;
   const liga = c.pct < 0 ? 'mas' : 'e';
   return `${base}, ${liga} ${destaque.nome} subiu ${destaque.pct}%.`;
+}
+
+/** Começo do mês: a leitura do mês que acabou de fechar. "Outubro fechou com R$ 7.120 de gastos, 20% mais que setembro." */
+export function fraseMesFechado(
+  c: Comparativo,
+  month: string,
+  destaque: { nome: string; pct: number } | null,
+  moeda: (cents: number) => string,
+): string {
+  const nome = MESES[Number(month.slice(5, 7)) - 1];
+  const base = `${nome[0].toUpperCase()}${nome.slice(1)} fechou com ${moeda(c.atual)} de gastos`;
+  if (c.pct === null) return `${base}.`;
+  const mesAnterior = MESES[(Number(month.slice(5, 7)) + 10) % 12];
+  const comp =
+    c.pct === 0
+      ? `o mesmo que ${mesAnterior}`
+      : `${Math.abs(c.pct)}% ${c.pct < 0 ? 'menos' : 'mais'} que ${mesAnterior}`;
+  if (!destaque) return `${base}, ${comp}.`;
+  return `${base}, ${comp}, e ${destaque.nome} subiu ${destaque.pct}%.`;
 }
 
 export interface SerieMensal {

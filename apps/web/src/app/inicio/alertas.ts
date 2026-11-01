@@ -1,5 +1,6 @@
 import {
   categoriesAboveNormal,
+  contasDoMes,
   detectRecurrences,
   newSubscriptions,
   repricedRecurrences,
@@ -47,6 +48,8 @@ const MAX = 4;
 /** "Para ver hoje": o que merece atenção, do mais urgente ao menos, no máximo quatro. */
 export function montarAlertas(e: EntradaAlertas): Alerta[] {
   const out: Alerta[] = [];
+  // Contas do mês (aluguel, escola) chegam a 100% quando pagas: só alertam se passarem.
+  const contas = contasDoMes(e.txs, e.month);
 
   const metas = e.budgets
     .map((b) => ({
@@ -54,6 +57,7 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
       spent: e.spentByCategory[b.categoryId] ?? 0,
     }))
     .filter((b) => b.limitCents > 0 && b.spent >= b.limitCents * 0.8)
+    .filter((b) => !contas.has(b.categoryId) || b.spent > b.limitCents)
     .sort((a, b) => b.spent / b.limitCents - a.spent / a.limitCents)
     .slice(0, 2);
   for (const m of metas) {

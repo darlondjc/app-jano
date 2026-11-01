@@ -84,6 +84,11 @@ const MESES = [
       background: var(--danger-soft);
       color: var(--danger);
     }
+    .paga {
+      margin-top: 8px;
+      font: 500 13px/18px var(--font-sans);
+      color: var(--positive);
+    }
     .valor {
       font: 700 30px/36px var(--font-sans);
       letter-spacing: -0.01em;
@@ -200,6 +205,12 @@ const MESES = [
         <div class="rotulo">{{ rotuloValor() }}</div>
         <div class="valor">{{ money(f.valorCents) }}</div>
         <div class="sub">{{ datas() }}</div>
+        @if (f.paga; as p) {
+          <div class="paga">
+            Fatura anterior paga em {{ diaMes(p.date) }} ·
+            {{ money(p.cents) }}
+          </div>
+        }
       </div>
 
       @if (f.limite; as l) {

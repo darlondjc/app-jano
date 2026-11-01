@@ -318,6 +318,48 @@ export function projectMonthEnd(spentCents: Cents, pace: number): Cents {
   return Math.round(spentCents / Math.max(pace, 0.1));
 }
 
+const mediana = (v: number[]) => {
+  const o = [...v].sort((a, b) => a - b);
+  const m = Math.floor(o.length / 2);
+  return o.length % 2 ? o[m] : Math.round((o[m - 1] + o[m]) / 2);
+};
+
+/**
+ * Previsão de fechamento do mês que não exagera no começo: até a metade do mês, mistura o
+ * ritmo atual com o gasto típico (mediana dos meses anteriores, que ignora um mês fora da
+ * curva). No dia 1, uma compra grande não vira 30 compras. A receita prevista é pelo menos a
+ * típica, porque o salário ainda pode não ter caído.
+ */
+export function previsaoDoMes(e: {
+  gastoCents: Cents;
+  receitaCents: Cents;
+  /** Fração do mês decorrida (0–1). */
+  pace: number;
+  /** Gastos e receitas dos meses anteriores fechados (sem os vazios). */
+  gastosAnteriores: Cents[];
+  receitasAnteriores: Cents[];
+}): { gastoCents: Cents; receitaCents: Cents } {
+  const ritmo = projectMonthEnd(e.gastoCents, e.pace);
+  if (e.pace >= 1)
+    return { gastoCents: e.gastoCents, receitaCents: e.receitaCents };
+  const gastoTipico = e.gastosAnteriores.length
+    ? mediana(e.gastosAnteriores)
+    : null;
+  const receitaTipica = e.receitasAnteriores.length
+    ? mediana(e.receitasAnteriores)
+    : 0;
+  let gastoCents = ritmo;
+  if (gastoTipico !== null) {
+    const peso = Math.min(1, e.pace / 0.5);
+    const tipico = e.gastoCents + gastoTipico * (1 - e.pace);
+    gastoCents = Math.round(peso * ritmo + (1 - peso) * tipico);
+  }
+  return {
+    gastoCents: Math.max(gastoCents, e.gastoCents),
+    receitaCents: Math.max(e.receitaCents, receitaTipica),
+  };
+}
+
 export interface ScorePart {
   name: 'metas-no-ritmo' | 'sobra-projetada' | 'estabilidade';
   points: number;

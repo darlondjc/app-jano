@@ -518,6 +518,7 @@ export class Recorrencias {
   private readonly progresso = inject(Progresso);
   private readonly txRepo = inject(TransactionsRepository);
   private readonly catalog = inject(CatalogRepository);
+  private readonly cartoes = signal<ReadonlySet<string>>(new Set());
 
   protected readonly money = formatBRL;
   protected readonly semana = DIAS_SEMANA;
@@ -535,6 +536,7 @@ export class Recorrencias {
       this.historico(),
       `${this.month}-${String(this.hoje.getDate()).padStart(2, '0')}`,
       this.categorias().find((c) => c.id === 'assinaturas')?.id ?? null,
+      this.cartoes(),
     ),
   );
   protected readonly grupos = computed(() => porGrupo(this.linhas()));
@@ -648,14 +650,19 @@ export class Recorrencias {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {
-      const [txs, cats] = await Promise.all([
+      const [txs, cats, contas] = await Promise.all([
         this.txRepo.listRange(
           uid,
           previousMonths(this.month, 6).at(-1) as string,
           this.month,
         ),
         this.catalog.categories(uid),
+        // Sem as contas, tudo vira conta fixa; melhor que não mostrar nada.
+        this.catalog.accounts(uid).catch(() => []),
       ]);
+      this.cartoes.set(
+        new Set(contas.filter((c) => c.type === 'cartao').map((c) => c.id)),
+      );
       this.historico.set(
         (await marcarTransferencias(this.txRepo, uid, txs)).txs,
       );

@@ -2,6 +2,7 @@ import {
   compararComAnterior,
   distribuicao,
   explicarNota,
+  fraseMesFechado,
   fraseResumo,
   maioresEstabelecimentos,
   serieMensal,
@@ -61,6 +62,28 @@ describe('avaliar', () => {
     expect(fraseResumo({ ...c, pct: null }, '2026-10', null)).toContain(
       'Ainda não há',
     );
+  });
+
+  it('começo do mês: frase do mês que fechou', () => {
+    const moeda = (v: number) => `R$ ${v / 100}`;
+    expect(
+      fraseMesFechado(
+        { atual: 712000, anterior: 593000, pct: 20 },
+        '2026-10',
+        { nome: 'Mercado', pct: 63 },
+        moeda,
+      ),
+    ).toBe(
+      'Outubro fechou com R$ 7120 de gastos, 20% mais que setembro, e Mercado subiu 63%.',
+    );
+    expect(
+      fraseMesFechado(
+        { atual: 100, anterior: 0, pct: null },
+        '2026-10',
+        null,
+        moeda,
+      ),
+    ).toBe('Outubro fechou com R$ 1 de gastos.');
   });
 
   it('série mensal pega as categorias de maior gasto', () => {

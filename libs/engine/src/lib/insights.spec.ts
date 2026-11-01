@@ -5,6 +5,7 @@ import {
   monthScore,
   newSubscriptions,
   previousMonths,
+  previsaoDoMes,
   projectMonthEnd,
   repricedRecurrences,
   unusualTransactions,
@@ -296,5 +297,43 @@ describe('detectRecurrences de entradas', () => {
       day: 5,
       months: 3,
     });
+  });
+});
+
+describe('previsaoDoMes', () => {
+  const base = {
+    gastosAnteriores: [700000, 720000, 2000000],
+    receitasAnteriores: [985000, 985000, 5185000],
+  };
+  it('dia 1 com uma compra de R$ 690: perto do gasto típico, não 30 vezes a compra', () => {
+    const p = previsaoDoMes({
+      ...base,
+      gastoCents: 69000,
+      receitaCents: 0,
+      pace: 1 / 30,
+    });
+    // típico = mediana 7.200; 690 + 7.200 × 29/30 ≈ 7.650, com um pouco do ritmo.
+    expect(p.gastoCents).toBeGreaterThan(700000);
+    expect(p.gastoCents).toBeLessThan(950000);
+    expect(p.receitaCents).toBe(985000);
+  });
+  it('depois da metade do mês vale o ritmo atual', () => {
+    const p = previsaoDoMes({
+      ...base,
+      gastoCents: 400000,
+      receitaCents: 985000,
+      pace: 0.6,
+    });
+    expect(p.gastoCents).toBe(projectMonthEnd(400000, 0.6));
+  });
+  it('sem histórico usa só o ritmo', () => {
+    const p = previsaoDoMes({
+      gastoCents: 69000,
+      receitaCents: 0,
+      pace: 0.5,
+      gastosAnteriores: [],
+      receitasAnteriores: [],
+    });
+    expect(p).toEqual({ gastoCents: 138000, receitaCents: 0 });
   });
 });

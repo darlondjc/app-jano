@@ -70,3 +70,37 @@ describe('cartaoDaFatura', () => {
     ).toBeNull();
   });
 });
+
+describe('cartaoDaFatura depois do pagamento', () => {
+  // Dia 19: a fatura fechou em 27/09, venceu em 07/10 e foi paga no dia 7.
+  const d = gerarDadosDemo(new Date(2026, 9, 19, 10));
+  const e = {
+    saldos: d.balances,
+    txs: d.transactions,
+    cartoes: new Set(['cartao-de-credito']),
+    hoje: '2026-10-19',
+  };
+
+  it('paga: mostra a fatura aberta e quando fecha, não "vencida"', () => {
+    const f = cartaoDaFatura(e)!;
+    expect(f.situacao).not.toBe('vencida');
+    expect(f.paga?.date).toBe('2026-10-07');
+    expect(f.fase).toBe('aberta');
+    expect(f.fecha).toBe('2026-10-27');
+    expect(f.vence).toBe('2026-11-07');
+    expect(f.situacao).toBe('fecha em 8 dias');
+    expect(f.minimoCents).toBeNull();
+    expect(f.seguinte).toBeNull();
+  });
+
+  it('sem o pagamento continua vencida', () => {
+    const f = cartaoDaFatura({
+      ...e,
+      txs: d.transactions.filter(
+        (t) => !/PAGTO CARTAO/.test(t.descriptionNorm),
+      ),
+    })!;
+    expect(f.paga).toBeNull();
+    expect(f.situacao).toBe('vencida');
+  });
+});

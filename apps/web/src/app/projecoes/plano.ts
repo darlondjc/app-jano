@@ -9,7 +9,12 @@ import {
   podeGastar,
   type PodeGastar,
 } from '../inicio/pode-gastar';
-import { parcelamentos, type TxRec } from '../recorrencias/linhas';
+import {
+  fixasPorMes,
+  montarRecorrencias,
+  parcelamentos,
+  type TxRec,
+} from '../recorrencias/linhas';
 
 export interface EventoPlano {
   /** AAAA-MM-DD; null quando a data não é conhecida (fatura sem pagamento anterior). */
@@ -64,7 +69,7 @@ const somarMeses = (mes: string, n: number): string => {
 };
 
 /** Pagamento de fatura no extrato da conta (marcado como transferência). */
-const PAGAMENTO_FATURA = /\b(PAGTO|PAGAMENTO) (DE )?(CARTAO|FATURA)\b/;
+export const PAGAMENTO_FATURA = /\b(PAGTO|PAGAMENTO) (DE )?(CARTAO|FATURA)\b/;
 
 /** Dia em que a fatura costuma ser paga, pela mediana dos últimos pagamentos. */
 export function diaDaFatura(contas: TxRec[]): number | null {
@@ -182,16 +187,11 @@ export function planoDoMes(e: EntradaPlano): PlanoDoMes {
   }
 
   const rendaCents = entradas.reduce((t, { s }) => t + s.amountCents, 0);
-  // Contas fixas das contas e, do cartão, só cobranças de valor fixo (assinaturas); gasto
-  // variável que se repete no cartão (delivery, cinema) não é compromisso. Parcelas à parte.
-  const fixasCents =
-    fixasDaConta.reduce((t, { s }) => t + s.amountCents, 0) +
-    cobrancasFixas(
-      series(
-        semParcelas.filter((t) => e.cartoes.has(t.accountId)),
-        'gasto',
-      ),
-    ).reduce((t, { s }) => t + s.amountCents, 0);
+  // Mesma regra de Recorrências: o que sai das contas todo mês e, do cartão, só o que tem
+  // valor fixo (assinaturas); gasto variável que se repete no cartão não é compromisso.
+  const fixasCents = fixasPorMes(
+    montarRecorrencias(e.txs, e.hoje, 'assinaturas', e.cartoes),
+  );
   const parcelas = parcelamentos(e.txs, e.hoje);
   const comprometido: MesComprometido[] = [];
   for (let i = 1; i <= meses; i++) {

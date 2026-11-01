@@ -1,7 +1,12 @@
 import { proximaCobranca } from '@jano/engine';
 import { nomeSemPrefixo } from '@jano/import-file';
 import type { BalanceDoc } from '@jano/data-access';
-import { cobrancasFixas, diaDaFatura, series } from '../projecoes/plano';
+import {
+  PAGAMENTO_FATURA,
+  cobrancasFixas,
+  diaDaFatura,
+  series,
+} from '../projecoes/plano';
 import { parcelamentos, type TxRec } from '../recorrencias/linhas';
 
 /** Quantas categorias aparecem antes de agrupar o resto em "Outras". */
@@ -43,6 +48,8 @@ export interface CartaoFatura {
     date: string;
     categoryId: string | null;
   }[];
+  /** A fatura fechada já foi paga: o cartão passa a mostrar a aberta. */
+  paga: { cents: number; date: string } | null;
   /** Fatura fechada: o que já entrou na seguinte. */
   seguinte: { totalCents: number; compras: number; desde: string } | null;
   /** O que cai no cartão todo mês: parcelas que continuam e assinaturas. */
@@ -67,11 +74,44 @@ const dias = (de: string, ate: string) =>
       86_400_000,
   );
 
-const mesAntes = (iso: string) => {
+const somarMes = (iso: string, n: number) => {
   const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCMonth(d.getUTCMonth() - 1);
+  d.setUTCMonth(d.getUTCMonth() + n);
   return d.toISOString().slice(0, 10);
 };
+const mesAntes = (iso: string) => somarMes(iso, -1);
+
+/**
+ * Pagamento da fatura feito depois do fechamento: a saída na conta ("PAGTO CARTAO") ou o
+ * crédito no próprio cartão. Usa o maior dos dois lados, para não contar o mesmo duas vezes.
+ */
+function pagamentoDepois(
+  txs: EntradaFatura['txs'],
+  cartaoId: string | null,
+  cartoes: ReadonlySet<string>,
+  desde: string,
+  hoje: string,
+): { cents: number; date: string } | null {
+  const periodo = txs.filter((t) => t.date > desde && t.date <= hoje);
+  const naConta = periodo.filter(
+    (t) =>
+      !cartoes.has(t.accountId) &&
+      t.isTransfer &&
+      t.amountCents < 0 &&
+      PAGAMENTO_FATURA.test(t.descriptionNorm),
+  );
+  const noCartao = periodo.filter(
+    (t) => t.accountId === cartaoId && t.isTransfer && t.amountCents > 0,
+  );
+  const soma = (l: typeof periodo) =>
+    l.reduce((s, t) => s + Math.abs(t.amountCents), 0);
+  const lado = soma(naConta) >= soma(noCartao) ? naConta : noCartao;
+  if (!lado.length) return null;
+  return {
+    cents: soma(lado),
+    date: lado.map((t) => t.date).sort()[0],
+  };
+}
 
 function emDias(n: number, verbo: string): string {
   if (n === 0) return `${verbo} hoje`;
@@ -147,14 +187,44 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
   let fase: CartaoFatura['fase'] = 'estimada';
   if (c?.fechamento) fase = c.fechamento < e.hoje ? 'fechada' : 'aberta';
   const diaPago = diaDaFatura(contas);
-  const vence =
+  let vence =
     c?.vencimento ??
     (diaPago === null ? null : proximaCobranca(diaPago, e.hoje));
+  let fecha = c?.fechamento ?? null;
+  let minimoCents = c?.minimoCents ?? null;
+
+  // Fechada e já paga (até R$ 1 de diferença): o que importa agora é a fatura aberta.
+  let paga: CartaoFatura['paga'] = null;
+  const fechouEm = c?.fechamento ?? null;
+  if (fase === 'fechada' && fechouEm) {
+    const p = pagamentoDepois(e.txs, accountId, e.cartoes, fechouEm, e.hoje);
+    // Valor da fechada pelas compras gravadas: o saldo do banco já pode ser o da aberta.
+    const fechadaCents = -doCartao
+      .filter(
+        (t) =>
+          !t.isTransfer && t.date > mesAntes(fechouEm) && t.date <= fechouEm,
+      )
+      .reduce((s, t) => s + t.amountCents, 0);
+    if (p && p.cents >= fechadaCents - 100) {
+      paga = p;
+      fase = 'aberta';
+      fecha = somarMes(fechouEm, 1);
+      if (vence) vence = somarMes(vence, 1);
+      minimoCents = null;
+    }
+  }
 
   let valorCents = Math.max(0, saldo?.balanceCents ?? 0);
   let base: Base;
   let seguinte: CartaoFatura['seguinte'] = null;
-  if (fase === 'fechada' && c?.fechamento) {
+  if (paga && fechouEm) {
+    base = aberta ?? dasTransacoes(doCartao, fechouEm, e.hoje);
+    valorCents =
+      aberta?.totalCents ??
+      -doCartao
+        .filter((t) => !t.isTransfer && t.date > fechouEm)
+        .reduce((s, t) => s + t.amountCents, 0);
+  } else if (fase === 'fechada' && c?.fechamento) {
     // Fechada: as compras dela já estão gravadas; o resumo da sincronização é a seguinte.
     base = dasTransacoes(doCartao, mesAntes(c.fechamento), c.fechamento);
     if (aberta?.compras)
@@ -171,8 +241,8 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
   }
 
   let situacao = 'vencimento a confirmar';
-  if (fase === 'aberta' && c?.fechamento)
-    situacao = emDias(dias(e.hoje, c.fechamento), 'fecha');
+  if (fase === 'aberta' && fecha)
+    situacao = emDias(dias(e.hoje, fecha), 'fecha');
   else if (vence) {
     const n = dias(e.hoje, vence);
     situacao = n < 0 ? 'vencida' : emDias(n, 'vence');
@@ -221,14 +291,15 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
     accountId,
     fase,
     valorCents,
-    fecha: c?.fechamento ?? null,
+    fecha,
     vence,
-    minimoCents: c?.minimoCents ?? null,
+    minimoCents,
     situacao,
     limite,
     composicao: partes(base.porCategoria),
     compras: base.compras,
     maiores: base.maiores.slice(0, MAIORES),
+    paga,
     seguinte,
     todoMes: { totalCents: itens.reduce((s, i) => s + i.cents, 0), itens },
   };
