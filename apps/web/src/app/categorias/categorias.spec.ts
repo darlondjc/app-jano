@@ -41,7 +41,10 @@ function montar(
       { provide: CatalogRepository, useValue: repo },
       {
         provide: TransactionsRepository,
-        useValue: { listMonth: vi.fn().mockResolvedValue(contexto.txs ?? []) },
+        useValue: {
+          listMonth: vi.fn().mockResolvedValue(contexto.txs ?? []),
+          listRange: vi.fn().mockResolvedValue(contexto.txs ?? []),
+        },
       },
       {
         provide: BudgetsRepository,

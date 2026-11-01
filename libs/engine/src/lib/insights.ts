@@ -1,3 +1,4 @@
+import { periodoDe } from './periodo';
 import { partes, type Cents, type Parte } from './engine';
 
 /** Transação como o motor a enxerga. Gasto = valor negativo. */
@@ -59,7 +60,11 @@ export interface GoalStreak {
 export type Insight =
   CategoryAbove | UnusualSpend | Repriced | NewSubscription | GoalStreak;
 
-export const monthOf = (date: string): string => date.slice(0, 7);
+/**
+ * Período da data ('AAAA-MM'): o mês do calendário ou, com o salário conhecido, o período
+ * financeiro (ver `definirCalendario`). Tudo o que compara "meses" usa esta chave.
+ */
+export const monthOf = (date: string): string => periodoDe(date);
 
 /** Os `n` meses anteriores a `month` ('AAAA-MM'), do mais recente ao mais antigo. */
 export function previousMonths(month: string, n: number): string[] {
@@ -215,7 +220,8 @@ export function detectRecurrences(
   for (const [description, list] of groups) {
     const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
     const perMonth = new Map<string, HistTx>();
-    for (const t of sorted) perMonth.set(monthOf(t.date), t);
+    // Recorrência é do calendário: a conta cai todo dia N do mês, não do período.
+    for (const t of sorted) perMonth.set(t.date.slice(0, 7), t);
     const series = [...perMonth.values()];
     if (series.length < 3) continue;
     const days = series

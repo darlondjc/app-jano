@@ -17,8 +17,10 @@ import {
   type TransactionDoc,
 } from '@jano/data-access';
 import {
+  calendario,
   categoriesAboveNormal,
-  daysLeftInMonth,
+  diaNoPeriodo,
+  monthOf,
   formatBRL,
   previousMonths,
   goalStreaks,
@@ -36,6 +38,7 @@ import { montarAlertas, type Alerta } from '../inicio/alertas';
 import { Progresso } from '../shell/progresso';
 import { marcarTransferencias } from '../transacoes/transferencias';
 import { mesAtual, rotuloMes } from '../transacoes/agrupar';
+import { PeriodoService } from '../periodo/periodo.service';
 import {
   compararComAnterior,
   distribuicao,
@@ -521,6 +524,7 @@ export class Avaliacoes {
   private readonly budgetRepo = inject(BudgetsRepository);
   private readonly catalog = inject(CatalogRepository);
   private readonly insightsRepo = inject(InsightsRepository);
+  private readonly periodo = inject(PeriodoService);
 
   protected readonly money = formatBRL;
   /** Insights dispensados neste mês. */
@@ -529,31 +533,37 @@ export class Avaliacoes {
   protected readonly raio = RAIO;
 
   private readonly hoje = new Date();
-  private readonly month = mesAtual(this.hoje);
-  private readonly dia = this.hoje.getDate();
-  private readonly pace = monthPace(
-    this.hoje.getFullYear(),
-    this.hoje.getMonth() + 1,
-    this.dia,
+  /** Período de hoje ('AAAA-MM'); definido depois de reconhecer o salário. */
+  private readonly month = signal(mesAtual(this.hoje));
+  /** Dia de hoje dentro do período. */
+  private readonly dia = signal(this.hoje.getDate());
+  private readonly pace = signal(
+    monthPace(
+      this.hoje.getFullYear(),
+      this.hoje.getMonth() + 1,
+      this.hoje.getDate(),
+    ),
   );
-  /** Nos primeiros dias o mês ainda não diz nada: a leitura é a do mês que fechou. */
-  private readonly comecoDoMes = this.dia <= DIAS_COMECO;
+  /** Nos primeiros dias o período ainda não diz nada: a leitura é a do que fechou. */
+  private readonly comecoDoMes = computed(() => this.dia() <= DIAS_COMECO);
   /**
-   * Mês que a tela lê: o atual; nos primeiros dias, sem lançamentos ainda, o que acabou de
-   * fechar (dia 1 sem nada importado não é "sem dados").
+   * Período que a tela lê: o atual; nos primeiros dias, sem lançamentos ainda, o que acabou
+   * de fechar (dia 1 sem nada importado não é "sem dados").
    */
   private readonly mesAnalise = computed(() =>
-    !this.comecoDoMes ||
-    this.historico().some((t) => t.date.startsWith(this.month))
-      ? this.month
-      : previousMonths(this.month, 1)[0],
+    !this.comecoDoMes() ||
+    this.historico().some((t) => monthOf(t.date) === this.month())
+      ? this.month()
+      : previousMonths(this.month(), 1)[0],
   );
-  private readonly fechado = computed(() => this.mesAnalise() !== this.month);
-  protected readonly mes = computed(
-    () =>
-      rotuloMes(this.mesAnalise()) + (this.fechado() ? ' · mês fechado' : ''),
-  );
-  private readonly meses = ultimosMeses(this.month, 6);
+  private readonly fechado = computed(() => this.mesAnalise() !== this.month());
+  protected readonly mes = computed(() => {
+    const nome = this.periodo.peloSalario()
+      ? this.periodo.rotulo(this.mesAnalise())
+      : rotuloMes(this.mesAnalise());
+    return nome + (this.fechado() ? ' · fechado' : '');
+  });
+  private readonly meses = computed(() => ultimosMeses(this.month(), 6));
 
   private readonly historico = signal<TransactionDoc[]>([]);
   private readonly budgets = signal<BudgetDoc[]>([]);
@@ -571,41 +581,41 @@ export class Avaliacoes {
     categoriesAboveNormal(this.historico(), this.mesAnalise()),
   );
   protected readonly frase = computed(() => {
-    if (this.comecoDoMes) {
-      const fechado = previousMonths(this.month, 1)[0];
+    if (this.comecoDoMes()) {
+      const fechado = previousMonths(this.month(), 1)[0];
       const topo = categoriesAboveNormal(this.historico(), fechado)[0];
       return fraseMesFechado(
-        compararComAnterior(this.historico(), fechado, 31, this.cartoes()),
+        compararComAnterior(this.historico(), fechado, 99, this.cartoes()),
         fechado,
         topo ? { nome: this.nomeCat(topo.categoryId), pct: topo.pct } : null,
         formatBRL,
+        this.periodo.peloSalario() ? this.periodo.rotulo(fechado) : undefined,
       );
     }
     const topo = this.acima()[0];
     return fraseResumo(
       compararComAnterior(
         this.historico(),
-        this.month,
-        this.dia,
+        this.month(),
+        this.dia(),
         this.cartoes(),
       ),
-      this.month,
+      this.month(),
       topo ? { nome: this.nomeCat(topo.categoryId), pct: topo.pct } : null,
+      this.periodo.peloSalario(),
     );
   });
 
   protected readonly insights = computed<Alerta[]>(() => {
     const mes = this.mesAnalise();
-    const [ano, m] = mes.split('-').map(Number);
-    const ultimo = new Date(ano, m, 0).getDate();
-    const dia = this.fechado() ? ultimo : this.dia;
+    const hoje = this.fechado() ? calendario().fim(mes) : this.periodo.hoje();
     const base = montarAlertas({
       txs: this.historico(),
       month: mes,
-      today: `${mes}-${String(dia).padStart(2, '0')}`,
+      today: hoje,
       budgets: this.budgets(),
       spentByCategory: this.gastoMes().porCategoria,
-      daysLeft: daysLeftInMonth(ano, m, dia),
+      daysLeft: this.fechado() ? 0 : this.periodo.diasRestantes(mes),
       assinaturasId:
         this.categorias().find((c) => c.id === 'assinaturas')?.id ?? null,
       nomeCategoria: (id) => this.nomeCat(id),
@@ -635,7 +645,7 @@ export class Avaliacoes {
 
   // Barras agrupadas: 6 meses × até 3 categorias.
   protected readonly series = computed(() =>
-    serieMensal(this.historico(), this.meses, this.cartoes()),
+    serieMensal(this.historico(), this.meses(), this.cartoes()),
   );
   private readonly maxBarra = computed(() => {
     const max = Math.max(1, ...this.series().flatMap((s) => s.valores));
@@ -653,7 +663,7 @@ export class Avaliacoes {
   });
   protected readonly barras = computed(() => {
     const n = this.series().length || 1;
-    const larg = (GRAF.w - GRAF.x0 - 8) / this.meses.length;
+    const larg = (GRAF.w - GRAF.x0 - 8) / this.meses().length;
     const bw = Math.min(14, (larg - 8) / n);
     return this.series().flatMap((s, si) =>
       s.valores.map((v, mi) => {
@@ -669,8 +679,8 @@ export class Avaliacoes {
     );
   });
   protected readonly rotulosMeses = computed(() => {
-    const larg = (GRAF.w - GRAF.x0 - 8) / this.meses.length;
-    return this.meses.map((m, i) => ({
+    const larg = (GRAF.w - GRAF.x0 - 8) / this.meses().length;
+    return this.meses().map((m, i) => ({
       t: MESES_ABREV[Number(m.slice(5, 7)) - 1],
       x: GRAF.x0 + i * larg + larg / 2,
     }));
@@ -763,7 +773,7 @@ export class Avaliacoes {
     const antes = this.dispensados();
     this.dispensados.set(new Set([...antes, a.id]));
     try {
-      await this.insightsRepo.dispensar(uid, this.month, a.id);
+      await this.insightsRepo.dispensar(uid, this.month(), a.id);
     } catch (e) {
       this.dispensados.set(antes);
       this.erro.set(
@@ -778,13 +788,23 @@ export class Avaliacoes {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {
+      await this.periodo.garantir();
+      const chave = this.periodo.atual();
+      this.month.set(chave);
+      this.dia.set(diaNoPeriodo(this.periodo.hoje()));
+      this.pace.set(this.periodo.ritmo(chave));
       const [txs, budgets, cats, contas, dispensados] = await Promise.all([
-        this.txRepo.listRange(uid, this.meses[0], this.month),
+        // Um mês a mais no começo: o período mais antigo pode começar no mês anterior à chave.
+        this.txRepo.listRange(
+          uid,
+          previousMonths(this.meses()[0], 1)[0],
+          mesAtual(this.hoje),
+        ),
         this.budgetRepo.list(uid),
         this.catalog.categories(uid),
         this.catalog.accounts(uid),
         // Complemento: se falhar, os insights aparecem todos.
-        this.insightsRepo.dispensados(uid, this.month).catch(() => []),
+        this.insightsRepo.dispensados(uid, this.month()).catch(() => []),
       ]);
       this.dispensados.set(new Set(dispensados));
       this.cartoes.set(

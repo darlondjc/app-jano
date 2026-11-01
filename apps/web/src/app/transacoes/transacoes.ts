@@ -21,7 +21,8 @@ import {
   type CategoryDoc,
   type TransactionDoc,
 } from '@jano/data-access';
-import { formatBRL } from '@jano/engine';
+import { calendario, formatBRL, mesesDoPeriodo, monthOf } from '@jano/engine';
+import { PeriodoService } from '../periodo/periodo.service';
 import {
   DEFAULT_RULES,
   addDedupeKeys,
@@ -843,7 +844,13 @@ interface Previa {
           <div class="j-empty" style="padding: 48px 16px">
             @if (mesAtualVazio()) {
               <div class="j-empty__title">
-                Nada em {{ rotulo().split(' ')[0].toLowerCase() }} ainda
+                {{
+                  porSalario()
+                    ? 'Nada neste período ainda'
+                    : 'Nada em ' +
+                      rotulo().split(' ')[0].toLowerCase() +
+                      ' ainda'
+                }}
               </div>
               <div class="j-empty__text">
                 A sincronização diária traz os lançamentos novos assim que o
@@ -1117,8 +1124,13 @@ export class Transacoes {
   protected readonly classeValor = classeValor;
   protected readonly dataCurta = dataCurta;
   protected readonly transferenciaId = TRANSFERENCIA;
-  protected readonly mesAtualStr = mesAtual();
-  protected readonly mesPassado = mesAnterior(mesAtual());
+  private readonly fin = inject(PeriodoService);
+  /** Períodos ('AAAA-MM') de hoje e o anterior; do salário quando ele é conhecido. */
+  protected readonly mesAtualStr = signal(mesAtual());
+  protected readonly mesPassado = computed(() =>
+    mesAnterior(this.mesAtualStr()),
+  );
+  protected readonly porSalario = this.fin.peloSalario;
 
   protected readonly periodo = signal<
     { tipo: 'mes'; mes: string } | { tipo: '3m' }
@@ -1142,31 +1154,40 @@ export class Transacoes {
 
   protected readonly rotulo = computed(() => {
     const p = this.periodo();
-    return p.tipo === 'mes'
-      ? rotuloMes(p.mes)
-      : `${rotuloMes(mesAnterior(mesAnterior(mesAtual())))} a ${rotuloMes(mesAtual())}`;
+    const nome = (k: string) =>
+      this.porSalario() ? this.fin.rotulo(k) : rotuloMes(k);
+    if (p.tipo === 'mes') return nome(p.mes);
+    const desde = mesAnterior(mesAnterior(this.mesAtualStr()));
+    return this.porSalario()
+      ? `${calendario().inicio(desde).split('-').reverse().slice(0, 2).join('/')} até hoje`
+      : `${nome(desde)} a ${nome(this.mesAtualStr())}`;
   });
   /** O mês corrente sem lançamentos é só começo de mês, não falta de importação. */
   protected readonly mesAtualVazio = computed(() => {
     const p = this.periodo();
-    return p.tipo === 'mes' && p.mes === this.mesAtualStr;
+    return p.tipo === 'mes' && p.mes === this.mesAtualStr();
   });
   protected readonly mesAnteriorRotulo = computed(() => {
     const p = this.periodo();
-    return p.tipo === 'mes'
-      ? rotuloMes(mesAnterior(p.mes)).split(' ')[0].toLowerCase()
-      : '';
+    if (p.tipo !== 'mes') return '';
+    return this.porSalario()
+      ? 'o período anterior'
+      : rotuloMes(mesAnterior(p.mes)).split(' ')[0].toLowerCase();
   });
   protected readonly opcoesPeriodo = computed(() => [
-    { id: 'este', rotulo: 'Este mês', ativo: this.periodoAtivo() === 'este' },
+    {
+      id: 'este',
+      rotulo: this.porSalario() ? 'Este período' : 'Este mês',
+      ativo: this.periodoAtivo() === 'este',
+    },
     {
       id: 'passado',
-      rotulo: 'Mês passado',
+      rotulo: this.porSalario() ? 'Período passado' : 'Mês passado',
       ativo: this.periodoAtivo() === 'passado',
     },
     {
       id: '3m',
-      rotulo: 'Últimos 3 meses',
+      rotulo: this.porSalario() ? 'Últimos 3 períodos' : 'Últimos 3 meses',
       ativo: this.periodo().tipo === '3m',
     },
   ]);
@@ -1187,9 +1208,9 @@ export class Transacoes {
   protected readonly periodoAtivo = computed(() => {
     const p = this.periodo();
     if (p.tipo !== 'mes') return null;
-    return p.mes === this.mesAtualStr
+    return p.mes === this.mesAtualStr()
       ? 'este'
-      : p.mes === this.mesPassado
+      : p.mes === this.mesPassado()
         ? 'passado'
         : null;
   });
@@ -1249,6 +1270,9 @@ export class Transacoes {
 
   private async iniciar(): Promise<void> {
     try {
+      await this.fin.garantir();
+      this.mesAtualStr.set(this.fin.atual());
+      this.periodo.set({ tipo: 'mes', mes: this.fin.atual() });
       const [contas, categorias, regras] = await Promise.all([
         this.catalog.accounts(this.uid),
         this.catalog.categories(this.uid),
@@ -1261,7 +1285,7 @@ export class Transacoes {
       const alvo = this.tx();
       const lancamento = alvo ? await this.repo.get(this.uid, alvo) : null;
       if (lancamento) {
-        this.periodo.set({ tipo: 'mes', mes: lancamento.date.slice(0, 7) });
+        this.periodo.set({ tipo: 'mes', mes: monthOf(lancamento.date) });
         this.filtros.set(SEM_FILTROS);
       }
       const conta = this.conta();
@@ -1283,15 +1307,24 @@ export class Transacoes {
     this.detalheId.set(null);
     this.selecionadas.set(new Set());
     try {
+      // Um período pode atravessar dois meses do calendário: busca os dois e filtra.
       const p = this.periodo();
-      const lista =
-        p.tipo === 'mes'
-          ? await this.repo.listMonth(this.uid, p.mes)
+      const de =
+        p.tipo === 'mes' ? p.mes : mesAnterior(mesAnterior(this.mesAtualStr()));
+      const ate = p.tipo === 'mes' ? p.mes : this.mesAtualStr();
+      const meses = [...mesesDoPeriodo(de), ...mesesDoPeriodo(ate)].sort();
+      const lista = (
+        meses.length === 1
+          ? await this.repo.listMonth(this.uid, meses[0])
           : await this.repo.listRange(
               this.uid,
-              mesAnterior(mesAnterior(mesAtual())),
-              mesAtual(),
-            );
+              meses[0],
+              meses.at(-1) as string,
+            )
+      ).filter((t) => {
+        const k = monthOf(t.date);
+        return k >= de && k <= ate;
+      });
       const r = await marcarTransferencias(this.repo, this.uid, lista);
       this.txs.set(r.txs);
       if (r.marcadas)
@@ -1351,8 +1384,8 @@ export class Transacoes {
   }
 
   protected escolherPeriodo(id: string): void {
-    if (id === 'este') this.irPara(this.mesAtualStr);
-    else if (id === 'passado') this.irPara(this.mesPassado);
+    if (id === 'este') this.irPara(this.mesAtualStr());
+    else if (id === 'passado') this.irPara(this.mesPassado());
     else this.tresMeses();
   }
 
@@ -1699,7 +1732,7 @@ export class Transacoes {
       this.previa.set(null);
       this.aviso.set(`${rows.length} transações importadas.`);
       if (p.plan.from)
-        this.periodo.set({ tipo: 'mes', mes: p.plan.from.slice(0, 7) });
+        this.periodo.set({ tipo: 'mes', mes: monthOf(p.plan.from) });
       await this.carregar();
     } catch (e) {
       this.falha(e);

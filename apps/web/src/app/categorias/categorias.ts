@@ -15,7 +15,8 @@ import {
   missingDefaults,
   type CategoryDoc,
 } from '@jano/data-access';
-import { formatBRL, monthTotals } from '@jano/engine';
+import { formatBRL, mesesDoPeriodo, monthOf, monthTotals } from '@jano/engine';
+import { PeriodoService } from '../periodo/periodo.service';
 import {
   ICON_NAMES,
   ICONS,
@@ -469,6 +470,7 @@ export class Categorias {
   private readonly txRepo = inject(TransactionsRepository);
   private readonly budgetRepo = inject(BudgetsRepository);
   private readonly rulesRepo = inject(RulesRepository);
+  private readonly periodo = inject(PeriodoService);
 
   protected readonly cores = CATEGORY_COLORS;
   protected readonly icones = ICON_NAMES;
@@ -484,7 +486,6 @@ export class Categorias {
   private readonly gastoMes = signal<Record<string, number>>({});
   private readonly metas = signal(new Map<string, number>());
   private readonly regras = signal(new Map<string, number>());
-  private readonly mesAtual = new Date().toISOString().slice(0, 7);
   private readonly nomeMes = new Date().toLocaleDateString('pt-BR', {
     month: 'long',
   });
@@ -521,7 +522,10 @@ export class Categorias {
   protected uso(c: CategoryDoc): string {
     const partes: string[] = [];
     const gasto = this.gastoMes()[c.id];
-    if (gasto) partes.push(`${formatBRL(gasto)} em ${this.nomeMes}`);
+    if (gasto)
+      partes.push(
+        `${formatBRL(gasto)} ${this.periodo.peloSalario() ? 'neste período' : `em ${this.nomeMes}`}`,
+      );
     const meta = this.metas().get(c.id);
     if (meta) partes.push(`meta ${formatBRL(meta)}`);
     const n = this.regras().get(c.id);
@@ -535,7 +539,16 @@ export class Categorias {
       const [cats, txs, budgets, regras, contas] = await Promise.all([
         this.catalog.categories(uid),
         // O resto é contexto: sem ele a lista funciona igual.
-        this.txRepo.listMonth(uid, this.mesAtual).catch(() => []),
+        this.periodo
+          .garantir()
+          .then(() => {
+            const chave = this.periodo.atual();
+            const meses = mesesDoPeriodo(chave);
+            return this.txRepo
+              .listRange(uid, meses[0], meses.at(-1) as string)
+              .then((l) => l.filter((t) => monthOf(t.date) === chave));
+          })
+          .catch(() => []),
         this.budgetRepo.list(uid).catch(() => []),
         this.rulesRepo.list(uid).catch(() => []),
         this.catalog.accounts(uid).catch(() => []),

@@ -18,6 +18,8 @@ import {
   type TransactionDoc,
 } from '@jano/data-access';
 import {
+  diaNoPeriodo,
+  diasNoPeriodo,
   formatBRL,
   previousMonths,
   projetar,
@@ -37,6 +39,7 @@ import { saldoAtual, type SaldoAtual } from '../inicio/saldo';
 import { Progresso } from '../shell/progresso';
 import { marcarTransferencias } from '../transacoes/transferencias';
 import { mesAtual } from '../transacoes/agrupar';
+import { PeriodoService } from '../periodo/periodo.service';
 import { planoDoMes } from './plano';
 import { PlanoMes } from './plano-mes';
 import { ObjetivosCard } from './objetivos-card';
@@ -540,6 +543,7 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
 })
 export class Projecoes {
   private readonly auth = inject(AuthService);
+  private readonly periodo = inject(PeriodoService);
   private readonly progresso = inject(Progresso);
   private readonly txRepo = inject(TransactionsRepository);
   private readonly catalog = inject(CatalogRepository);
@@ -557,8 +561,12 @@ export class Projecoes {
   protected readonly horizonte = signal(6);
 
   protected readonly hoje = new Date();
-  private readonly month = mesAtual(this.hoje);
-  protected readonly mesLongo = nomeMesLongo(this.month);
+  /** Mês do calendário de hoje (prazos de objetivos, data de hoje). */
+  private readonly mesCalendario = mesAtual(this.hoje);
+  protected readonly mesLongo = nomeMesLongo(this.mesCalendario);
+  /** Período financeiro de hoje; a projeção conta dentro dele. */
+  private readonly month = signal(this.mesCalendario);
+  private readonly hojeIso = `${this.mesCalendario}-${String(this.hoje.getDate()).padStart(2, '0')}`;
 
   private readonly historico = signal<TransactionDoc[]>([]);
   private readonly categorias = signal<CategoryDoc[]>([]);
@@ -585,7 +593,7 @@ export class Projecoes {
     return {
       poupancaCents: this.poupanca(),
       sobraMediaCents: p ? p.receitaMedia - p.gastoMedio : null,
-      mesAtual: this.month,
+      mesAtual: this.mesCalendario,
     };
   });
   protected readonly plano = computed(() =>
@@ -594,7 +602,7 @@ export class Projecoes {
       faturaCents: this.fatura(),
       txs: this.historico(),
       cartoes: this.cartoes(),
-      hoje: `${this.month}-${String(this.hoje.getDate()).padStart(2, '0')}`,
+      hoje: this.hojeIso,
     }),
   );
   protected readonly quando = haQuantoTempo;
@@ -636,13 +644,9 @@ export class Projecoes {
     projetar({
       txs: this.historico(),
       cartoes: this.cartoes(),
-      month: this.month,
-      dia: this.hoje.getDate(),
-      diasNoMes: new Date(
-        this.hoje.getFullYear(),
-        this.hoje.getMonth() + 1,
-        0,
-      ).getDate(),
+      month: this.month(),
+      dia: diaNoPeriodo(this.hojeIso),
+      diasNoMes: diasNoPeriodo(this.month()),
       horizonte: this.horizonte(),
       saldoInicial: this.saldoBanco()?.cents ?? this.prefs.saldoInicial(),
       cenarios: this.cenarios().lista,
@@ -694,11 +698,13 @@ export class Projecoes {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {
+      await this.periodo.garantir();
+      this.month.set(this.periodo.atual());
       const [txs, cats, contas, saldos, salvos] = await Promise.all([
         this.txRepo.listRange(
           uid,
-          previousMonths(this.month, 6).at(-1) as string,
-          this.month,
+          previousMonths(this.month(), 7).at(-1) as string,
+          this.mesCalendario,
         ),
         this.catalog.categories(uid),
         this.catalog.accounts(uid),

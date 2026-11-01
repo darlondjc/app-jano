@@ -1,3 +1,4 @@
+import { diaNoPeriodo } from './periodo';
 import { signal } from '@angular/core';
 
 /** Dinheiro sempre em centavos inteiros. */
@@ -232,7 +233,7 @@ export function cumulativeSpend(
     if (t.isTransfer) continue;
     const estorno = ehEstorno(t, cartoes);
     if (t.amountCents >= 0 && !estorno) continue;
-    const day = Number(t.date.slice(8, 10));
+    const day = diaNoPeriodo(t.date);
     if (day >= 1 && day <= upToDay) perDay[day - 1] -= t.amountCents;
   }
   let acc = 0;

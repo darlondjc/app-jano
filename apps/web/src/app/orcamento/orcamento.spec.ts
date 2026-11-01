@@ -55,15 +55,9 @@ function montar(metas: BudgetDoc[], anterior: TransactionDoc[]) {
       {
         provide: TransactionsRepository,
         useValue: {
-          listMonth: vi.fn((_: string, m: string) =>
-            Promise.resolve(
-              m === mes
-                ? [tx(`${mes}-05`, -30000)]
-                : m === mesAnterior(mes)
-                  ? anterior
-                  : [],
-            ),
-          ),
+          listRange: vi
+            .fn()
+            .mockResolvedValue([tx(`${mes}-05`, -30000), ...anterior]),
         },
       },
     ],
