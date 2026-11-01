@@ -18,7 +18,7 @@ import {
   parseAmountToCents,
   regraGenerica,
 } from '@jano/import-file';
-import { JanoBanner, JanoButton } from '@jano/ui';
+import { JanoBanner, JanoButton, JanoMoeda, textoDeMoeda } from '@jano/ui';
 import { ApelidosService } from '../apelidos/apelidos.service';
 import { classeValor, dayLabel } from './agrupar';
 
@@ -76,13 +76,12 @@ interface LinhaDivisao {
   texto: string;
 }
 
-const emReais = (cents: number): string =>
-  (Math.abs(cents) / 100).toFixed(2).replace('.', ',');
+const emReais = (cents: number): string => textoDeMoeda(Math.abs(cents));
 
 /** Painel de uma transação: categoria, transferência e a mesma categoria para outras com o mesmo nome. */
 @Component({
   selector: 'jano-detalhe-transacao',
-  imports: [JanoBanner, JanoButton],
+  imports: [JanoMoeda, JanoBanner, JanoButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -475,7 +474,7 @@ const emReais = (cents: number): string =>
               <span class="j-input">
                 <span class="j-input__prefix">R$</span>
                 <input
-                  inputmode="decimal"
+                  janoMoeda
                   placeholder="0,00"
                   [attr.aria-label]="'Valor ' + (i + 1)"
                   [value]="l.texto"

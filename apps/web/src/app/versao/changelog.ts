@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.22.1',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Campos de valor com máscara de moeda: o teclado numérico abre e cada dígito entra pela direita (1.234,56), sem como digitar vírgula a mais, letra ou ponto no lugar errado. Vale para metas, objetivos, divisão de lançamento e cenários.',
+      },
+    ],
+  },
+  {
     version: '0.22.0',
     date: '2026-11-01',
     items: [

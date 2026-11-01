@@ -32,6 +32,8 @@ import {
   JanoSkeletonCard,
   JanoSkeletonGroup,
   JanoSkeletonKpi,
+  JanoMoeda,
+  textoDeMoeda,
 } from '@jano/ui';
 import { Preferencias } from '../conta/preferencias';
 import { haQuantoTempo } from '../conta/tempo';
@@ -61,12 +63,13 @@ const MESES_LONGOS = [
 ];
 const nomeMesLongo = (m: string) => MESES_LONGOS[Number(m.slice(5, 7)) - 1];
 
-const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
+const dinheiro = textoDeMoeda;
 
 /** Projeções: plano do mês, objetivos e cenários "e se" sobre o saldo dos próximos meses. */
 @Component({
   selector: 'jano-projecoes',
   imports: [
+    JanoMoeda,
     RouterLink,
     JanoButton,
     JanoBanner,
@@ -425,7 +428,7 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
                     <span class="j-input">
                       <span class="j-input__prefix">R$</span>
                       <input
-                        inputmode="decimal"
+                        janoMoeda
                         aria-label="Valor da parcela"
                         [value]="parcelaTexto()"
                         (change)="parcelaTexto.set($any($event.target).value)"
@@ -458,7 +461,7 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
                     <span class="j-input">
                       <span class="j-input__prefix">R$</span>
                       <input
-                        inputmode="decimal"
+                        janoMoeda
                         aria-label="Valor da renda extra"
                         [value]="rendaTexto()"
                         (change)="rendaTexto.set($any($event.target).value)"
@@ -480,7 +483,8 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
                     <span class="j-input__prefix">R$</span>
                     <input
                       id="saldo"
-                      inputmode="decimal"
+                      janoMoeda
+                      [moedaNegativa]="true"
                       placeholder="0,00"
                       [value]="saldoTexto()"
                       (change)="definirSaldo($any($event.target).value)"
