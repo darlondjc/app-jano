@@ -321,20 +321,30 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
 
   // Valor oficial: a fatura fechada como o banco informa (com encargos, créditos e
   // parcelas do jeito do banco). Vale quando é a mesma fatura que o card mostra.
-  const oficial = !c?.fechamento ? (saldo?.faturasBanco?.[0] ?? null) : null;
+  // A lista pode trazer também a próxima fatura (ainda aberta): escolhe a que corresponde
+  // à mostrada. Com os dias informados, a de vencimento mais perto do calculado; sem eles, a
+  // primeira que ainda não venceu.
+  const faturas = !c?.fechamento ? (saldo?.faturasBanco ?? []) : [];
   let valorDoBanco = false;
+  const oficial = manual
+    ? fase === 'fechada' && vence
+      ? (faturas
+          .filter((f) => Math.abs(dias(f.vencimento, vence as string)) <= 5)
+          .sort(
+            (a, b) =>
+              Math.abs(dias(a.vencimento, vence as string)) -
+              Math.abs(dias(b.vencimento, vence as string)),
+          )[0] ?? null)
+      : null
+    : ([...faturas]
+        .filter((f) => f.vencimento >= e.hoje)
+        .sort((a, b) => a.vencimento.localeCompare(b.vencimento))[0] ?? null);
   if (oficial) {
-    const mesma =
-      manual && fase === 'fechada' && vence
-        ? Math.abs(dias(oficial.vencimento, vence)) <= 5
-        : !manual && oficial.vencimento >= e.hoje;
-    if (mesma) {
-      if (!manual) fase = 'fechada';
-      vence = oficial.vencimento;
-      valorCents = oficial.totalCents;
-      minimoCents = oficial.minimoCents;
-      valorDoBanco = true;
-    }
+    if (!manual) fase = 'fechada';
+    vence = oficial.vencimento;
+    valorCents = oficial.totalCents;
+    minimoCents = oficial.minimoCents;
+    valorDoBanco = true;
   }
 
   const totalNoCartaoCents =

@@ -235,3 +235,38 @@ describe('cartaoDaFatura com o valor oficial do banco', () => {
     expect(f.valorDoBanco).toBe(false);
   });
 });
+
+describe('valor oficial quando o banco manda também a próxima fatura', () => {
+  const d = gerarDadosDemo(new Date(2026, 10, 1, 10));
+  const saldos = d.balances.map((b) =>
+    b.kind === 'cartao'
+      ? {
+          ...b,
+          credito: undefined,
+          faturaAberta: undefined,
+          faturasBanco: [
+            { vencimento: '2026-12-05', totalCents: 120000, minimoCents: 1 },
+            { vencimento: '2026-11-05', totalCents: 885433, minimoCents: 2 },
+            { vencimento: '2026-10-05', totalCents: 700000, minimoCents: 3 },
+          ],
+        }
+      : b,
+  ) as typeof d.balances;
+  const base = {
+    saldos,
+    txs: d.transactions,
+    cartoes: new Set(['cartao-de-credito']),
+    hoje: '2026-11-01',
+  };
+
+  it('com os dias: a fatura que vence no dia calculado', () => {
+    const f = cartaoDaFatura({ ...base, dias: { fecha: 26, vence: 5 } })!;
+    expect(f.valorCents).toBe(885433);
+  });
+
+  it('sem os dias: a primeira que ainda não venceu', () => {
+    const f = cartaoDaFatura(base)!;
+    expect(f.valorCents).toBe(885433);
+    expect(f.vence).toBe('2026-11-05');
+  });
+});
