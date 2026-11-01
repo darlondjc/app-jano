@@ -22,4 +22,5 @@ export const paths = {
   meta: (uid: string) => `users/${uid}/meta`,
   /** Objetivos de economia (reserva, viagem...). */
   goals: (uid: string) => `users/${uid}/goals`,
+  apelidos: (uid: string) => `users/${uid}/apelidos`,
 } as const;

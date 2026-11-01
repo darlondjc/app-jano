@@ -264,6 +264,8 @@ const NOVA: Form = {
             janoButton
             variant="ghost"
             type="button"
+            [carregando]="acao() === 'sugeridas'"
+            textoCarregando="Adicionando…"
             (click)="adicionarSugeridas()"
           >
             Adicionar
@@ -390,7 +392,8 @@ const NOVA: Form = {
                 janoButton
                 variant="danger"
                 type="button"
-                [disabled]="ocupado()"
+                [carregando]="acao() === 'apagar'"
+                textoCarregando="Apagando…"
                 (click)="apagarPorId(f.id)"
               >
                 Apagar
@@ -424,7 +427,8 @@ const NOVA: Form = {
             janoButton
             variant="primary"
             type="button"
-            [disabled]="ocupado()"
+            [carregando]="acao() === 'salvar'"
+            textoCarregando="Salvando…"
             (click)="salvar()"
           >
             Salvar
@@ -478,6 +482,10 @@ export class Categorias {
   protected readonly form = signal<Form | null>(null);
   protected readonly apagando = signal<CategoryDoc | null>(null);
   protected readonly ocupado = signal(false);
+  /** Ação em andamento, para o botão dela mostrar o retorno. */
+  protected readonly acao = signal<'salvar' | 'apagar' | 'sugeridas' | null>(
+    null,
+  );
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
   protected readonly aviso = signal('');
@@ -614,6 +622,7 @@ export class Categorias {
     if (!f) return;
     this.erro.set('');
     this.ocupado.set(true);
+    this.acao.set('salvar');
     try {
       const atual = this.categorias().find((c) => c.id === f.id);
       await this.catalog.saveCategory(
@@ -635,6 +644,7 @@ export class Categorias {
       this.falha(e);
     } finally {
       this.ocupado.set(false);
+      this.acao.set(null);
     }
   }
 
@@ -647,6 +657,7 @@ export class Categorias {
     const c = this.categorias().find((x) => x.id === id);
     if (!c) return;
     this.ocupado.set(true);
+    this.acao.set('apagar');
     try {
       await this.catalog.deleteCategory(this.uid, c.id);
       this.apagando.set(null);
@@ -657,11 +668,13 @@ export class Categorias {
       this.falha(e);
     } finally {
       this.ocupado.set(false);
+      this.acao.set(null);
     }
   }
 
   protected async adicionarSugeridas(): Promise<void> {
     this.limpar();
+    this.acao.set('sugeridas');
     try {
       const n = await this.catalog.addMissingDefaults(
         this.uid,
@@ -671,6 +684,8 @@ export class Categorias {
       await this.carregar();
     } catch (e) {
       this.falha(e);
+    } finally {
+      this.acao.set(null);
     }
   }
 

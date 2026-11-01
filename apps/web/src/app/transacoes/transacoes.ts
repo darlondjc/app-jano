@@ -23,6 +23,7 @@ import {
 } from '@jano/data-access';
 import { calendario, formatBRL, mesesDoPeriodo, monthOf } from '@jano/engine';
 import { PeriodoService } from '../periodo/periodo.service';
+import { ApelidosService } from '../apelidos/apelidos.service';
 import {
   DEFAULT_RULES,
   addDedupeKeys,
@@ -708,14 +709,12 @@ interface Previa {
             janoButton
             variant="primary"
             type="button"
-            [disabled]="ocupado() || !p.plan.fresh.length"
+            [disabled]="!p.plan.fresh.length"
+            [carregando]="ocupado()"
+            textoCarregando="Importando…"
             (click)="confirmar()"
           >
-            {{
-              ocupado()
-                ? 'Gravando...'
-                : 'Importar ' + p.plan.fresh.length + ' transações'
-            }}
+            {{ 'Importar ' + p.plan.fresh.length + ' transações' }}
           </button>
         </div>
       </section>
@@ -1050,8 +1049,10 @@ interface Previa {
               variant="primary"
               [small]="true"
               type="button"
-              [disabled]="!catLote.value || ocupado()"
-              (click)="aplicarLote(catLote.value)"
+              [disabled]="!catLote.value"
+              [carregando]="ocupado() && acaoLote() === 'categorizar'"
+              textoCarregando="Aplicando…"
+              (click)="acaoLote.set('categorizar'); aplicarLote(catLote.value)"
             >
               Categorizar
             </button>
@@ -1060,8 +1061,11 @@ interface Previa {
               variant="secondary"
               [small]="true"
               type="button"
-              [disabled]="ocupado()"
+              [disabled]="ocupado() && acaoLote() !== 'transferir'"
+              [carregando]="ocupado() && acaoLote() === 'transferir'"
+              textoCarregando="Aplicando…"
               (click)="
+                acaoLote.set('transferir');
                 aplicarLote(selecaoSoTransferencias() ? '' : transferenciaId)
               "
             >
@@ -1097,6 +1101,7 @@ interface Previa {
             [categorias]="categoriasOrdenadas()"
             [conta]="nomeConta(d.accountId)"
             (fechar)="fecharDetalhe()"
+            [salvando]="ocupado()"
             (salvar)="salvarDetalhe($event)"
           />
         </aside>
@@ -1125,6 +1130,7 @@ export class Transacoes {
   protected readonly dataCurta = dataCurta;
   protected readonly transferenciaId = TRANSFERENCIA;
   private readonly fin = inject(PeriodoService);
+  private readonly apelidos = inject(ApelidosService);
   /** Períodos ('AAAA-MM') de hoje e o anterior; do salário quando ele é conhecido. */
   protected readonly mesAtualStr = signal(mesAtual());
   protected readonly mesPassado = computed(() =>
@@ -1147,6 +1153,10 @@ export class Transacoes {
   protected readonly selecionadas = signal<Set<string>>(new Set());
   protected readonly carregando = signal(true);
   protected readonly ocupado = signal(false);
+  /** Qual ação em lote está rodando, para só o botão dela mostrar o retorno. */
+  protected readonly acaoLote = signal<'categorizar' | 'transferir' | null>(
+    null,
+  );
   protected readonly erro = signal('');
   protected readonly aviso = signal('');
   protected readonly previa = signal<Previa | null>(null);
@@ -1509,6 +1519,31 @@ export class Transacoes {
   protected async salvarDetalhe(ev: SalvarDetalhe): Promise<void> {
     const t = this.detalhe();
     if (!t) return;
+    if (ev.apelido) {
+      this.ocupado.set(true);
+      try {
+        const a = ev.apelido;
+        if ('apelido' in a) await this.apelidos.salvar(a.pattern, a.apelido);
+        if (a.removerId) await this.apelidos.remover(a.removerId);
+        // Os nomes da lista vêm do apelido: redesenha com o novo.
+        this.txs.update((l) => [...l]);
+        if (!ev.mudouCategoria) {
+          this.aviso.set(
+            'apelido' in a
+              ? `Apelido “${a.apelido}” salvo para as transações com “${a.pattern}”.`
+              : 'Apelido removido.',
+          );
+          this.detalheId.set(null);
+          return;
+        }
+      } catch (e) {
+        this.falha(e);
+        return;
+      } finally {
+        this.ocupado.set(false);
+      }
+    }
+    if (!ev.mudouCategoria) return;
     if (ev.divisao) {
       this.ocupado.set(true);
       try {

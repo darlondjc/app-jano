@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
   linkedSignal,
   output,
@@ -17,6 +18,7 @@ import {
   regraGenerica,
 } from '@jano/import-file';
 import { JanoBanner, JanoButton } from '@jano/ui';
+import { ApelidosService } from '../apelidos/apelidos.service';
 import { classeValor, dayLabel } from './agrupar';
 
 export const TRANSFERENCIA = '__transferencia__';
@@ -36,6 +38,17 @@ export interface SalvarDetalhe {
   } | null;
   /** Partes da divisão, já conferidas e com o sinal do lançamento; ausente = sem divisão. */
   divisao?: { categoryId: string; amountCents: number }[];
+  /** A categoria (ou a divisão) mudou; false = só o apelido mudou. */
+  mudouCategoria: boolean;
+  /**
+   * Apelido para as transações com o trecho: salvar (e remover o anterior, se o trecho
+   * mudou) ou só remover. Ausente = sem mudança.
+   */
+  apelido?:
+    | { pattern: string; apelido: string; removerId?: string }
+    | {
+        removerId: string;
+      };
 }
 
 /** Mensagem depois de salvar, contando as outras transações alteradas. */
@@ -252,6 +265,17 @@ const emReais = (cents: number): string =>
     .acoes button:first-child {
       flex: 1;
     }
+    .apelido {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+    }
+    .apelido-link {
+      align-self: flex-start;
+    }
   `,
   template: `
     <div class="topo">
@@ -311,6 +335,61 @@ const emReais = (cents: number): string =>
     <div [class]="'valor ' + cor()">
       {{ tx().amountCents > 0 ? '+' : '' }}{{ money(tx().amountCents) }}
     </div>
+
+    @if (editandoApelido()) {
+      <div class="apelido">
+        <label class="j-field">
+          <span class="j-field__label">Apelido</span>
+          <span class="j-input">
+            <input
+              #campoApelido
+              id="apelido"
+              maxlength="40"
+              placeholder="Ex.: Academia"
+              [value]="apelido()"
+              (input)="apelido.set($any($event.target).value)"
+            />
+          </span>
+        </label>
+        @if (apelido().trim()) {
+          <label class="j-field">
+            <span class="j-field__label"
+              >Vale para todas as transações com o nome contendo</span
+            >
+            <span class="j-input" [class.j-input--error]="apelidoGenerico()">
+              <input
+                id="apelido-trecho"
+                [value]="apelidoTrecho()"
+                (input)="apelidoTrecho.set($any($event.target).value)"
+              />
+            </span>
+          </label>
+          @if (apelidoGenerico()) {
+            <span class="j-cap aviso-trecho" role="alert">
+              Inclua o nome da loja ou da pessoa: esse trecho pegaria quase
+              todas as transações.
+            </span>
+          }
+        } @else if (apelidoAtual(); as a) {
+          <span class="j-cap"
+            >Ao salvar, “{{ a.apelido }}” deixa de valer para as transações com
+            “{{ a.pattern }}”.</span
+          >
+        }
+      </div>
+    } @else {
+      <button
+        class="link apelido-link"
+        type="button"
+        (click)="editandoApelido.set(true)"
+      >
+        @if (apelidoAtual(); as a) {
+          Apelido “{{ a.apelido }}” · alterar
+        } @else {
+          Dar um apelido
+        }
+      </button>
+    }
 
     @if (
       !dividindo() && !tx().categoryId && !tx().isTransfer && escolha() === null
@@ -495,6 +574,8 @@ const emReais = (cents: number): string =>
         variant="primary"
         type="button"
         [disabled]="!mudou()"
+        [carregando]="salvando()"
+        textoCarregando="Salvando…"
         (click)="salvarClick()"
       >
         Salvar
@@ -506,6 +587,8 @@ export class DetalheTransacao {
   readonly tx = input.required<TransactionDoc>();
   readonly categorias = input.required<CategoryDoc[]>();
   readonly conta = input('');
+  /** A tela está gravando o que foi salvo aqui: o botão mostra "Salvando…". */
+  readonly salvando = input(false);
   readonly fechar = output<void>();
   readonly salvar = output<SalvarDetalhe>();
 
@@ -539,6 +622,40 @@ export class DetalheTransacao {
     () => this.podeRegra() && (this.passadas() || this.futuras()),
   );
   protected readonly copiado = signal(false);
+
+  private readonly apelidos = inject(ApelidosService);
+  /** Apelido que já vale para este lançamento (por algum trecho da descrição). */
+  protected readonly apelidoAtual = computed(() => {
+    this.apelidos.lista();
+    return this.apelidos.doLancamento(this.tx().description);
+  });
+  protected readonly editandoApelido = linkedSignal<boolean>(() => {
+    this.tx();
+    return false;
+  });
+  protected readonly apelido = linkedSignal<string>(
+    () => this.apelidoAtual()?.apelido ?? '',
+  );
+  protected readonly apelidoTrecho = linkedSignal<string>(
+    () =>
+      this.apelidoAtual()?.pattern ??
+      estabelecimento(this.tx().descriptionNorm),
+  );
+  private readonly apelidoTrechoNorm = computed(() =>
+    normalizeDescription(this.apelidoTrecho()),
+  );
+  protected readonly apelidoGenerico = computed(
+    () => !!this.apelido().trim() && regraGenerica(this.apelidoTrechoNorm()),
+  );
+  protected readonly apelidoMudou = computed(() => {
+    const atual = this.apelidoAtual();
+    const novo = this.apelido().trim();
+    if (!novo) return !!atual;
+    return (
+      novo !== (atual?.apelido ?? '') ||
+      this.apelidoTrechoNorm() !== (atual?.pattern ?? '')
+    );
+  });
 
   /** Editor de divisão aberto; abre sozinho quando o lançamento já é dividido. */
   protected readonly dividindo = linkedSignal<boolean>(
@@ -594,6 +711,11 @@ export class DetalheTransacao {
     () => !!this.escolha() && this.escolha() !== TRANSFERENCIA,
   );
   protected readonly mudou = computed(() => {
+    if (this.apelidoGenerico()) return false;
+    return this.mudouCategoria() || this.apelidoMudou();
+  });
+
+  private readonly mudouCategoria = computed(() => {
     const t = this.tx();
     const dividido = !!t.splits?.length;
     if (this.dividindo())
@@ -644,17 +766,39 @@ export class DetalheTransacao {
     this.escolha.set(id);
   }
 
+  /** O que mudar nos apelidos ao salvar. */
+  private mudancaApelido(): SalvarDetalhe['apelido'] {
+    if (!this.apelidoMudou()) return undefined;
+    const atual = this.apelidoAtual();
+    const novo = this.apelido().trim();
+    if (!novo) return atual ? { removerId: atual.id } : undefined;
+    const pattern = this.apelidoTrechoNorm();
+    return {
+      pattern,
+      apelido: novo,
+      ...(atual && atual.pattern !== pattern ? { removerId: atual.id } : {}),
+    };
+  }
+
   protected salvarClick(): void {
+    const apelido = this.mudancaApelido();
+    const mudouCategoria = this.mudouCategoria();
     if (this.dividindo()) {
       this.salvar.emit({
         escolha: null,
         regra: null,
-        divisao: this.partes() as { categoryId: string; amountCents: number }[],
+        divisao: mudouCategoria
+          ? (this.partes() as { categoryId: string; amountCents: number }[])
+          : undefined,
+        mudouCategoria,
+        apelido,
       });
       return;
     }
     const escolha = this.escolha();
     this.salvar.emit({
+      mudouCategoria,
+      apelido,
       escolha,
       regra:
         this.outras() && !this.trechoGenerico()

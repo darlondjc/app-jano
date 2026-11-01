@@ -102,6 +102,8 @@ function titulo(nome: string): string {
  * no começo das palavras. A descrição original continua no detalhe do lançamento.
  */
 export function nomeDeExibicao(description: string): string {
+  const apelido = apelidoDe(description);
+  if (apelido) return apelido.apelido;
   const limpo = nomeSemPrefixo(description)
     .replace(/\s*\*\s*/g, ' ')
     .replace(/(\s+\d{3,})+$/, '')
@@ -117,4 +119,32 @@ export function tipoDeOperacao(description: string): string | null {
   if (/^PIX\s*-\s*RECEBIDO/.test(d)) return 'Pix recebido';
   if (/^(COMPRA (C\/|COM )?CARTAO|COMPRA NO DEBITO)/.test(d)) return 'Débito';
   return null;
+}
+
+/** Apelido do usuário para um trecho da descrição ("JIM DAVI" → "Academia"). */
+export interface Apelido {
+  id?: string;
+  /** Trecho da descrição normalizada (maiúsculas, sem acento). */
+  pattern: string;
+  apelido: string;
+}
+
+let apelidos: Apelido[] = [];
+
+/**
+ * Troca os apelidos usados em `nomeDeExibicao` (o app chama ao carregar e ao salvar). O
+ * trecho mais longo vence quando mais de um casa: "PIX JIM DAVI" antes de "PIX".
+ */
+export function definirApelidos(lista: Apelido[]): void {
+  apelidos = lista
+    .filter((a) => a.pattern.trim() && a.apelido.trim())
+    .map((a) => ({ ...a, pattern: normalizeDescription(a.pattern) }))
+    .sort((a, b) => b.pattern.length - a.pattern.length);
+}
+
+/** O apelido que vale para a descrição, se algum trecho casar. */
+export function apelidoDe(description: string): Apelido | null {
+  if (!apelidos.length) return null;
+  const norm = normalizeDescription(description);
+  return apelidos.find((a) => norm.includes(a.pattern)) ?? null;
 }

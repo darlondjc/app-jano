@@ -1,3 +1,4 @@
+import { nomeDeExibicao } from '@jano/import-file';
 import { ehEstorno, formatBRL, partes } from '@jano/engine';
 
 export type TipoFiltro = 'gastos' | 'receitas' | 'transferencias';
@@ -53,6 +54,8 @@ export function casaBusca(
   if (!q) return true;
   if (
     simples(t.description).includes(q) ||
+    // O nome que aparece na lista (apelido ou nome limpo) também é buscável.
+    simples(nomeDeExibicao(t.description)).includes(q) ||
     simples(nomeCategoria(t.categoryId)).includes(q)
   )
     return true;
