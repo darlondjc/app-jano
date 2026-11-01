@@ -146,6 +146,9 @@ import { PeriodoService } from '../periodo/periodo.service';
     .folha h2 {
       margin: 0;
     }
+    .folha .referencia {
+      margin: -8px 0 0;
+    }
     .folha .contexto {
       margin: -8px 0 0;
     }
@@ -324,7 +327,7 @@ import { PeriodoService } from '../periodo/periodo.service';
               [value]="
                 ed.categoryId
                   ? paraTexto(meta(ed.categoryId)?.limitCents ?? 0)
-                  : ''
+                  : sugestao(novaCategoria())
               "
               inputmode="decimal"
               placeholder="0,00"
@@ -338,6 +341,9 @@ import { PeriodoService } from '../periodo/periodo.service';
             />
           </span>
         </label>
+        @if (referencia(ed.categoryId ?? novaCategoria()); as r) {
+          <p class="j-cap referencia">{{ r }}</p>
+        }
         <label class="sobra">
           <input
             #sobra
@@ -403,6 +409,8 @@ export class Orcamento {
   protected readonly contas = signal(new Map<string, ContaDoMes>());
   /** Gasto por categoria no mês anterior; `null` quando ele não tem dados. */
   private readonly gastoAnterior = signal<Record<string, number> | null>(null);
+  /** Gasto por categoria dois períodos atrás, para a média da referência. */
+  private readonly gastoAntesDele = signal<Record<string, number> | null>(null);
   /** Metas do mês com a sobra do anterior somada ao limite (rollover). */
   private readonly efetivas = computed(() =>
     limitesComSobra(this.budgets(), this.gastoAnterior()),
@@ -565,6 +573,11 @@ export class Orcamento {
       this.contas.set(
         contasDoMes([...doMes, ...doAnterior, ...antesDele], this.month()),
       );
+      this.gastoAntesDele.set(
+        antesDele.length
+          ? monthTotals(antesDele, this.cartoes).spentByCategory
+          : null,
+      );
       this.gastoAnterior.set(
         doAnterior.length
           ? monthTotals(doAnterior, this.cartoes).spentByCategory
@@ -601,6 +614,29 @@ export class Orcamento {
   }
 
   /** Na folha: quanto já foi neste mês e a sobra que entrou no limite. */
+  /** Limite sugerido para uma meta nova: o gasto do período anterior, arredondado para cima. */
+  protected sugestao(categoryId: string): string {
+    const gasto = this.gastoAnterior()?.[categoryId] ?? 0;
+    return gasto > 0 ? this.paraTexto(Math.ceil(gasto / 100) * 100) : '';
+  }
+
+  /** "No período anterior: R$ 1.348,60 · média dos dois últimos: R$ 1.120,00". */
+  protected referencia(categoryId: string): string {
+    if (!categoryId) return '';
+    const ultimo = this.gastoAnterior();
+    if (!ultimo) return '';
+    const a = ultimo[categoryId] ?? 0;
+    const quando = this.periodo.peloSalario()
+      ? 'No período anterior'
+      : `Em ${this.mesPassado()}`;
+    if (!a) return `${quando}, nada gasto nesta categoria.`;
+    const antes = this.gastoAntesDele();
+    const media = antes ? Math.round((a + (antes[categoryId] ?? 0)) / 2) : null;
+    return media !== null && media !== a
+      ? `${quando}: ${formatBRL(a)} · média dos dois últimos: ${formatBRL(media)}.`
+      : `${quando}: ${formatBRL(a)}.`;
+  }
+
   protected contextoMeta(id: string): string {
     const l = this.linhas().find((x) => x.categoryId === id);
     if (!l) return '';

@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.21.0',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Nova meta no Orçamento já vem com um limite sugerido: o que você gastou na categoria no período anterior, arredondado para cima. Abaixo do campo aparece esse gasto e a média dos dois últimos períodos, também ao editar uma meta.',
+      },
+    ],
+  },
+  {
     version: '0.20.1',
     date: '2026-11-01',
     items: [

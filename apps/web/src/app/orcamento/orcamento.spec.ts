@@ -134,3 +134,25 @@ describe('Orcamento: levar a sobra para o mês seguinte', () => {
     );
   });
 });
+
+describe('Orcamento: nova meta', () => {
+  it('sugere o gasto do período anterior na categoria, arredondado para cima', async () => {
+    const { f, el } = montar(
+      [],
+      [
+        tx(`${mesAnterior(mes)}-10`, -70050),
+        tx(`${mesAnterior(mes)}-12`, -10000),
+      ],
+    );
+    await vi.waitFor(() => {
+      f.detectChanges();
+      expect(el.querySelector('.rodape button')).not.toBeNull();
+    });
+    (el.querySelector('.rodape button') as HTMLButtonElement).click();
+    f.detectChanges();
+    expect((el.querySelector('#lim-nova') as HTMLInputElement).value).toBe(
+      '801,00',
+    );
+    expect(el.querySelector('.referencia')?.textContent).toMatch(/R\$\s800,50/);
+  });
+});
