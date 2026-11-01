@@ -27,6 +27,11 @@ export const CHANGELOG: Versao[] = [
         texto:
           'Com os dias informados, o "pode gastar" e o plano de Projeções descontam só a fatura do ciclo, não o saldo inteiro do cartão. O nome do cartão aparece sem caixa alta.',
       },
+      {
+        tipo: 'correcao',
+        texto:
+          'O pagamento da fatura como vem no extrato do BB ("Pgto Cartao") passa a ser reconhecido: a fatura paga sai do aviso de vencimento e o dia de pagamento entra no plano. Na lista ele aparece como "Pagamento da fatura", e o detalhe explica por que fica fora dos gastos: as compras do cartão já contam uma a uma.',
+      },
     ],
   },
   {

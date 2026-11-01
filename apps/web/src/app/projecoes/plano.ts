@@ -3,7 +3,11 @@ import {
   proximaCobranca,
   type RecurringSeries,
 } from '@jano/engine';
-import { estabelecimento, nomeDeExibicao } from '@jano/import-file';
+import {
+  ehPagamentoDeFatura,
+  estabelecimento,
+  nomeDeExibicao,
+} from '@jano/import-file';
 import {
   jaVeioNoMes,
   podeGastar,
@@ -68,9 +72,6 @@ const somarMeses = (mes: string, n: number): string => {
   return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`;
 };
 
-/** Pagamento de fatura no extrato da conta (marcado como transferência). */
-export const PAGAMENTO_FATURA = /\b(PAGTO|PAGAMENTO) (DE )?(CARTAO|FATURA)\b/;
-
 /** Dia em que a fatura costuma ser paga, pela mediana dos últimos pagamentos. */
 export function diaDaFatura(contas: TxRec[]): number | null {
   const dias = contas
@@ -78,7 +79,7 @@ export function diaDaFatura(contas: TxRec[]): number | null {
       (t) =>
         t.isTransfer &&
         t.amountCents < 0 &&
-        PAGAMENTO_FATURA.test(t.descriptionNorm),
+        ehPagamentoDeFatura(t.descriptionNorm),
     )
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3)

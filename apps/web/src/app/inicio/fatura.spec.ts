@@ -163,3 +163,22 @@ describe('cartaoDaFatura com os dias informados (banco sem datas)', () => {
     expect(f.nome).toBe('Ourocard');
   });
 });
+
+describe('pagamento "PGTO CARTAO" (como no extrato do BB)', () => {
+  it('é reconhecido: a fatura paga passa para a aberta', () => {
+    const d = gerarDadosDemo(new Date(2026, 9, 19, 10));
+    const txs = d.transactions.map((t) =>
+      /PAGTO CARTAO/.test(t.descriptionNorm)
+        ? { ...t, description: 'Pgto Cartao', descriptionNorm: 'PGTO CARTAO' }
+        : t,
+    );
+    const f = cartaoDaFatura({
+      saldos: d.balances,
+      txs,
+      cartoes: new Set(['cartao-de-credito']),
+      hoje: '2026-10-19',
+    })!;
+    expect(f.paga?.date).toBe('2026-10-07');
+    expect(f.situacao).toBe('fecha em 8 dias');
+  });
+});

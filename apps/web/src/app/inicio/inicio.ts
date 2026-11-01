@@ -50,7 +50,12 @@ import {
   JanoSkeletonKpi,
   JanoSkeletonRows,
 } from '@jano/ui';
-import { classeValor, mesAtual, rotuloMes } from '../transacoes/agrupar';
+import {
+  classeValor,
+  mesAtual,
+  rotuloMes,
+  rotuloTransferencia,
+} from '../transacoes/agrupar';
 import { marcarTransferencias } from '../transacoes/transferencias';
 import { montarAlertas } from './alertas';
 import { GraficoAcumulado } from './grafico-acumulado';
@@ -523,7 +528,7 @@ function lerDispensado(): string | null {
                       {{ dia(t.date) }} ·
                       {{
                         t.isTransfer
-                          ? 'Transferência'
+                          ? rotuloTransferencia(t)
                           : nomeCategoria(t.categoryId)
                       }}
                     </div>
@@ -860,6 +865,7 @@ export class Inicio {
       : `Você está ${formatBRL(dif)} acima do ritmo ideal para o dia ${this.diaAtual()}.`;
   });
   protected readonly nomeTx = nomeDeExibicao;
+  protected readonly rotuloTransferencia = rotuloTransferencia;
   /** As mais recentes de todo o histórico: no dia 1, sem nada no mês, mostra as do anterior. */
   protected readonly recentes = computed(() =>
     [...this.historico()]

@@ -58,6 +58,7 @@ import {
   mesAtual,
   mesSeguinte,
   rotuloMes,
+  rotuloTransferencia,
 } from './agrupar';
 import {
   DetalheTransacao,
@@ -945,7 +946,7 @@ interface Previa {
                         ></i>
                         {{
                           t.isTransfer
-                            ? 'Transferência · fora do total'
+                            ? rotuloTransferencia(t) + ' · fora do total'
                             : rotuloCategoria(t)
                         }}
                       </span>
@@ -999,7 +1000,9 @@ interface Previa {
                       }}</span>
                       <span class="j-tx__sub" style="display: block">
                         {{
-                          t.isTransfer ? 'Transferência' : rotuloCategoria(t)
+                          t.isTransfer
+                            ? rotuloTransferencia(t)
+                            : rotuloCategoria(t)
                         }}
                         · {{ detalheConta(t) }}
                       </span>
@@ -1446,6 +1449,7 @@ export class Transacoes {
   }
 
   protected readonly nomeTx = nomeDeExibicao;
+  protected readonly rotuloTransferencia = rotuloTransferencia;
   /** No celular: "Pix enviado" ou "Débito" diz mais que "Conta corrente"; senão, a conta. */
   protected detalheConta(t: TransactionDoc): string {
     return tipoDeOperacao(t.description) ?? this.nomeConta(t.accountId);

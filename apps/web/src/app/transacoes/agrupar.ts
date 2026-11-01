@@ -1,3 +1,4 @@
+import { ehPagamentoDeFatura } from '@jano/import-file';
 import type { TransactionDoc } from '@jano/data-access';
 
 export interface DayGroup {
@@ -83,6 +84,13 @@ export function classeValor(t: {
 }): string {
   const tom = t.isTransfer ? 'neutral' : t.amountCents > 0 ? 'in' : 'out';
   return `j-tx__amount j-num j-tx__amount--${tom}`;
+}
+
+/** Rótulo de um lançamento fora dos totais: o pagamento da fatura tem nome próprio. */
+export function rotuloTransferencia(t: { descriptionNorm: string }): string {
+  return ehPagamentoDeFatura(t.descriptionNorm)
+    ? 'Pagamento da fatura'
+    : 'Transferência';
 }
 
 const MESES_CURTOS = [

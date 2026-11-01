@@ -1,12 +1,7 @@
 import { proximaCobranca } from '@jano/engine';
-import { nomeDeExibicao } from '@jano/import-file';
+import { ehPagamentoDeFatura, nomeDeExibicao } from '@jano/import-file';
 import type { BalanceDoc } from '@jano/data-access';
-import {
-  PAGAMENTO_FATURA,
-  cobrancasFixas,
-  diaDaFatura,
-  series,
-} from '../projecoes/plano';
+import { cobrancasFixas, diaDaFatura, series } from '../projecoes/plano';
 import { parcelamentos, type TxRec } from '../recorrencias/linhas';
 
 /** Quantas categorias aparecem antes de agrupar o resto em "Outras". */
@@ -144,7 +139,7 @@ function pagamentoDepois(
       !cartoes.has(t.accountId) &&
       t.isTransfer &&
       t.amountCents < 0 &&
-      PAGAMENTO_FATURA.test(t.descriptionNorm),
+      ehPagamentoDeFatura(t.descriptionNorm),
   );
   const noCartao = periodo.filter(
     (t) => t.accountId === cartaoId && t.isTransfer && t.amountCents > 0,
