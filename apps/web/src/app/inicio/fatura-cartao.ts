@@ -3,11 +3,14 @@ import {
   Component,
   computed,
   input,
+  linkedSignal,
+  output,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { CategoryDoc } from '@jano/data-access';
 import { formatBRL } from '@jano/engine';
-import type { CartaoFatura } from './fatura';
+import { JanoButton } from '@jano/ui';
+import type { CartaoFatura, DiasDaFatura } from './fatura';
 
 const MESES = [
   'jan',
@@ -27,7 +30,7 @@ const MESES = [
 /** Fatura do cartão no Início: quanto, quando, limite, para onde foi e o que vem todo mês. */
 @Component({
   selector: 'jano-fatura-cartao',
-  imports: [RouterLink],
+  imports: [RouterLink, JanoButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -208,6 +211,37 @@ const MESES = [
       gap: 18px;
       margin-top: 12px;
     }
+    .link-dias {
+      all: unset;
+      cursor: pointer;
+      margin-top: 8px;
+      display: inline-block;
+      color: var(--primary-text);
+      font: 600 13px/18px var(--font-sans);
+    }
+    .link-dias:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+    .dias {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      background: var(--surface-2);
+    }
+    .dias-acoes {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .dias .erro {
+      grid-column: 1 / -1;
+      color: var(--danger);
+    }
     a.ver {
       align-self: flex-start;
       color: var(--primary-text);
@@ -240,6 +274,83 @@ const MESES = [
         <div class="rotulo">{{ rotuloValor() }}</div>
         <div class="valor">{{ money(f.valorCents) }}</div>
         <div class="sub">{{ datas() }}</div>
+        @if (f.totalNoCartaoCents; as total) {
+          <div class="sub">
+            Total no cartão, com parcelas futuras: {{ money(total) }}
+          </div>
+        }
+        @if (editandoDias()) {
+          <form
+            class="dias"
+            (submit)="enviarDias($event, fecha.value, vence.value)"
+          >
+            <label class="j-field">
+              <span class="j-field__label">Fecha no dia</span>
+              <span class="j-input"
+                ><input
+                  #fecha
+                  id="dia-fecha"
+                  type="number"
+                  inputmode="numeric"
+                  min="1"
+                  max="31"
+                  [value]="f.diasInformados?.fecha ?? ''"
+              /></span>
+            </label>
+            <label class="j-field">
+              <span class="j-field__label">Vence no dia</span>
+              <span class="j-input"
+                ><input
+                  #vence
+                  id="dia-vence"
+                  type="number"
+                  inputmode="numeric"
+                  min="1"
+                  max="31"
+                  [value]="f.diasInformados?.vence ?? ''"
+              /></span>
+            </label>
+            <div class="dias-acoes">
+              <button
+                janoButton
+                variant="ghost"
+                [small]="true"
+                type="button"
+                (click)="editandoDias.set(false)"
+              >
+                Cancelar
+              </button>
+              <button
+                janoButton
+                [small]="true"
+                type="submit"
+                [carregando]="salvandoDias()"
+                textoCarregando="Salvando…"
+              >
+                Salvar
+              </button>
+            </div>
+            @if (erroDias()) {
+              <span class="j-cap erro" role="alert">{{ erroDias() }}</span>
+            }
+          </form>
+        } @else if (f.diasInformados; as d) {
+          <button
+            class="link-dias"
+            type="button"
+            (click)="editandoDias.set(true)"
+          >
+            Fecha dia {{ d.fecha }}, vence dia {{ d.vence }} · alterar
+          </button>
+        } @else if (f.fase === 'estimada') {
+          <button
+            class="link-dias"
+            type="button"
+            (click)="editandoDias.set(true)"
+          >
+            O banco não informa as datas: informar fechamento e vencimento
+          </button>
+        }
         @if (f.paga; as p) {
           <div class="paga">
             Fatura anterior paga em {{ diaMes(p.date) }} ·
@@ -359,6 +470,31 @@ const MESES = [
 export class FaturaCartaoCard {
   readonly fatura = input.required<CartaoFatura>();
   readonly categorias = input<CategoryDoc[]>([]);
+  /** O Início está gravando os dias informados. */
+  readonly salvandoDias = input(false);
+  readonly salvarDias = output<DiasDaFatura>();
+
+  /** Formulário dos dias aberto; fecha sozinho quando os dias gravados mudam. */
+  protected readonly editandoDias = linkedSignal<DiasDaFatura | null, boolean>({
+    source: () => this.fatura().diasInformados,
+    computation: () => false,
+  });
+  protected readonly erroDias = linkedSignal<string>(() => {
+    this.editandoDias();
+    return '';
+  });
+
+  protected enviarDias(ev: Event, fecha: string, vence: string): void {
+    ev.preventDefault();
+    const f = Number(fecha);
+    const v = Number(vence);
+    const ok = (n: number) => Number.isInteger(n) && n >= 1 && n <= 31;
+    if (!ok(f) || !ok(v)) {
+      this.erroDias.set('Use dias de 1 a 31, por exemplo fecha 25 e vence 5.');
+      return;
+    }
+    this.salvarDias.emit({ fecha: f, vence: v });
+  }
 
   protected readonly money = formatBRL;
 

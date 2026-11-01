@@ -60,7 +60,7 @@ import { deveLembrar } from './lembrete';
 import { saldoAtual, type SaldoAtual } from './saldo';
 import { podeGastar, type PodeGastar } from './pode-gastar';
 import { comparacaoNoDia, variacao } from './comparacao';
-import { cartaoDaFatura } from './fatura';
+import { cartaoDaFatura, type DiasDaFatura } from './fatura';
 import { FaturaCartaoCard } from './fatura-cartao';
 
 function hojeIso(d: Date): string {
@@ -543,6 +543,8 @@ function lerDispensado(): string | null {
               class="ordem-2"
               [fatura]="fc"
               [categorias]="categorias()"
+              [salvandoDias]="salvandoDias()"
+              (salvarDias)="salvarDiasDaFatura(fc.accountId, $event)"
             />
           }
 
@@ -661,21 +663,51 @@ export class Inicio {
     const cartoes = this.cartoes();
     return podeGastar({
       saldoCents: s.cents,
-      faturaCents: this.fatura(),
+      // Com os dias informados, desconta a fatura do ciclo, não o saldo com parcelas futuras.
+      faturaCents: this.faturaCartao()?.diasInformados
+        ? (this.faturaCartao()?.valorCents ?? 0)
+        : this.fatura(),
       // Compras do cartão já estão na fatura; recorrências só das contas.
       txs: this.historico().filter((t) => !cartoes.has(t.accountId)),
       hoje: hojeIso(this.hoje),
     });
   });
   private readonly saldos = signal<BalanceDoc[]>([]);
-  protected readonly faturaCartao = computed(() =>
-    cartaoDaFatura({
-      saldos: this.saldos(),
+  /** Dias de fechamento e vencimento informados, por conta de cartão. */
+  private readonly diasDosCartoes = signal(new Map<string, DiasDaFatura>());
+  protected readonly salvandoDias = signal(false);
+  protected readonly faturaCartao = computed(() => {
+    const saldos = this.saldos();
+    const id =
+      saldos.find((b) => b.kind === 'cartao')?.accountId ??
+      [...this.cartoes()][0];
+    return cartaoDaFatura({
+      saldos,
       txs: this.historico(),
       cartoes: this.cartoes(),
       hoje: hojeIso(this.hoje),
-    }),
-  );
+      dias: id ? (this.diasDosCartoes().get(id) ?? null) : null,
+    });
+  });
+
+  protected async salvarDiasDaFatura(
+    accountId: string | null,
+    dias: DiasDaFatura,
+  ): Promise<void> {
+    const uid = this.auth.user()?.uid;
+    if (!uid || !accountId) return;
+    this.salvandoDias.set(true);
+    try {
+      await this.catalog.salvarDiasDaFatura(uid, accountId, dias);
+      this.diasDosCartoes.update((m) => new Map(m).set(accountId, dias));
+    } catch (e) {
+      this.erro.set(
+        e instanceof Error ? e.message : 'Não foi possível salvar as datas.',
+      );
+    } finally {
+      this.salvandoDias.set(false);
+    }
+  }
   protected readonly comparacao = computed(() =>
     comparacaoNoDia(
       this.historico(),
@@ -923,6 +955,13 @@ export class Inicio {
       );
       this.cartoes.set(
         new Set(contas.filter((c) => c.type === 'cartao').map((c) => c.id)),
+      );
+      this.diasDosCartoes.set(
+        new Map(
+          contas
+            .filter((c) => c.type === 'cartao' && c.fatura)
+            .map((c) => [c.id, c.fatura as DiasDaFatura]),
+        ),
       );
       // Só alimenta o lembrete: se falhar, o resto da tela segue normal.
       this.ultimaImportacao.set(

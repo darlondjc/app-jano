@@ -52,6 +52,10 @@ export interface CartaoFatura {
   paga: { cents: number; date: string } | null;
   /** Fatura fechada: o que já entrou na seguinte. */
   seguinte: { totalCents: number; compras: number; desde: string } | null;
+  /** Dias informados pelo usuário em uso (null = datas do banco ou desconhecidas). */
+  diasInformados: DiasDaFatura | null;
+  /** Saldo devedor total no banco, quando é maior que a fatura (parcelas futuras). */
+  totalNoCartaoCents: number | null;
   /** O que cai no cartão todo mês: parcelas que continuam e assinaturas. */
   todoMes: {
     totalCents: number;
@@ -66,6 +70,43 @@ export interface EntradaFatura {
   cartoes: ReadonlySet<string>;
   /** AAAA-MM-DD */
   hoje: string;
+  /** Dias de fechamento e vencimento informados pelo usuário (quando o banco não manda). */
+  dias?: DiasDaFatura | null;
+}
+
+export interface DiasDaFatura {
+  /** Dia do mês em que a fatura fecha. */
+  fecha: number;
+  /** Dia do mês em que ela vence. */
+  vence: number;
+}
+
+const doisDigitos = (n: number) => String(n).padStart(2, '0');
+/** Data com o dia `d` no mês de `iso` (dia 31 vira o último dia em meses curtos). */
+const noDia = (iso: string, d: number) => {
+  const [y, m] = iso.split('-').map(Number);
+  const ultimo = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return `${y}-${doisDigitos(m)}-${doisDigitos(Math.min(d, ultimo))}`;
+};
+
+/**
+ * Datas da fatura pelos dias informados: o último fechamento antes de hoje (no dia do
+ * fechamento a fatura ainda está aberta), o anterior a ele e o vencimento dela.
+ */
+export function datasPelosDias(
+  d: DiasDaFatura,
+  hoje: string,
+): { fechou: string; anterior: string; vence: string; proxima: string } {
+  let fechou = noDia(hoje, d.fecha);
+  if (fechou >= hoje) fechou = noDia(somarMes(hoje, -1), d.fecha);
+  const anterior = noDia(somarMes(fechou, -1), d.fecha);
+  const proxima = noDia(somarMes(fechou, 1), d.fecha);
+  // Vence depois do fechamento: no mesmo mês se o dia vier depois, senão no seguinte.
+  const vence =
+    d.vence > d.fecha
+      ? noDia(fechou, d.vence)
+      : noDia(somarMes(fechou, 1), d.vence);
+  return { fechou, anterior, vence, proxima };
 }
 
 const dias = (de: string, ate: string) =>
@@ -80,6 +121,11 @@ const somarMes = (iso: string, n: number) => {
   return d.toISOString().slice(0, 10);
 };
 const mesAntes = (iso: string) => somarMes(iso, -1);
+const somarDias = (iso: string, n: number) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
 
 /**
  * Pagamento da fatura feito depois do fechamento: a saída na conta ("PAGTO CARTAO") ou o
@@ -217,7 +263,43 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
   let valorCents = Math.max(0, saldo?.balanceCents ?? 0);
   let base: Base;
   let seguinte: CartaoFatura['seguinte'] = null;
-  if (paga && fechouEm) {
+  // Sem datas do banco, valem os dias que a pessoa informou; o valor sai das compras do
+  // ciclo, porque o saldo do banco inclui as parcelas que ainda vão vencer.
+  const manual = !c?.fechamento && e.dias ? e.dias : null;
+  if (manual) {
+    const d = datasPelosDias(manual, e.hoje);
+    const soma = (de: string, ate: string) =>
+      -doCartao
+        .filter((t) => !t.isTransfer && t.date > de && t.date <= ate)
+        .reduce((s, t) => s + t.amountCents, 0);
+    const p = pagamentoDepois(e.txs, accountId, e.cartoes, d.fechou, e.hoje);
+    const fechadaCents = soma(d.anterior, d.fechou);
+    // Entre o fechamento e o vencimento, a fechada é a que importa; paga ou vencida (o
+    // pagamento pode não ter um nome reconhecível), passa a valer a aberta.
+    if (e.hoje <= d.vence && !(p && p.cents >= fechadaCents - 100)) {
+      fase = 'fechada';
+      fecha = d.fechou;
+      vence = d.vence;
+      valorCents = Math.max(0, fechadaCents);
+      base = dasTransacoes(doCartao, d.anterior, d.fechou);
+      const depois = dasTransacoes(doCartao, d.fechou, e.hoje);
+      const total = soma(d.fechou, e.hoje);
+      if (depois.compras)
+        seguinte = {
+          totalCents: total,
+          compras: depois.compras,
+          desde: somarDias(d.fechou, 1),
+        };
+    } else {
+      fase = 'aberta';
+      if (p && p.cents >= fechadaCents - 100) paga = p;
+      fecha = d.proxima;
+      vence = datasPelosDias(manual, somarDias(d.proxima, 1)).vence;
+      valorCents = Math.max(0, soma(d.fechou, e.hoje));
+      base = dasTransacoes(doCartao, d.fechou, e.hoje);
+    }
+    minimoCents = null;
+  } else if (paga && fechouEm) {
     base = aberta ?? dasTransacoes(doCartao, fechouEm, e.hoje);
     valorCents =
       aberta?.totalCents ??
@@ -239,6 +321,11 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
   } else {
     base = dasTransacoes(doCartao, mesAntes(e.hoje), e.hoje);
   }
+
+  const totalNoCartaoCents =
+    manual && saldo && saldo.balanceCents > valorCents + 100
+      ? saldo.balanceCents
+      : null;
 
   let situacao = 'vencimento a confirmar';
   if (fase === 'aberta' && fecha)
@@ -283,7 +370,7 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
       : null;
 
   return {
-    nome: saldo?.name ?? 'Cartão de crédito',
+    nome: saldo ? nomeDeExibicao(saldo.name) : 'Cartão de crédito',
     final: saldo?.number
       ? saldo.number.replace(/\D/g, '').slice(-4) || null
       : null,
@@ -296,6 +383,8 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
     minimoCents,
     situacao,
     limite,
+    diasInformados: e.dias ?? null,
+    totalNoCartaoCents,
     composicao: partes(base.porCategoria),
     compras: base.compras,
     maiores: base.maiores.slice(0, MAIORES),

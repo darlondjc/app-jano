@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.19.0',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Datas da fatura informadas por você: quando o banco não manda o fechamento e o vencimento pelo Open Finance, o cartão da fatura pede os dois dias (por exemplo, fecha 25 e vence 5). Com eles, o Jano mostra a fatura do ciclo, quando fecha e quando vence, calcula o valor pelas compras do período e mostra à parte o total no cartão com as parcelas futuras.',
+      },
+      {
+        tipo: 'correcao',
+        texto:
+          'Com os dias informados, o "pode gastar" e o plano de Projeções descontam só a fatura do ciclo, não o saldo inteiro do cartão. O nome do cartão aparece sem caixa alta.',
+      },
+    ],
+  },
+  {
     version: '0.18.0',
     date: '2026-11-01',
     items: [

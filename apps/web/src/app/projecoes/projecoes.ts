@@ -40,6 +40,7 @@ import { Progresso } from '../shell/progresso';
 import { marcarTransferencias } from '../transacoes/transferencias';
 import { mesAtual } from '../transacoes/agrupar';
 import { PeriodoService } from '../periodo/periodo.service';
+import { cartaoDaFatura } from '../inicio/fatura';
 import { planoDoMes } from './plano';
 import { PlanoMes } from './plano-mes';
 import { ObjetivosCard } from './objetivos-card';
@@ -731,6 +732,19 @@ export class Projecoes {
       this.historico.set(
         (await marcarTransferencias(this.txRepo, uid, txs)).txs,
       );
+      // Com os dias da fatura informados, o plano desconta a fatura do ciclo, não o saldo
+      // do cartão no banco (que inclui as parcelas futuras).
+      const dias = contas.find((c) => c.type === 'cartao' && c.fatura)?.fatura;
+      if (dias) {
+        const fc = cartaoDaFatura({
+          saldos,
+          txs: this.historico(),
+          cartoes: this.cartoes(),
+          hoje: this.hojeIso,
+          dias,
+        });
+        if (fc) this.fatura.set(fc.valorCents);
+      }
       this.categorias.set(cats);
       const despesas = cats.filter((c) => c.type === 'despesa');
       if (!despesas.some((c) => c.id === 'lazer') && despesas[0])

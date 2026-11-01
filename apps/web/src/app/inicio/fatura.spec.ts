@@ -104,3 +104,62 @@ describe('cartaoDaFatura depois do pagamento', () => {
     expect(f.situacao).toBe('vencida');
   });
 });
+
+describe('cartaoDaFatura com os dias informados (banco sem datas)', () => {
+  const d = gerarDadosDemo(new Date(2026, 10, 1, 10));
+  // Como no BB pelo Open Finance: saldo do cartão sem os dados de crédito.
+  const saldos = d.balances.map((b) =>
+    b.kind === 'cartao'
+      ? {
+          ...b,
+          credito: undefined,
+          faturaAberta: undefined,
+          balanceCents: 1_793_000,
+        }
+      : b,
+  );
+  const base = {
+    saldos,
+    txs: d.transactions,
+    cartoes: new Set(['cartao-de-credito']),
+    dias: { fecha: 25, vence: 5 },
+  };
+  const compras = (de: string, ate: string) =>
+    -d.transactions
+      .filter(
+        (t) =>
+          t.accountId === 'cartao-de-credito' &&
+          !t.isTransfer &&
+          t.date > de &&
+          t.date <= ate,
+      )
+      .reduce((s, t) => s + t.amountCents, 0);
+
+  it('entre o fechamento e o vencimento: a fechada, pelas compras do ciclo', () => {
+    const f = cartaoDaFatura({ ...base, hoje: '2026-11-01' })!;
+    expect(f.fase).toBe('fechada');
+    expect(f.fecha).toBe('2026-10-25');
+    expect(f.vence).toBe('2026-11-05');
+    expect(f.situacao).toBe('vence em 4 dias');
+    expect(f.valorCents).toBe(compras('2026-09-25', '2026-10-25'));
+    // O saldo do banco (com parcelas futuras) aparece à parte.
+    expect(f.totalNoCartaoCents).toBe(1_793_000);
+    expect(f.diasInformados).toEqual({ fecha: 25, vence: 5 });
+  });
+
+  it('depois do vencimento: a aberta e quando fecha', () => {
+    const f = cartaoDaFatura({ ...base, hoje: '2026-11-10' })!;
+    expect(f.fase).toBe('aberta');
+    expect(f.fecha).toBe('2026-11-25');
+    expect(f.vence).toBe('2026-12-05');
+    expect(f.situacao).toBe('fecha em 15 dias');
+    expect(f.valorCents).toBe(compras('2026-10-25', '2026-11-10'));
+  });
+
+  it('sem dias informados: segue a estimativa de antes, com o nome sem caixa alta', () => {
+    const f = cartaoDaFatura({ ...base, dias: null, hoje: '2026-11-01' })!;
+    expect(f.fase).toBe('estimada');
+    expect(f.diasInformados).toBeNull();
+    expect(f.nome).toBe('Ourocard');
+  });
+});
