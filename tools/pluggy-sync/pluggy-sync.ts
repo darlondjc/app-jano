@@ -326,7 +326,15 @@ async function sync(
   for (const a of contasPluggy) {
     if (a.kind !== 'cartao') continue;
     const lista = await connector.fetchFaturas(a);
-    doBanco.set(a.externalId, lista.slice(0, 3));
+    // As que vencem de 45 dias atrás em diante: a atual, a anterior e as próximas que o
+    // banco já mostrar (o app escolhe a que corresponde à fatura do card).
+    const limite = new Date(Date.now() - 45 * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    doBanco.set(
+      a.externalId,
+      lista.filter((f) => f.vencimento >= limite).slice(0, 6),
+    );
     console.log(
       `Faturas do banco: ${lista.length} (com mínimo: ${lista.filter((f) => f.minimoCents !== null).length}).`,
     );

@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.20.1',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'correcao',
+        texto:
+          'O cartão da fatura escolhe, entre as faturas que o banco manda, a que corresponde à atual (pelo vencimento), mesmo quando a próxima já aparece na lista.',
+      },
+    ],
+  },
+  {
     version: '0.20.0',
     date: '2026-11-01',
     items: [
