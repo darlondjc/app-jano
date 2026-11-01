@@ -37,3 +37,12 @@ export function marcarSplashVista(): void {
     /* sem armazenamento: tudo bem */
   }
 }
+
+/** Faz a splash tocar no próximo carregamento (ao atualizar o app para a versão nova). */
+export function pedirSplash(): void {
+  try {
+    sessionStorage.removeItem(FLAG);
+  } catch {
+    /* sem armazenamento: a splash já toca em todo carregamento */
+  }
+}

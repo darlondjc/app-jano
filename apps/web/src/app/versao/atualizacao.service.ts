@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { SwUpdate } from '@angular/service-worker';
 import { BUILD_ID } from '../../environments/build-info';
+import { pedirSplash } from '../splash';
 
 const INTERVALO_MS = 5 * 60 * 1000;
 /** Se ativar a versão nova demorar mais que isso, recarrega mesmo assim. */
@@ -106,6 +107,8 @@ export class AtualizacaoService {
       trocar(),
       new Promise((ok) => setTimeout(ok, LIMITE_ATUALIZAR_MS)),
     ]);
+    // A versão nova abre com a splash, como quando o app é aberto.
+    pedirSplash();
     location.reload();
   }
 }

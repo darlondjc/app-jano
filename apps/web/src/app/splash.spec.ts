@@ -1,5 +1,10 @@
 import { SPLASH_FULL_MS, SPLASH_REDUCED_MS } from '@jano/ui';
-import { splashDuracao } from './splash';
+import {
+  lerContextoSplash,
+  marcarSplashVista,
+  pedirSplash,
+  splashDuracao,
+} from './splash';
 
 describe('splashDuracao', () => {
   it('não toca de novo na mesma sessão', () => {
@@ -14,5 +19,14 @@ describe('splashDuracao', () => {
     expect(splashDuracao({ jaVista: false, movimentoReduzido: true })).toBe(
       SPLASH_REDUCED_MS,
     );
+  });
+});
+
+describe('pedirSplash', () => {
+  it('faz a splash tocar de novo no próximo carregamento', () => {
+    marcarSplashVista();
+    expect(lerContextoSplash().jaVista).toBe(true);
+    pedirSplash();
+    expect(lerContextoSplash().jaVista).toBe(false);
   });
 });

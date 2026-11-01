@@ -496,10 +496,17 @@ export class Shell {
       )
         this.progresso.concluir();
       if (e instanceof NavigationEnd) {
+        // Outra tela começa do topo; mudar só os filtros (?tx=, ?conta=) não mexe na rolagem.
+        const caminho = (u: string) => u.split(/[?#]/)[0];
+        if (caminho(e.urlAfterRedirects) !== caminho(this.url()))
+          window.scrollTo({ top: 0 });
         this.novidades.set(haNovidades());
         this.url.set(e.urlAfterRedirects);
         this.maisAberto.set(false);
       }
+      // Tocar no menu da tela em que já está volta ao topo, como nos apps.
+      if (e instanceof NavigationSkipped)
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
 }
