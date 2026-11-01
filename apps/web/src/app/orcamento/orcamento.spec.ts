@@ -146,9 +146,9 @@ describe('Orcamento: nova meta', () => {
     );
     await vi.waitFor(() => {
       f.detectChanges();
-      expect(el.querySelector('.rodape button')).not.toBeNull();
+      expect(el.querySelector('.topo button')).not.toBeNull();
     });
-    (el.querySelector('.rodape button') as HTMLButtonElement).click();
+    (el.querySelector('.topo button') as HTMLButtonElement).click();
     f.detectChanges();
     expect((el.querySelector('#lim-nova') as HTMLInputElement).value).toBe(
       '801,00',

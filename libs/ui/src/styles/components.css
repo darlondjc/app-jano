@@ -332,6 +332,11 @@ jano-kpi-card .j-kpi {
   font: 600 16px/24px var(--font-sans);
   color: var(--text);
 }
+.j-goal__nome {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
 .j-goal__track {
   position: relative;
   height: 12px;

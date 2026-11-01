@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.22.2',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Orçamento: "Nova meta" fica no topo, ao lado do título, e cada meta aparece com o ícone e a cor da categoria. Em atenção ou estourada, a barra continua amarela ou vermelha.',
+      },
+    ],
+  },
+  {
     version: '0.22.1',
     date: '2026-11-01',
     items: [

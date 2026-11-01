@@ -5,6 +5,7 @@ import {
   input,
 } from '@angular/core';
 import { estadoDaMeta, formatBRL, type ContaDoMes } from '@jano/engine';
+import { JanoCategoryBadge } from '../icon/category-badge';
 
 /**
  * Barra de meta mensal: gasto × limite, marcador de ritmo e frase de estado (cor nunca sozinha).
@@ -12,11 +13,20 @@ import { estadoDaMeta, formatBRL, type ContaDoMes } from '@jano/engine';
  */
 @Component({
   selector: 'jano-goal-bar',
+  imports: [JanoCategoryBadge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div [class]="(plain() ? '' : 'j-card ') + 'j-goal j-goal--' + modifier()">
       <div class="j-goal__head">
-        <span>{{ name() }}</span
+        <span class="j-goal__nome">
+          @if (cor()) {
+            <jano-category-badge
+              [icon]="icone()"
+              [colorToken]="cor()"
+              [size]="28"
+            />
+          }
+          {{ name() }}</span
         ><span class="j-goal__pct j-num">{{ percent() }}%</span>
       </div>
       <div
@@ -27,7 +37,11 @@ import { estadoDaMeta, formatBRL, type ContaDoMes } from '@jano/engine';
         [attr.aria-valuenow]="percent()"
         [attr.aria-label]="name()"
       >
-        <div class="j-goal__fill" [style.width.%]="fill()"></div>
+        <div
+          class="j-goal__fill"
+          [style.width.%]="fill()"
+          [style.background]="corDaBarra()"
+        ></div>
         @if (comRitmo()) {
           <div
             class="j-goal__pace"
@@ -58,6 +72,9 @@ export class JanoGoalBar {
   readonly daysLeft = input<number>();
   /** "Ritmo ideal: N%" em cada barra; desligue quando a tela já mostra o ritmo uma vez. */
   readonly ritmoNoTexto = input(true);
+  /** Token de cor da categoria (ex.: "cat-3"): ícone ao lado do nome e barra na cor dela enquanto está ok. */
+  readonly cor = input<string | null>();
+  readonly icone = input<string | null>();
   /** Contas do mês (aluguel, escola): esperado, pago e o que falta. */
   readonly conta = input<ContaDoMes>();
 
@@ -77,6 +94,10 @@ export class JanoGoalBar {
   protected readonly status = computed(() => this.estado().status);
   protected readonly modifier = computed(
     () => ({ ok: 'ok', warning: 'warn', over: 'over' })[this.status()],
+  );
+  /** Atenção e estouro mantêm as cores de estado; no ok, a barra fica na cor da categoria. */
+  protected readonly corDaBarra = computed(() =>
+    this.cor() && this.status() === 'ok' ? `var(--${this.cor()})` : null,
   );
   protected readonly percent = computed(() => {
     const limit = this.limitCents();

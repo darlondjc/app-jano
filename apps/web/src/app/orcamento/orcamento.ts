@@ -111,10 +111,11 @@ import {
     .dica {
       margin: 12px 0 0;
     }
-    .rodape {
-      margin-top: 20px;
+    .topo {
       display: flex;
-      justify-content: center;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
     .escurece {
       border: 0;
@@ -193,7 +194,19 @@ import {
     }
   `,
   template: `
-    <h1>Orçamento</h1>
+    <div class="topo">
+      <h1>Orçamento</h1>
+      @if (!carregando() && opcoesNova().length) {
+        <button
+          janoButton
+          [variant]="linhas().length ? 'secondary' : 'primary'"
+          type="button"
+          (click)="editar(null)"
+        >
+          Nova meta
+        </button>
+      }
+    </div>
     <jano-month-nav
       class="mes"
       [rotulo]="rotulo()"
@@ -260,6 +273,8 @@ import {
                 [daysLeft]="diasDe(l.categoryId)"
                 [conta]="contas().get(l.categoryId)"
                 [ritmoNoTexto]="l.categoryId === metaFatura"
+                [cor]="corDe(l.categoryId)"
+                [icone]="iconeDe(l.categoryId)"
               />
             </button>
           }
@@ -272,19 +287,6 @@ import {
             Defina quanto quer gastar por mês em cada categoria. O Jano mostra o
             ritmo e avisa antes de passar.
           </div>
-        </div>
-      }
-
-      @if (opcoesNova().length) {
-        <div class="rodape">
-          <button
-            janoButton
-            [variant]="linhas().length ? 'secondary' : 'primary'"
-            type="button"
-            (click)="editar(null)"
-          >
-            Nova meta
-          </button>
         </div>
       }
     }
@@ -776,6 +778,16 @@ export class Orcamento {
 
   protected sobraDe(id: string): number {
     return this.efetivas().find((b) => b.categoryId === id)?.sobraCents ?? 0;
+  }
+
+  /** A fatura usa o azul e o ícone do banco; as categorias, a cor e o ícone delas. */
+  protected corDe(id: string): string {
+    if (id === META_FATURA) return 'cat-2';
+    return this.categorias().find((c) => c.id === id)?.color ?? 'cat-1';
+  }
+  protected iconeDe(id: string): string | null {
+    if (id === META_FATURA) return 'banco';
+    return this.categorias().find((c) => c.id === id)?.icon ?? null;
   }
 
   protected nome(id: string): string {
