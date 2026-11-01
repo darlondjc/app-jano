@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.22.0',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Meta "Fatura do cartão" no Orçamento: um limite para o total da fatura, acompanhado no ciclo dela (do dia seguinte ao fechamento até o próximo), com ritmo próprio e a sugestão pelo valor da fatura anterior. Aparece também no Início e fica fora da soma das metas de categoria, porque as compras do cartão já estão nelas.',
+      },
+    ],
+  },
+  {
     version: '0.21.1',
     date: '2026-11-01',
     items: [
