@@ -36,6 +36,8 @@ import {
   type FaturaResult,
   type ImportPlan,
   regraQueCasa,
+  nomeDeExibicao,
+  tipoDeOperacao,
 } from '@jano/import-file';
 import {
   JanoBanner,
@@ -375,7 +377,25 @@ interface Previa {
     .lista-m .blocao {
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      overflow: hidden;
+      background: var(--surface);
+      overflow: clip;
+    }
+    .dia-cab {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px 6px;
+      background: var(--surface-2);
+      font: 600 12px/16px var(--font-sans);
+      letter-spacing: 0.02em;
+      color: var(--text-2);
+    }
+    .linha-m.j-tx:last-child,
+    .linha-m.j-tx:has(+ .dia-cab) {
+      border-bottom: 0;
     }
     .mais {
       display: flex;
@@ -431,9 +451,6 @@ interface Previa {
     .previa dd {
       margin: 0;
       text-align: right;
-    }
-    .dia {
-      margin: 16px 0 4px;
     }
     @media (min-width: 720px) {
       .tabela-wrap {
@@ -877,7 +894,9 @@ interface Previa {
                           type="checkbox"
                           [checked]="selecionadas().has(t.id)"
                           (change)="marcar(t.id)"
-                          [attr.aria-label]="'Selecionar ' + t.description"
+                          [attr.aria-label]="
+                            'Selecionar ' + nomeTx(t.description)
+                          "
                         />
                       </td>
                     }
@@ -891,7 +910,7 @@ interface Previa {
                         [title]="t.description"
                         (click)="abrir(t)"
                       >
-                        {{ t.description }}
+                        {{ nomeTx(t.description) }}
                       </button>
                     </td>
                     <td>
@@ -921,9 +940,17 @@ interface Previa {
           </div>
 
           <div class="lista-m">
-            @for (g of grupos(); track g.date) {
-              <div class="j-day dia" style="padding-left: 0">{{ g.label }}</div>
-              <div class="blocao">
+            <div class="blocao">
+              @for (g of grupos(); track g.date) {
+                <div class="dia-cab">
+                  <span>{{ g.label }}</span>
+                  @if (g.totalCents) {
+                    <span class="j-num"
+                      >{{ g.totalCents > 0 ? '+' : ''
+                      }}{{ money(g.totalCents) }}</span
+                    >
+                  }
+                </div>
                 @for (t of g.items; track t.id) {
                   <button
                     type="button"
@@ -944,13 +971,13 @@ interface Previa {
                     />
                     <span>
                       <span class="j-tx__name" style="display: block">{{
-                        t.description
+                        nomeTx(t.description)
                       }}</span>
                       <span class="j-tx__sub" style="display: block">
                         {{
                           t.isTransfer ? 'Transferência' : rotuloCategoria(t)
                         }}
-                        · {{ nomeConta(t.accountId) }}
+                        · {{ detalheConta(t) }}
                       </span>
                     </span>
                     <span [class]="classeValor(t)"
@@ -959,8 +986,8 @@ interface Previa {
                     >
                   </button>
                 }
-              </div>
-            }
+              }
+            </div>
           </div>
 
           @if (filtradas().length > visiveis().length) {
@@ -1344,6 +1371,12 @@ export class Transacoes {
     return t.splits && t.splits.length > 1
       ? `${nome} + ${t.splits.length - 1}`
       : nome;
+  }
+
+  protected readonly nomeTx = nomeDeExibicao;
+  /** No celular: "Pix enviado" ou "Débito" diz mais que "Conta corrente"; senão, a conta. */
+  protected detalheConta(t: TransactionDoc): string {
+    return tipoDeOperacao(t.description) ?? this.nomeConta(t.accountId);
   }
 
   protected nomeConta(id: string): string {

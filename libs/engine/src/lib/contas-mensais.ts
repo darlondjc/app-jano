@@ -26,7 +26,7 @@ const MAX_LANCAMENTOS = 3;
 
 /**
  * Categorias que funcionam como contas do mês (aluguel, escola, luz): nos dois meses
- * anteriores, de 1 a 3 lançamentos, sempre dos mesmos pagadores, com total parecido; e neste
+ * anteriores, de 1 a 3 lançamentos, um por pagador, sempre os mesmos, com total parecido; e neste
  * mês nada fora deles. Para elas, ritmo do mês não faz sentido: o que importa é se já foram
  * pagas e quanto ainda falta.
  */
@@ -60,7 +60,11 @@ export function contasDoMes(
     if (!b) continue;
     if (a.marcas.length > MAX_LANCAMENTOS || b.marcas.length > MAX_LANCAMENTOS)
       continue;
+    // Conta vem uma vez por mês de cada pagador; duas idas ao mesmo lugar é consumo.
+    const unicas = (m: string[]) => new Set(m).size === m.length;
     const iguais =
+      unicas(a.marcas) &&
+      unicas(b.marcas) &&
       [...a.marcas].sort().join('|') === [...b.marcas].sort().join('|');
     const parecidos =
       Math.abs(a.cents - b.cents) <= Math.max(a.cents, b.cents) * VARIACAO;
@@ -68,6 +72,7 @@ export function contasDoMes(
     const atual = porMes.get(month)?.get(categoryId);
     const conhecidas = new Set(a.marcas);
     if (atual?.marcas.some((x) => !conhecidas.has(x))) continue;
+    if (atual && !unicas(atual.marcas)) continue;
     const esperadoCents = Math.round((a.cents + b.cents) / 2);
     const pagoCents = atual?.cents ?? 0;
     out.set(categoryId, {

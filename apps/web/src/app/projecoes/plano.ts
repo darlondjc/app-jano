@@ -3,7 +3,7 @@ import {
   proximaCobranca,
   type RecurringSeries,
 } from '@jano/engine';
-import { estabelecimento, nomeSemPrefixo } from '@jano/import-file';
+import { estabelecimento, nomeDeExibicao } from '@jano/import-file';
 import {
   jaVeioNoMes,
   podeGastar,
@@ -116,7 +116,7 @@ export function series(txs: TxRec[], tipo: 'gasto' | 'entrada') {
     ultimo.set(t.descriptionNorm, t);
   return detectRecurrences(porLoja, tipo).map((s) => ({
     s,
-    nome: nomeSemPrefixo(
+    nome: nomeDeExibicao(
       ultimo.get(s.description)?.description ?? s.description,
     ),
   }));

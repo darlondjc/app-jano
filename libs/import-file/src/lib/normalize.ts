@@ -49,3 +49,72 @@ const PREFIXO_DO_BANCO =
 export function nomeSemPrefixo(description: string): string {
   return description.replace(PREFIXO_DO_BANCO, '').trim() || description;
 }
+
+/** Palavras que ficam minúsculas no meio do nome. */
+const MINUSCULAS = new Set([
+  'de',
+  'da',
+  'do',
+  'das',
+  'dos',
+  'e',
+  'em',
+  'na',
+  'no',
+]);
+/** Siglas que ficam como estão. */
+const SIGLAS = new Set([
+  'BB',
+  'CEF',
+  'SA',
+  'S/A',
+  'ME',
+  'MEI',
+  'EPP',
+  'TV',
+  'IPVA',
+  'IPTU',
+  'INSS',
+  'FGTS',
+  'DARF',
+  'GPS',
+  'CPF',
+  'CNPJ',
+]);
+
+function titulo(nome: string): string {
+  // Só mexe no que veio todo em maiúsculas; um nome que já tem minúsculas foi escrito assim.
+  if (/[a-zà-ú]/.test(nome)) return nome;
+  return nome
+    .toLowerCase()
+    .split(' ')
+    .map((p, i) => {
+      if (SIGLAS.has(p.toUpperCase())) return p.toUpperCase();
+      if (i > 0 && MINUSCULAS.has(p)) return p;
+      return p.charAt(0).toUpperCase() + p.slice(1);
+    })
+    .join(' ');
+}
+
+/**
+ * Nome para as listas: sem prefixo de operação, data e hora, sem código de loja no fim
+ * ("DROGASIL 1234"), sem o "*" das maquininhas ("IFOOD *RESTAURANTE") e com maiúsculas só
+ * no começo das palavras. A descrição original continua no detalhe do lançamento.
+ */
+export function nomeDeExibicao(description: string): string {
+  const limpo = nomeSemPrefixo(description)
+    .replace(/\s*\*\s*/g, ' ')
+    .replace(/(\s+\d{3,})+$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return titulo(limpo || description.trim());
+}
+
+/** Tipo da operação, para o detalhe da linha: "Pix enviado", "Débito"... null se não houver. */
+export function tipoDeOperacao(description: string): string | null {
+  const d = description.toUpperCase();
+  if (/^PIX\s*-\s*ENVIADO/.test(d)) return 'Pix enviado';
+  if (/^PIX\s*-\s*RECEBIDO/.test(d)) return 'Pix recebido';
+  if (/^(COMPRA (C\/|COM )?CARTAO|COMPRA NO DEBITO)/.test(d)) return 'Débito';
+  return null;
+}

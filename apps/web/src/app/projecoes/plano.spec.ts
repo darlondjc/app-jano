@@ -20,13 +20,13 @@ describe('planoDoMes', () => {
   it('lista os próximos 30 dias em ordem, com o saldo depois de cada um', () => {
     const nomes = plano.eventos.map((e) => `${e.data?.slice(5)} ${e.nome}`);
     expect(nomes).toEqual([
-      '11-05 SALARIO EMPRESA EXEMPLO LTDA',
+      '11-05 Salario Empresa Exemplo Ltda',
       '11-07 Fatura do cartão',
-      '11-10 ESCOLA PEQUENO PRINCIPE',
-      '11-13 MARIA SOUZA', // PIX todo mês para a mesma pessoa
-      '11-15 ENERGIA ELETRICA EXEMPLO',
-      '11-20 INTERNET FIBRA EXEMPLO',
-      '11-24 IMOBILIARIA CENTRO',
+      '11-10 Escola Pequeno Principe',
+      '11-13 Maria Souza', // PIX todo mês para a mesma pessoa
+      '11-15 Energia Eletrica Exemplo',
+      '11-20 Internet Fibra Exemplo',
+      '11-24 Imobiliaria Centro',
     ]);
     const [salario, faturaEv] = plano.eventos;
     expect(salario.saldoDepois).toBe(1_248_032 + 985_000);
@@ -44,10 +44,10 @@ describe('planoDoMes', () => {
     });
     const nomes = doDia.eventos.map((e) => e.nome);
     // Luz (dia 15) e escola (dia 10) já foram; internet (20) e aluguel (24) ainda vêm.
-    expect(nomes).toContain('INTERNET FIBRA EXEMPLO');
-    expect(nomes).toContain('IMOBILIARIA CENTRO');
+    expect(nomes).toContain('Internet Fibra Exemplo');
+    expect(nomes).toContain('Imobiliaria Centro');
     expect(
-      doDia.eventos.find((e) => e.nome === 'ESCOLA PEQUENO PRINCIPE')?.data,
+      doDia.eventos.find((e) => e.nome === 'Escola Pequeno Principe')?.data,
     ).toBe('2026-11-10');
   });
 
@@ -104,7 +104,7 @@ describe('gasto fixo: uma regra só', () => {
       .filter((l) => l.grupo === 'frequentes')
       .map((l) => l.nome);
     expect(frequentes).toEqual(
-      expect.arrayContaining(['POSTO IPIRANGA CENTRO']),
+      expect.arrayContaining(['Posto Ipiranga Centro']),
     );
     const p = planoDoMes({
       saldoCents: 0,

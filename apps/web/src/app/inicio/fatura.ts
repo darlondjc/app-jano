@@ -1,5 +1,5 @@
 import { proximaCobranca } from '@jano/engine';
-import { nomeSemPrefixo } from '@jano/import-file';
+import { nomeDeExibicao } from '@jano/import-file';
 import type { BalanceDoc } from '@jano/data-access';
 import {
   PAGAMENTO_FATURA,
@@ -162,7 +162,7 @@ function dasTransacoes(
       .sort((a, b) => a.amountCents - b.amountCents)
       .slice(0, MAIORES)
       .map((t) => ({
-        nome: nomeSemPrefixo(t.description),
+        nome: nomeDeExibicao(t.description),
         cents: -t.amountCents,
         date: t.date,
         categoryId: t.categoryId,
@@ -259,7 +259,7 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
   );
   const itens = [
     ...parcelas.map((p) => ({
-      nome: nomeSemPrefixo(p.nome),
+      nome: nomeDeExibicao(p.nome),
       detalhe: `parcela ${(p.parcela?.n ?? 0) + 1} de ${p.parcela?.total}`,
       cents: p.cents,
     })),

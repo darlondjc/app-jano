@@ -7,7 +7,7 @@ import {
   unusualTransactions,
   type HistTx,
 } from '@jano/engine';
-import { nomeSemPrefixo } from '@jano/import-file';
+import { nomeDeExibicao } from '@jano/import-file';
 
 export interface Alerta {
   /** Estável no mês (não muda com os números): é o que se guarda ao dispensar. */
@@ -37,19 +37,46 @@ export interface EntradaAlertas {
   assinaturasId: string | null;
   nomeCategoria: (id: string) => string;
   moeda: (cents: number) => string;
-  /** Quantos alertas devolver (padrão 4). */
+  /** Quantos alertas devolver (padrão 3). */
   max?: number;
   /** Ids dispensados neste mês: saem e abrem espaço para o próximo. */
   dispensados?: ReadonlySet<string>;
 }
 
-const MAX = 4;
+/** O Início mostra no máximo três; a lista completa fica em Avaliações. */
+const MAX = 3;
 
-/** "Para ver hoje": o que merece atenção, do mais urgente ao menos, no máximo quatro. */
+/** "Para ver hoje": o que merece atenção, do mais urgente ao menos, um aviso por assunto. */
 export function montarAlertas(e: EntradaAlertas): Alerta[] {
   const out: Alerta[] = [];
   // Contas do mês (aluguel, escola) chegam a 100% quando pagas: só alertam se passarem.
   const contas = contasDoMes(e.txs, e.month);
+
+  // Um aviso por assunto: meta, gasto acima da média e compra fora do padrão da mesma
+  // categoria viram um aviso só, com os três números.
+  const acimas = categoriesAboveNormal(e.txs, e.month);
+  const incomuns = unusualTransactions(e.txs, e.month);
+  const usadas = new Set<string>();
+  const extras = (categoryId: string, semAcima = false) => {
+    const partes: string[] = [];
+    const acima = acimas.find((a) => a.categoryId === categoryId);
+    if (acima && !semAcima)
+      partes.push(
+        `${acima.pct}% acima do normal (${e.moeda(acima.avgCents)} por mês)`,
+      );
+    const incomum = incomuns.find((i) => i.categoryId === categoryId);
+    if (incomum)
+      partes.push(
+        `a maior foi ${exibir(incomum)}, ${e.moeda(incomum.amountCents)}`,
+      );
+    usadas.add(categoryId);
+    return {
+      texto: partes.length
+        ? ` ${partes.join('; ').replace(/^./, (c) => c.toUpperCase())}.`
+        : '',
+      incomum,
+    };
+  };
 
   const metas = e.budgets
     .map((b) => ({
@@ -63,13 +90,14 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
   for (const m of metas) {
     const pct = Math.round((m.spent / m.limitCents) * 100);
     const nome = e.nomeCategoria(m.categoryId);
+    const x = extras(m.categoryId);
     out.push(
       m.spent > m.limitCents
         ? {
             id: `meta-passou:${m.categoryId}`,
             tom: 'warn',
             titulo: `${nome} passou da meta (${pct}%)`,
-            texto: `${e.moeda(m.spent)} de ${e.moeda(m.limitCents)}.`,
+            texto: `${e.moeda(m.spent)} de ${e.moeda(m.limitCents)}.${x.texto}`,
             acao: { rotulo: 'Ajustar meta', rota: '/orcamento' },
           }
         : {
@@ -82,23 +110,29 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
                 : e.daysLeft === 1
                   ? 'faltando 1 dia'
                   : `faltando ${e.daysLeft} dias`
-            }.`,
+            }.${x.texto}`,
             acao: { rotulo: 'Ajustar meta', rota: '/orcamento' },
           },
     );
   }
 
-  const acima = categoriesAboveNormal(e.txs, e.month)[0];
-  if (acima)
+  const acima = acimas.find((a) => !usadas.has(a.categoryId));
+  if (acima) {
+    const x = extras(acima.categoryId, true);
     out.push({
       id: `acima:${acima.categoryId}`,
       tom: 'warn',
       titulo: `${e.nomeCategoria(acima.categoryId)} está ${acima.pct}% acima da média`,
-      texto: `${e.moeda(acima.spentCents)} contra ${e.moeda(acima.avgCents)} nos meses anteriores.`,
-      acao: { rotulo: 'Ajustar meta', rota: '/orcamento' },
+      texto: `${e.moeda(acima.spentCents)} contra ${e.moeda(acima.avgCents)} nos meses anteriores.${x.texto}`,
+      acao: x.incomum
+        ? verTransacao(x.incomum.txId)
+        : { rotulo: 'Ajustar meta', rota: '/orcamento' },
     });
+  }
 
-  const incomum = unusualTransactions(e.txs, e.month)[0];
+  const incomum = incomuns.find(
+    (i) => !i.categoryId || !usadas.has(i.categoryId),
+  );
   if (incomum)
     out.push({
       id: `incomum:${incomum.date}:${incomum.description}`,
@@ -125,7 +159,7 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
     out.push({
       id: `reajuste:${reajuste.description}:${reajuste.toCents}`,
       tom: 'info',
-      titulo: `${reajuste.description} subiu ${reajuste.pct.toLocaleString('pt-BR')}%`,
+      titulo: `${nomeDeExibicao(reajuste.description)} subiu ${reajuste.pct.toLocaleString('pt-BR')}%`,
       texto: `De ${e.moeda(reajuste.fromCents)} para ${e.moeda(reajuste.toCents)} por mês.`,
       acao: { rotulo: 'Ver transações', rota: '/transacoes' },
     });
@@ -135,7 +169,7 @@ export function montarAlertas(e: EntradaAlertas): Alerta[] {
 
 /** Nome do insight como o banco escreveu, sem "PIX - ENVIADO 09/10 11:59". */
 function exibir(i: { description: string; nome?: string }): string {
-  return i.nome ? nomeSemPrefixo(i.nome) : i.description;
+  return i.nome ? nomeDeExibicao(i.nome) : i.description;
 }
 
 /** Com o id, leva direto ao lançamento; sem ele, à lista. */

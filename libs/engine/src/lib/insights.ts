@@ -29,6 +29,8 @@ export interface UnusualSpend {
   /** Lançamento que gerou o insight e a descrição dele como veio. */
   txId?: string;
   nome?: string;
+  /** Categoria em que o valor ficou fora do padrão. */
+  categoryId?: string;
   date: string;
   amountCents: Cents;
   times: number;
@@ -168,6 +170,7 @@ export function unusualTransactions(
           description: t.descriptionNorm,
           txId: t.id,
           nome: t.description,
+          ...(p.categoryId ? { categoryId: p.categoryId } : {}),
           date: t.date,
           amountCents: value,
           times: Math.round((value / mean) * 10) / 10,

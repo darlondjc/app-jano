@@ -1,5 +1,5 @@
 import { ehEstorno, monthTotals, type ScorePart } from '@jano/engine';
-import { estabelecimento, nomeSemPrefixo } from '@jano/import-file';
+import { estabelecimento, nomeDeExibicao } from '@jano/import-file';
 
 export interface TxAval {
   date: string;
@@ -198,7 +198,7 @@ export function maioresEstabelecimentos(
       continue;
     const loja = estabelecimento(t.descriptionNorm);
     const g = grupos.get(loja) ?? {
-      nome: nomeSemPrefixo(t.description),
+      nome: nomeDeExibicao(t.description),
       cents: 0,
       compras: 0,
       categoryId: t.categoryId,

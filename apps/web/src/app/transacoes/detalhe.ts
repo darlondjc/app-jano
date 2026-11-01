@@ -11,7 +11,7 @@ import type { CategoryDoc, TransactionDoc } from '@jano/data-access';
 import { formatBRL, validarDivisao } from '@jano/engine';
 import {
   estabelecimento,
-  nomeSemPrefixo,
+  nomeDeExibicao,
   normalizeDescription,
   parseAmountToCents,
   regraGenerica,
@@ -578,7 +578,7 @@ export class DetalheTransacao {
 
   protected readonly data = computed(() => dayLabel(this.tx().date));
   protected readonly nome = computed(() =>
-    nomeSemPrefixo(this.tx().description),
+    nomeDeExibicao(this.tx().description),
   );
   /** As do tipo do lançamento primeiro (despesas num gasto, receitas numa entrada). */
   protected readonly categoriasNaOrdem = computed(() => {
