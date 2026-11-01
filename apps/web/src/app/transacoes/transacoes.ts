@@ -841,11 +841,29 @@ interface Previa {
           </jano-skeleton-group>
         } @else if (!txs().length) {
           <div class="j-empty" style="padding: 48px 16px">
-            <div class="j-empty__title">Nenhuma transação neste período</div>
-            <div class="j-empty__text">
-              Importe o extrato (OFX) da conta ou a fatura do cartão (PDF) do
-              Banco do Brasil para começar.
-            </div>
+            @if (mesAtualVazio()) {
+              <div class="j-empty__title">
+                Nada em {{ rotulo().split(' ')[0].toLowerCase() }} ainda
+              </div>
+              <div class="j-empty__text">
+                A sincronização diária traz os lançamentos novos assim que o
+                banco registrar.
+              </div>
+              <button
+                janoButton
+                variant="secondary"
+                type="button"
+                (click)="mudarMes(-1)"
+              >
+                Ver {{ mesAnteriorRotulo() }}
+              </button>
+            } @else {
+              <div class="j-empty__title">Nenhuma transação neste período</div>
+              <div class="j-empty__text">
+                Importe o extrato (OFX) da conta ou a fatura do cartão (PDF) do
+                Banco do Brasil, ou escolha outro mês.
+              </div>
+            }
           </div>
         } @else if (!filtradas().length) {
           <div class="j-empty" style="padding: 48px 16px">
@@ -1127,6 +1145,17 @@ export class Transacoes {
     return p.tipo === 'mes'
       ? rotuloMes(p.mes)
       : `${rotuloMes(mesAnterior(mesAnterior(mesAtual())))} a ${rotuloMes(mesAtual())}`;
+  });
+  /** O mês corrente sem lançamentos é só começo de mês, não falta de importação. */
+  protected readonly mesAtualVazio = computed(() => {
+    const p = this.periodo();
+    return p.tipo === 'mes' && p.mes === this.mesAtualStr;
+  });
+  protected readonly mesAnteriorRotulo = computed(() => {
+    const p = this.periodo();
+    return p.tipo === 'mes'
+      ? rotuloMes(mesAnterior(p.mes)).split(' ')[0].toLowerCase()
+      : '';
   });
   protected readonly opcoesPeriodo = computed(() => [
     { id: 'este', rotulo: 'Este mês', ativo: this.periodoAtivo() === 'este' },
