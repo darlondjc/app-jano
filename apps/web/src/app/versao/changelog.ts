@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.17.0',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Período financeiro pelo salário: o Jano conta do dia em que o salário cai até a véspera do próximo (por exemplo, 5/out – 4/nov), e não mais do dia 1 ao 30. Se o salário adiantar por fim de semana ou feriado, o período começa no dia em que ele caiu. Vale para Início, Orçamento, Avaliações, Transações, Categorias e Projeções; Conta mostra qual salário foi reconhecido.',
+      },
+    ],
+  },
+  {
     version: '0.16.1',
     date: '2026-11-01',
     items: [

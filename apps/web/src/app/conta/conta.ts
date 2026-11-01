@@ -13,6 +13,7 @@ import { AtualizacaoService } from '../versao/atualizacao.service';
 import { VERSAO_ATUAL } from '../versao/changelog';
 import { baixar, transacoesCsv } from './exportar';
 import { Preferencias } from './preferencias';
+import { PeriodoService } from '../periodo/periodo.service';
 import { haQuantoTempo } from './tempo';
 
 /** Conta e dados: importação, atualização do app, privacidade e dados pessoais. */
@@ -124,6 +125,29 @@ import { haQuantoTempo } from './tempo';
       <div class="acoes">
         <a janoButton routerLink="/transacoes">Importar novo extrato</a>
       </div>
+    </section>
+
+    <section class="j-card" aria-label="Período financeiro">
+      <h2>Período financeiro</h2>
+      @if (periodo.salario(); as sal) {
+        <p>
+          Começa no dia em que o salário cai e vai até a véspera do próximo.
+          Salário reconhecido: <b>{{ sal.nome }}</b
+          >, em geral no dia {{ sal.dia }}. Período atual:
+          <b>{{ periodo.rotulo(periodo.atual()) }}</b
+          >.
+        </p>
+        <p class="j-sub">
+          Se o salário adiantar (fim de semana, feriado), o período começa no
+          dia em que ele cair.
+        </p>
+      } @else {
+        <p>
+          Nenhum salário reconhecido ainda: os números seguem o mês do
+          calendário. Com três meses de extrato, o Jano passa a contar do
+          salário até a véspera do próximo.
+        </p>
+      }
     </section>
 
     <section class="j-card">
@@ -271,6 +295,7 @@ export class Conta {
   private readonly repo = inject(ContaRepository);
   protected readonly atualizacao = inject(AtualizacaoService);
   protected readonly prefs = inject(Preferencias);
+  protected readonly periodo = inject(PeriodoService);
 
   protected readonly versao = VERSAO_ATUAL;
   protected readonly emDesenvolvimento = BUILD_ID === 'dev';
@@ -284,6 +309,7 @@ export class Conta {
   protected readonly texto = signal('');
 
   constructor() {
+    void this.periodo.garantir();
     void this.carregar();
   }
 

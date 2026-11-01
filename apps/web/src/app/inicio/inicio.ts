@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { nomeDeExibicao } from '@jano/import-file';
+import { PeriodoService } from '../periodo/periodo.service';
 import {
   AuthService,
   BalancesRepository,
@@ -22,7 +23,11 @@ import {
 } from '@jano/data-access';
 import {
   budgetRows,
+  calendario,
   contasDoMes,
+  diaNoPeriodo,
+  diasNoPeriodo,
+  monthOf,
   cumulativeSpend,
   daysLeftInMonth,
   formatBRL,
@@ -223,7 +228,7 @@ function lerDispensado(): string | null {
       <div>
         <h1>Como está seu mês</h1>
         <div class="j-sub">
-          Olá, {{ nome() }} · dia {{ diaAtual }} de {{ diasNoMes }} ·
+          Olá, {{ nome() }} · dia {{ diaAtual() }} de {{ diasNoMes() }} ·
           {{ mes() }}
         </div>
       </div>
@@ -307,9 +312,9 @@ function lerDispensado(): string | null {
           <div
             class="j-hero__mes"
             role="img"
-            [attr.aria-label]="'Dia ' + diaAtual + ' de ' + diasNoMes"
+            [attr.aria-label]="'Dia ' + diaAtual() + ' de ' + diasNoMes()"
           >
-            <span [style.width.%]="pace * 100"></span>
+            <span [style.width.%]="pace() * 100"></span>
           </div>
           @if (gastar(); as g) {
             <div class="j-hero__linha">
@@ -342,7 +347,7 @@ function lerDispensado(): string | null {
           />
         }
         <jano-kpi-card
-          label="Gasto no mês"
+          [label]="periodo.peloSalario() ? 'Gasto no período' : 'Gasto no mês'"
           [valueCents]="totais().spent"
           [serie]="comparacao().gastos"
           corTendencia="text-2"
@@ -381,9 +386,7 @@ function lerDispensado(): string | null {
               </span>
             </div>
           } @else {
-            <span class="j-cap"
-              >Projeção para {{ diasNoMes }} de {{ mesCurto }}</span
-            >
+            <span class="j-cap">Projeção até {{ fimDoPeriodo() }}</span>
           }
         </jano-kpi-card>
       </section>
@@ -471,11 +474,17 @@ function lerDispensado(): string | null {
           }
 
           <section class="j-card ordem-4" aria-label="Gasto acumulado">
-            <h2>Gasto acumulado no mês</h2>
+            <h2>
+              {{
+                periodo.peloSalario()
+                  ? 'Gasto acumulado no período'
+                  : 'Gasto acumulado no mês'
+              }}
+            </h2>
             <p class="j-sub" style="margin: 4px 0 0">{{ resumoRitmo() }}</p>
             <jano-grafico-acumulado
               [serie]="serie()"
-              [dias]="diasNoMes"
+              [dias]="diasNoMes()"
               [limite]="limiteTotal()"
               [projecao]="gastoProjetado()"
             />
@@ -494,7 +503,7 @@ function lerDispensado(): string | null {
             </div>
             @if (!txs().length) {
               <p class="j-sub sem-mes">
-                Nada em {{ mesCurto }} ainda; a sincronização diária traz os
+                Nada neste período ainda; a sincronização diária traz os
                 lançamentos novos. Abaixo, os mais recentes.
               </p>
             }
@@ -556,8 +565,8 @@ function lerDispensado(): string | null {
                     [name]="nomeCategoria(m.categoryId)"
                     [spentCents]="m.spentCents"
                     [limitCents]="m.limitCents"
-                    [pace]="pace"
-                    [daysLeft]="diasRestantes"
+                    [pace]="pace()"
+                    [daysLeft]="diasRestantes()"
                     [conta]="contas().get(m.categoryId)"
                     [ritmoNoTexto]="false"
                   />
@@ -590,38 +599,52 @@ export class Inicio {
   private readonly contaRepo = inject(ContaRepository);
   private readonly balancesRepo = inject(BalancesRepository);
   private readonly insightsRepo = inject(InsightsRepository);
+  protected readonly periodo = inject(PeriodoService);
   /** Insights dispensados nas Avaliações neste mês. */
   private readonly dispensados = signal<ReadonlySet<string>>(new Set());
 
   protected readonly money = formatBRL;
   protected readonly classeValor = classeValor;
   private readonly hoje = new Date();
-  private readonly month = mesAtual(this.hoje);
-  protected readonly mes = computed(() => rotuloMes(this.month));
-  protected readonly mesCurto = rotuloMes(this.month)
-    .split(' ')[0]
-    .toLowerCase();
-  protected readonly diaAtual = this.hoje.getDate();
-  protected readonly diasNoMes = new Date(
-    this.hoje.getFullYear(),
-    this.hoje.getMonth() + 1,
-    0,
-  ).getDate();
-  protected readonly pace = monthPace(
-    this.hoje.getFullYear(),
-    this.hoje.getMonth() + 1,
-    this.diaAtual,
+  /** Período financeiro atual ('AAAA-MM'); vale o mês até o salário ser conhecido. */
+  private readonly month = signal(mesAtual(this.hoje));
+  protected readonly mes = computed(() =>
+    this.periodo.peloSalario()
+      ? this.periodo.rotulo(this.month())
+      : rotuloMes(this.month()),
   );
-  protected readonly diasRestantes = daysLeftInMonth(
-    this.hoje.getFullYear(),
-    this.hoje.getMonth() + 1,
-    this.diaAtual,
+  protected readonly diaAtual = signal(this.hoje.getDate());
+  protected readonly diasNoMes = signal(
+    new Date(this.hoje.getFullYear(), this.hoje.getMonth() + 1, 0).getDate(),
+  );
+  protected readonly pace = signal(
+    monthPace(
+      this.hoje.getFullYear(),
+      this.hoje.getMonth() + 1,
+      this.hoje.getDate(),
+    ),
+  );
+  protected readonly diasRestantes = signal(
+    daysLeftInMonth(
+      this.hoje.getFullYear(),
+      this.hoje.getMonth() + 1,
+      this.hoje.getDate(),
+    ),
+  );
+  /** "4 de nov": último dia do período. */
+  protected readonly fimDoPeriodo = computed(() => {
+    const fim = calendario().fim(this.month());
+    return `${Number(fim.slice(8, 10))} de ${rotuloMes(fim.slice(0, 7)).split(' ')[0].toLowerCase()}`;
+  });
+  /** "o anterior" com o período pelo salário; "set" com o mês do calendário. */
+  private readonly nomeAnterior = computed(() =>
+    this.periodo.peloSalario() ? 'o anterior' : undefined,
   );
 
   /** Mês atual e os três anteriores: o histórico alimenta os alertas. */
   protected readonly historico = signal<TransactionDoc[]>([]);
   protected readonly txs = computed(() =>
-    this.historico().filter((t) => t.date.startsWith(this.month)),
+    this.historico().filter((t) => monthOf(t.date) === this.month()),
   );
   private readonly budgets = signal<BudgetDoc[]>([]);
   protected readonly categorias = signal<CategoryDoc[]>([]);
@@ -656,20 +679,26 @@ export class Inicio {
   protected readonly comparacao = computed(() =>
     comparacaoNoDia(
       this.historico(),
-      this.month,
-      this.diaAtual,
+      this.month(),
+      this.diaAtual(),
       3,
       this.cartoes(),
     ),
   );
   protected readonly variacaoGasto = computed(() =>
-    variacao(this.comparacao().gastos, previousMonths(this.month, 1)[0], false),
+    variacao(
+      this.comparacao().gastos,
+      previousMonths(this.month(), 1)[0],
+      false,
+      this.nomeAnterior(),
+    ),
   );
   protected readonly variacaoReceita = computed(() =>
     variacao(
       this.comparacao().receitas,
-      previousMonths(this.month, 1)[0],
+      previousMonths(this.month(), 1)[0],
       true,
+      this.nomeAnterior(),
     ),
   );
   protected reais(cents: number): string {
@@ -718,9 +747,9 @@ export class Inicio {
   );
   /** Metas com a sobra do mês anterior (rollover); sem dados do mês anterior, sem folga. */
   private readonly metas = computed(() => {
-    const anterior = previousMonths(this.month, 1)[0];
-    const doAnterior = this.historico().filter((t) =>
-      t.date.startsWith(anterior),
+    const anterior = previousMonths(this.month(), 1)[0];
+    const doAnterior = this.historico().filter(
+      (t) => monthOf(t.date) === anterior,
     );
     return limitesComSobra(
       this.budgets(),
@@ -733,7 +762,7 @@ export class Inicio {
     budgetRows(this.metas(), this.totais().spentByCategory),
   );
   protected readonly contas = computed(() =>
-    contasDoMes(this.historico(), this.month),
+    contasDoMes(this.historico(), this.month()),
   );
   /** Metas mais apertadas; contas do mês só entram se forem passar da meta. */
   protected readonly apertadas = computed(() => {
@@ -752,10 +781,10 @@ export class Inicio {
   });
   /** Gasto e receita previstos para o fim do mês (ver `previsaoDoMes`). */
   private readonly previsao = computed(() => {
-    const anteriores = previousMonths(this.month, 3)
+    const anteriores = previousMonths(this.month(), 3)
       .map((m) =>
         monthTotals(
-          this.historico().filter((t) => t.date.startsWith(m)),
+          this.historico().filter((t) => monthOf(t.date) === m),
           this.cartoes(),
         ),
       )
@@ -763,7 +792,7 @@ export class Inicio {
     return previsaoDoMes({
       gastoCents: this.totais().spent,
       receitaCents: this.totais().income,
-      pace: this.pace,
+      pace: this.pace(),
       gastosAnteriores: anteriores.map((t) => t.spent),
       receitasAnteriores: anteriores.map((t) => t.income),
     });
@@ -775,7 +804,7 @@ export class Inicio {
     () => this.previsao().receitaCents - this.gastoProjetado(),
   );
   protected readonly serie = computed(() =>
-    cumulativeSpend(this.txs(), this.diaAtual, this.cartoes()),
+    cumulativeSpend(this.txs(), this.diaAtual(), this.cartoes()),
   );
   protected readonly statusMeta = computed(() => {
     const limite = this.limiteTotal();
@@ -783,20 +812,20 @@ export class Inicio {
     return {
       pct: Math.round((this.totais().spent / limite) * 100),
       // Mesma folga das metas: uma compra no começo do mês não põe tudo "acima do ritmo".
-      noRitmo: this.totais().spent <= limite * Math.min(1, this.pace + 0.15),
+      noRitmo: this.totais().spent <= limite * Math.min(1, this.pace() + 0.15),
     };
   });
   protected readonly resumoRitmo = computed(() => {
     const limite = this.limiteTotal();
     if (!limite)
       return 'Defina metas no Orçamento para ver o ritmo ideal de gasto.';
-    const ideal = Math.round(limite * this.pace);
+    const ideal = Math.round(limite * this.pace());
     const dif = this.totais().spent - ideal;
-    if (dif > 0 && this.totais().spent <= limite * (this.pace + 0.15))
-      return `Você gastou ${formatBRL(this.totais().spent)} até o dia ${this.diaAtual}, perto do ritmo ideal.`;
+    if (dif > 0 && this.totais().spent <= limite * (this.pace() + 0.15))
+      return `Você gastou ${formatBRL(this.totais().spent)} até o dia ${this.diaAtual()}, perto do ritmo ideal.`;
     return dif <= 0
-      ? `Você está ${formatBRL(-dif)} abaixo do ritmo ideal para o dia ${this.diaAtual}.`
-      : `Você está ${formatBRL(dif)} acima do ritmo ideal para o dia ${this.diaAtual}.`;
+      ? `Você está ${formatBRL(-dif)} abaixo do ritmo ideal para o dia ${this.diaAtual()}.`
+      : `Você está ${formatBRL(dif)} acima do ritmo ideal para o dia ${this.diaAtual()}.`;
   });
   protected readonly nomeTx = nomeDeExibicao;
   /** As mais recentes de todo o histórico: no dia 1, sem nada no mês, mostra as do anterior. */
@@ -808,11 +837,11 @@ export class Inicio {
   protected readonly alertas = computed(() =>
     montarAlertas({
       txs: this.historico(),
-      month: this.month,
-      today: `${this.month}-${String(this.diaAtual).padStart(2, '0')}`,
+      month: this.month(),
+      today: hojeIso(this.hoje),
       budgets: this.metas(),
       spentByCategory: this.totais().spentByCategory,
-      daysLeft: this.diasRestantes,
+      daysLeft: this.diasRestantes(),
       assinaturasId: this.cat('assinaturas')?.id ?? null,
       nomeCategoria: (id) => this.nomeCategoria(id),
       moeda: formatBRL,
@@ -861,19 +890,28 @@ export class Inicio {
     const uid = this.auth.user()?.uid;
     if (!uid) return;
     try {
+      await this.periodo.garantir();
+      const hoje = hojeIso(this.hoje);
+      const chave = this.periodo.atual();
+      this.month.set(chave);
+      this.diaAtual.set(diaNoPeriodo(hoje));
+      this.diasNoMes.set(diasNoPeriodo(chave));
+      this.pace.set(this.periodo.ritmo(chave));
+      this.diasRestantes.set(this.periodo.diasRestantes(chave));
       const [txs, budgets, cats, contas, saldos, dispensados] =
         await Promise.all([
+          // Três períodos antes do atual: começam no máximo um mês antes da chave deles.
           this.txRepo.listRange(
             uid,
-            previousMonths(this.month, 3).at(-1) as string,
-            this.month,
+            previousMonths(chave, 4).at(-1) as string,
+            mesAtual(this.hoje),
           ),
           this.budgetRepo.list(uid),
           this.catalog.categories(uid),
           this.catalog.accounts(uid),
           // Só alimenta o KPI de saldo: se falhar, o resto da tela segue normal.
           this.balancesRepo.list(uid).catch(() => []),
-          this.insightsRepo.dispensados(uid, this.month).catch(() => []),
+          this.insightsRepo.dispensados(uid, this.month()).catch(() => []),
         ]);
       this.dispensados.set(new Set(dispensados));
       this.saldo.set(saldoAtual(saldos));

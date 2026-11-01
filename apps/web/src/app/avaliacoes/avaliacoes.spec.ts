@@ -72,7 +72,7 @@ describe('Avaliações no dia 1, sem lançamentos no mês', () => {
       expect(el.querySelector('.frase')).not.toBeNull();
     });
     expect(el.textContent).not.toContain('Ainda não há o que avaliar');
-    expect(el.textContent).toContain('Outubro 2026 · mês fechado');
+    expect(el.textContent).toContain('Outubro 2026 · fechado');
     expect(el.querySelector('.frase')?.textContent).toMatch(
       /^Outubro fechou com R\$\s690,00 de gastos, 38% mais que setembro\.$/,
     );

@@ -1,4 +1,10 @@
-import { ehEstorno, monthTotals, type ScorePart } from '@jano/engine';
+import {
+  diaNoPeriodo,
+  ehEstorno,
+  monthOf,
+  monthTotals,
+  type ScorePart,
+} from '@jano/engine';
 import { estabelecimento, nomeDeExibicao } from '@jano/import-file';
 
 export interface TxAval {
@@ -22,8 +28,8 @@ export function gastoDoMes(
 ): { total: number; porCategoria: Record<string, number> } {
   const doMes = txs.filter(
     (t) =>
-      t.date.startsWith(month) &&
-      (ateODia === undefined || Number(t.date.slice(8, 10)) <= ateODia),
+      monthOf(t.date) === month &&
+      (ateODia === undefined || diaNoPeriodo(t.date) <= ateODia),
   );
   const m = monthTotals(doMes, cartoes);
   return { total: m.spent, porCategoria: m.spentByCategory };
@@ -88,14 +94,20 @@ export function fraseResumo(
   c: Comparativo,
   month: string,
   destaque: { nome: string; pct: number } | null,
+  /** Com o período pelo salário: "no período anterior" no lugar de "em setembro". */
+  porPeriodo = false,
 ): string {
   if (c.pct === null)
-    return 'Ainda não há gastos do mês anterior até este dia para comparar.';
-  const mesAnterior = MESES[(Number(month.slice(5, 7)) + 10) % 12];
+    return porPeriodo
+      ? 'Ainda não há gastos do período anterior até este dia para comparar.'
+      : 'Ainda não há gastos do mês anterior até este dia para comparar.';
+  const em = porPeriodo
+    ? 'no período anterior'
+    : `em ${MESES[(Number(month.slice(5, 7)) + 10) % 12]}`;
   const base =
     c.pct === 0
-      ? `Você gastou o mesmo que em ${mesAnterior}`
-      : `Você gastou ${Math.abs(c.pct)}% ${c.pct < 0 ? 'menos' : 'mais'} que em ${mesAnterior}`;
+      ? `Você gastou o mesmo que ${em}`
+      : `Você gastou ${Math.abs(c.pct)}% ${c.pct < 0 ? 'menos' : 'mais'} que ${em}`;
   if (!destaque) return `${base}.`;
   const liga = c.pct < 0 ? 'mas' : 'e';
   return `${base}, ${liga} ${destaque.nome} subiu ${destaque.pct}%.`;
@@ -107,11 +119,18 @@ export function fraseMesFechado(
   month: string,
   destaque: { nome: string; pct: number } | null,
   moeda: (cents: number) => string,
+  /** Com o período pelo salário: o rótulo dele ("5/set – 4/out"). */
+  rotuloPeriodo?: string,
 ): string {
   const nome = MESES[Number(month.slice(5, 7)) - 1];
-  const base = `${nome[0].toUpperCase()}${nome.slice(1)} fechou com ${moeda(c.atual)} de gastos`;
+  const quem = rotuloPeriodo
+    ? `O período ${rotuloPeriodo}`
+    : `${nome[0].toUpperCase()}${nome.slice(1)}`;
+  const base = `${quem} fechou com ${moeda(c.atual)} de gastos`;
   if (c.pct === null) return `${base}.`;
-  const mesAnterior = MESES[(Number(month.slice(5, 7)) + 10) % 12];
+  const mesAnterior = rotuloPeriodo
+    ? 'o anterior'
+    : MESES[(Number(month.slice(5, 7)) + 10) % 12];
   const comp =
     c.pct === 0
       ? `o mesmo que ${mesAnterior}`
@@ -194,7 +213,7 @@ export function maioresEstabelecimentos(
 ): Estabelecimento[] {
   const grupos = new Map<string, Estabelecimento>();
   for (const t of txs) {
-    if (!t.date.startsWith(month) || t.isTransfer || t.amountCents >= 0)
+    if (monthOf(t.date) !== month || t.isTransfer || t.amountCents >= 0)
       continue;
     const loja = estabelecimento(t.descriptionNorm);
     const g = grupos.get(loja) ?? {

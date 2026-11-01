@@ -15,13 +15,15 @@ import {
 } from '@jano/data-access';
 import {
   budgetRows,
+  calendario,
   contasDoMes,
-  daysLeftInMonth,
+  mesesDoPeriodo,
+  monthOf,
+  previousMonths,
   estadoDaMeta,
   type ContaDoMes,
   limitesComSobra,
   formatBRL,
-  monthPace,
   monthTotals,
 } from '@jano/engine';
 import { parseAmountToCents } from '@jano/import-file';
@@ -35,6 +37,7 @@ import {
   JanoSkeletonKpi,
 } from '@jano/ui';
 import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
+import { PeriodoService } from '../periodo/periodo.service';
 
 @Component({
   selector: 'jano-orcamento',
@@ -207,7 +210,7 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
             <div
               class="j-hero__mes"
               role="img"
-              [attr.aria-label]="ritmo() + '% do mês passou'"
+              [attr.aria-label]="ritmo() + '% ' + doQue() + ' passou'"
             >
               <span [style.width.%]="ritmo()"></span>
             </div>
@@ -218,7 +221,7 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
               {{ money(limiteTotal()) }}</span
             >
             @if (pace() !== undefined) {
-              <span>{{ ritmo() }}% do mês</span>
+              <span>{{ ritmo() }}% {{ doQue() }}</span>
             }
           </div>
           @if (resumo().atencao.length) {
@@ -384,6 +387,7 @@ export class Orcamento {
   private readonly txRepo = inject(TransactionsRepository);
   private readonly budgetRepo = inject(BudgetsRepository);
   private readonly catalog = inject(CatalogRepository);
+  protected readonly periodo = inject(PeriodoService);
 
   protected readonly money = formatBRL;
   protected readonly month = signal(new Date().toISOString().slice(0, 7));
@@ -402,7 +406,11 @@ export class Orcamento {
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
 
-  protected readonly rotulo = computed(() => rotuloMes(this.month()));
+  protected readonly rotulo = computed(() =>
+    this.periodo.peloSalario()
+      ? this.periodo.rotulo(this.month())
+      : rotuloMes(this.month()),
+  );
   /** Meta em edição na folha; `categoryId: null` = nova meta. */
   protected readonly editando = signal<{ categoryId: string | null } | null>(
     null,
@@ -428,6 +436,9 @@ export class Orcamento {
       .sort((x, y) => x.k.peso - y.k.peso || y.k.proporcao - x.k.proporcao)
       .map(({ b }) => b);
   });
+  protected readonly doQue = computed(() =>
+    this.periodo.peloSalario() ? 'do período' : 'do mês',
+  );
   protected readonly ritmo = computed(() =>
     Math.round((this.pace() ?? 1) * 100),
   );
@@ -452,13 +463,12 @@ export class Orcamento {
       });
       if (status !== 'ok') atencao.push(this.nome(l.categoryId));
     }
-    const fim = this.month() === this.mesAtual;
-    const [ano, mes] = this.month().split('-').map(Number);
-    const ultimo = new Date(ano, mes, 0).getDate();
+    const fim = calendario().fim(this.month());
     return {
-      rotulo: fim
-        ? `Ainda cabe nas metas até ${ultimo}/${String(mes).padStart(2, '0')}`
-        : 'Sobrou nas metas',
+      rotulo:
+        this.month() === this.mesAtual()
+          ? `Ainda cabe nas metas até ${fim.slice(8, 10)}/${fim.slice(5, 7)}`
+          : 'Sobrou nas metas',
       cabeCents,
       gastoCents,
       atencao,
@@ -467,11 +477,16 @@ export class Orcamento {
   protected readonly limiteTotal = computed(() =>
     this.efetivas().reduce((s, b) => s + b.limitCents, 0),
   );
+  /** "novembro" ou, pelo salário, "o próximo período". */
   protected readonly proximoMes = computed(() =>
-    rotuloMes(mesSeguinte(this.month())).split(' ')[0].toLowerCase(),
+    this.periodo.peloSalario()
+      ? 'o próximo período'
+      : rotuloMes(mesSeguinte(this.month())).split(' ')[0].toLowerCase(),
   );
   protected readonly mesPassado = computed(() =>
-    rotuloMes(mesAnterior(this.month())).split(' ')[0].toLowerCase(),
+    this.periodo.peloSalario()
+      ? 'o período anterior'
+      : rotuloMes(mesAnterior(this.month())).split(' ')[0].toLowerCase(),
   );
   protected readonly semMeta = computed(() => {
     const usadas = new Set(this.budgets().map((b) => b.categoryId));
@@ -480,24 +495,16 @@ export class Orcamento {
     );
   });
 
-  private readonly hoje = new Date();
-  private readonly mesAtual = this.hoje.toISOString().slice(0, 7);
+  /** Período de hoje: só nele há ritmo e dias restantes. */
+  private readonly mesAtual = this.periodo.atual;
   protected readonly pace = computed(() =>
-    this.month() === this.mesAtual
-      ? monthPace(
-          this.hoje.getFullYear(),
-          this.hoje.getMonth() + 1,
-          this.hoje.getDate(),
-        )
+    this.month() === this.mesAtual()
+      ? this.periodo.ritmo(this.month())
       : undefined,
   );
   protected readonly daysLeft = computed(() =>
-    this.month() === this.mesAtual
-      ? daysLeftInMonth(
-          this.hoje.getFullYear(),
-          this.hoje.getMonth() + 1,
-          this.hoje.getDate(),
-        )
+    this.month() === this.mesAtual()
+      ? this.periodo.diasRestantes(this.month())
       : undefined,
   );
 
@@ -523,6 +530,8 @@ export class Orcamento {
       );
       this.categorias.set(cats);
       this.budgets.set(budgets);
+      await this.periodo.garantir();
+      this.month.set(this.periodo.atual());
       await this.carregarMes();
     } catch (e) {
       this.falha(e);
@@ -533,12 +542,19 @@ export class Orcamento {
   private async carregarMes(): Promise<void> {
     this.carregando.set(true);
     try {
-      const anterior = mesAnterior(this.month());
-      const [doMes, doAnterior, antesDele] = await Promise.all([
-        this.txRepo.listMonth(this.uid, this.month()),
-        this.txRepo.listMonth(this.uid, anterior),
-        this.txRepo.listMonth(this.uid, mesAnterior(anterior)),
-      ]);
+      // O período e os dois anteriores; um período pode começar no mês de antes da chave.
+      const chave = this.month();
+      const anterior = mesAnterior(chave);
+      const todas = await this.txRepo.listRange(
+        this.uid,
+        previousMonths(chave, 3).at(-1) as string,
+        mesesDoPeriodo(chave).at(-1) as string,
+      );
+      const doPeriodo = (k: string) =>
+        todas.filter((t) => monthOf(t.date) === k);
+      const doMes = doPeriodo(chave);
+      const doAnterior = doPeriodo(anterior);
+      const antesDele = doPeriodo(mesAnterior(anterior));
       this.totais.set(monthTotals(doMes, this.cartoes));
       this.contas.set(
         contasDoMes([...doMes, ...doAnterior, ...antesDele], this.month()),
@@ -583,7 +599,7 @@ export class Orcamento {
     const l = this.linhas().find((x) => x.categoryId === id);
     if (!l) return '';
     const partes = [
-      `${formatBRL(l.spentCents)} gastos em ${rotuloMes(this.month()).split(' ')[0].toLowerCase()}.`,
+      `${formatBRL(l.spentCents)} gastos ${this.periodo.peloSalario() ? 'neste período' : 'em ' + rotuloMes(this.month()).split(' ')[0].toLowerCase()}.`,
     ];
     const sobra = this.sobraDe(id);
     if (sobra)

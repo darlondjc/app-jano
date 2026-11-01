@@ -17,7 +17,9 @@ describe('Início no modo demonstração', () => {
     expect(texto).toContain('Olá, Visitante');
     expect(texto).toContain('17.680'); // conta corrente e poupança
     expect(texto).toContain('Pode gastar até o salário');
-    expect(texto).toContain('Gasto no mês');
+    // A demonstração tem salário todo dia 5: o app conta por período.
+    expect(texto).toContain('Gasto no período');
+    expect(texto).toMatch(/\d+\/\w{3} – \d+\/\w{3}/);
     const fatura =
       (f.nativeElement as HTMLElement).querySelector('jano-fatura-cartao')
         ?.textContent ?? '';
