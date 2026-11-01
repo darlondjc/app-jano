@@ -182,3 +182,56 @@ describe('pagamento "PGTO CARTAO" (como no extrato do BB)', () => {
     expect(f.situacao).toBe('fecha em 8 dias');
   });
 });
+
+describe('cartaoDaFatura com o valor oficial do banco', () => {
+  const d = gerarDadosDemo(new Date(2026, 10, 1, 10));
+  const comFaturas = (faturasBanco: unknown) =>
+    d.balances.map((b) =>
+      b.kind === 'cartao'
+        ? {
+            ...b,
+            credito: undefined,
+            faturaAberta: undefined,
+            balanceCents: 1_793_000,
+            faturasBanco,
+          }
+        : b,
+    ) as typeof d.balances;
+  const base = {
+    txs: d.transactions,
+    cartoes: new Set(['cartao-de-credito']),
+    hoje: '2026-11-01',
+  };
+  const oficial = [
+    { vencimento: '2026-11-05', totalCents: 885433, minimoCents: 132815 },
+  ];
+
+  it('com os dias informados, o valor e o mínimo são os do banco', () => {
+    const f = cartaoDaFatura({
+      ...base,
+      saldos: comFaturas(oficial),
+      dias: { fecha: 26, vence: 5 },
+    })!;
+    expect(f.valorCents).toBe(885433);
+    expect(f.minimoCents).toBe(132815);
+    expect(f.valorDoBanco).toBe(true);
+    expect(f.situacao).toBe('vence em 4 dias');
+  });
+
+  it('mesmo sem dias informados, mostra valor e vencimento do banco', () => {
+    const f = cartaoDaFatura({ ...base, saldos: comFaturas(oficial) })!;
+    expect(f.fase).toBe('fechada');
+    expect(f.vence).toBe('2026-11-05');
+    expect(f.valorCents).toBe(885433);
+  });
+
+  it('fatura do banco já vencida não vale para a atual', () => {
+    const f = cartaoDaFatura({
+      ...base,
+      saldos: comFaturas([
+        { vencimento: '2026-10-05', totalCents: 1, minimoCents: null },
+      ]),
+    })!;
+    expect(f.valorDoBanco).toBe(false);
+  });
+});

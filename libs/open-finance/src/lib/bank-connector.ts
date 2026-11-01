@@ -33,6 +33,14 @@ export interface CreditoCartao {
 }
 
 /** Resumo da fatura aberta, com as compras ainda pendentes. Nunca vira transação. */
+/** Fatura fechada como o banco informa (valor oficial, com encargos e créditos). */
+export interface FaturaBanco {
+  /** AAAA-MM-DD */
+  vencimento: string;
+  totalCents: number;
+  minimoCents: number | null;
+}
+
 export interface ResumoFatura {
   /** Primeiro dia considerado (AAAA-MM-DD). */
   desde: string;

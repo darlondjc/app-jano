@@ -24,6 +24,7 @@ import {
   inferirPeloHistorico,
   inicioDaFaturaAberta,
   resumirFatura,
+  type FaturaBanco,
   type ResumoFatura,
   type CategoriaRef,
   type LancamentoGravado,
@@ -320,8 +321,18 @@ async function sync(
     ate,
   );
   console.log(`Faturas abertas resumidas: ${faturas.size} cartões.`);
+  // Faturas fechadas como o banco informa (valor oficial). No log, só contagens.
+  const doBanco = new Map<string, FaturaBanco[]>();
+  for (const a of contasPluggy) {
+    if (a.kind !== 'cartao') continue;
+    const lista = await connector.fetchFaturas(a);
+    doBanco.set(a.externalId, lista.slice(0, 3));
+    console.log(
+      `Faturas do banco: ${lista.length} (com mínimo: ${lista.filter((f) => f.minimoCents !== null).length}).`,
+    );
+  }
   if (!seco) {
-    await gravarSaldos(db, base, contasPluggy, config, faturas);
+    await gravarSaldos(db, base, contasPluggy, config, faturas, doBanco);
     await gravarConexoes(db, base, connector);
   }
 }
@@ -474,6 +485,7 @@ async function gravarSaldos(
   contas: ConnectedAccount[],
   config: Config,
   faturas: Map<string, ResumoFatura>,
+  doBanco: Map<string, FaturaBanco[]>,
 ): Promise<void> {
   const col = db.collection(`${base}/balances`);
   const batch = db.batch();
@@ -495,6 +507,7 @@ async function gravarSaldos(
         ? {
             credito: a.credito ?? null,
             faturaAberta: faturas.get(a.externalId) ?? null,
+            faturasBanco: doBanco.get(a.externalId) ?? [],
           }
         : {}),
     });

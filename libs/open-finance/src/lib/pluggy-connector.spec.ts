@@ -198,3 +198,51 @@ describe('toConnectedAccount: cartão', () => {
     });
   });
 });
+
+describe('faturas do banco (/bills)', () => {
+  const credentials = { clientId: 'id', clientSecret: 'secret' };
+  const conta = {
+    externalId: 'card',
+    kind: 'cartao' as const,
+    name: 'Cartão',
+  };
+
+  it('converte para centavos, data local e ordena da mais recente', async () => {
+    const { fn } = fakeFetch({
+      '/auth': { apiKey: 'k' },
+      '/bills?accountId=card': {
+        results: [
+          {
+            id: 'b1',
+            dueDate: '2026-10-05T00:00:00.000Z',
+            totalAmount: 7200.1,
+            minimumPaymentAmount: 1080,
+          },
+          {
+            id: 'b2',
+            dueDate: '2026-11-05T00:00:00.000Z',
+            totalAmount: 8854.33,
+            minimumPaymentAmount: null,
+          },
+        ],
+      },
+    });
+    const c = new PluggyConnector(
+      new PluggyClient(credentials, { fetch: fn }),
+      ['item1'],
+    );
+    expect(await c.fetchFaturas(conta)).toEqual([
+      { vencimento: '2026-11-05', totalCents: 885433, minimoCents: null },
+      { vencimento: '2026-10-05', totalCents: 720010, minimoCents: 108000 },
+    ]);
+  });
+
+  it('sem a consulta no banco, lista vazia (sem derrubar a sincronização)', async () => {
+    const { fn } = fakeFetch({ '/auth': { apiKey: 'k' } });
+    const c = new PluggyConnector(
+      new PluggyClient(credentials, { fetch: fn }),
+      ['item1'],
+    );
+    expect(await c.fetchFaturas(conta)).toEqual([]);
+  });
+});

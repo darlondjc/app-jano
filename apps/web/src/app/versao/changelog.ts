@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.20.0',
+    date: '2026-11-01',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Fatura com o valor do banco: a sincronização passa a buscar as faturas fechadas pelo Open Finance. Quando o banco manda, o cartão mostra o valor, o vencimento e o pagamento mínimo oficiais, iguais aos do app do banco. Sem isso, continua a soma das compras do ciclo, agora com o aviso de que pode diferir (encargos, ajustes).',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Ao informar o fechamento, a dica explica: é a véspera do "melhor dia de compra" do app do banco.',
+      },
+    ],
+  },
+  {
     version: '0.19.0',
     date: '2026-11-01',
     items: [
