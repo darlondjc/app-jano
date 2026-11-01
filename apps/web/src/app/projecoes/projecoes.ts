@@ -44,6 +44,7 @@ import { marcarTransferencias } from '../transacoes/transferencias';
 import { mesAtual } from '../transacoes/agrupar';
 import { planoDoMes } from './plano';
 import { PlanoMes } from './plano-mes';
+import { ObjetivosCard } from './objetivos-card';
 
 const MESES = [
   'Jan',
@@ -99,6 +100,7 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
     JanoSkeletonGroup,
     JanoSkeletonKpi,
     PlanoMes,
+    ObjetivosCard,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -127,6 +129,9 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
     .chips {
       display: flex;
       gap: 8px;
+    }
+    .objetivos {
+      margin-top: 16px;
     }
     .longo {
       display: flex;
@@ -363,6 +368,7 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
       </jano-skeleton-group>
     } @else {
       <jano-plano-mes [plano]="plano()" />
+      <jano-objetivos class="objetivos" [base]="baseObjetivos()" />
       <div class="longo">
         <h2>Longo prazo</h2>
         <div class="chips" role="group" aria-label="Horizonte">
@@ -746,6 +752,16 @@ export class Projecoes {
   protected readonly saldoBanco = signal<SaldoAtual | null>(null);
   /** Fatura em aberto dos cartões (positivo = devido), do banco. */
   private readonly fatura = signal(0);
+  /** Saldo da poupança no banco; null sem Open Finance. */
+  private readonly poupanca = signal<number | null>(null);
+  protected readonly baseObjetivos = computed(() => {
+    const p = this.proj();
+    return {
+      poupancaCents: this.poupanca(),
+      sobraMediaCents: p ? p.receitaMedia - p.gastoMedio : null,
+      mesAtual: this.month,
+    };
+  });
   protected readonly plano = computed(() =>
     planoDoMes({
       saldoCents: this.saldoBanco()?.cents ?? null,
@@ -970,6 +986,14 @@ export class Projecoes {
         this.scenariosRepo.get(uid).catch(() => null),
       ]);
       this.saldoBanco.set(saldoAtual(saldos));
+      const poupancas = saldos.filter(
+        (b) => b.kind === 'conta' && b.detail === 'poupança',
+      );
+      this.poupanca.set(
+        poupancas.length
+          ? poupancas.reduce((s, b) => s + b.balanceCents, 0)
+          : null,
+      );
       this.fatura.set(
         saldos
           .filter((b) => b.kind === 'cartao')
