@@ -134,24 +134,54 @@ function lerDispensado(): string | null {
     }
     .colunas {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       gap: 24px;
-      align-items: flex-start;
       margin-top: 24px;
     }
-    .principal {
-      flex: 999 1 520px;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
+    /* No celular as colunas somem e cada bloco entra na ordem do que pede decisão. */
+    .principal,
     .lateral {
-      flex: 1 1 340px;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+      display: contents;
+    }
+    .ordem-1 {
+      order: 1;
+    }
+    .ordem-2 {
+      order: 2;
+    }
+    .ordem-3 {
+      order: 3;
+    }
+    .ordem-4 {
+      order: 4;
+    }
+    .ordem-5 {
+      order: 5;
+    }
+    @media (min-width: 900px) {
+      .colunas {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
+        align-items: start;
+      }
+      .principal,
+      .lateral {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        min-width: 0;
+      }
+    }
+    .acao {
+      display: inline-block;
+      margin-top: 6px;
+      color: var(--primary-text);
+      font: 600 13px/18px var(--font-sans);
+      text-decoration: none;
+    }
+    .acao:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
     }
     .alertas {
       display: flex;
@@ -355,66 +385,12 @@ function lerDispensado(): string | null {
         </jano-kpi-card>
       </section>
 
+      <!-- Celular: uma coluna na ordem do que pede decisão (ver .ordem-N);
+           desktop: duas colunas equilibradas. -->
       <div class="colunas">
         <div class="principal">
-          <section class="j-card" aria-label="Gasto acumulado">
-            <h2>Gasto acumulado no mês</h2>
-            <p class="j-sub" style="margin: 4px 0 0">{{ resumoRitmo() }}</p>
-            <jano-grafico-acumulado
-              [serie]="serie()"
-              [dias]="diasNoMes"
-              [limite]="limiteTotal()"
-              [projecao]="gastoProjetado()"
-            />
-          </section>
-
-          <section aria-label="Últimas transações">
-            <div class="titulo-secao">
-              <h2>Últimas transações</h2>
-              <a
-                janoButton
-                variant="ghost"
-                [small]="true"
-                routerLink="/transacoes"
-                >Ver todas ›</a
-              >
-            </div>
-            <div class="lista">
-              @for (t of recentes(); track t.id) {
-                <div class="j-tx" style="grid-template-columns: auto 1fr auto">
-                  <jano-category-badge
-                    [icon]="cat(t.categoryId)?.icon ?? 'etiqueta'"
-                    [colorToken]="cat(t.categoryId)?.color ?? 'cat-1'"
-                    [size]="32"
-                  />
-                  <div>
-                    <div class="j-tx__name" [title]="t.description">
-                      {{ nomeTx(t.description) }}
-                    </div>
-                    <div class="j-tx__sub">
-                      {{ dia(t.date) }} ·
-                      {{
-                        t.isTransfer
-                          ? 'Transferência'
-                          : nomeCategoria(t.categoryId)
-                      }}
-                    </div>
-                  </div>
-                  <div [class]="classeValor(t)">
-                    {{ t.amountCents > 0 ? '+' : '' }}{{ money(t.amountCents) }}
-                  </div>
-                </div>
-              }
-            </div>
-          </section>
-        </div>
-
-        <div class="lateral">
-          @if (faturaCartao(); as fc) {
-            <jano-fatura-cartao [fatura]="fc" [categorias]="categorias()" />
-          }
           @if (alertas().length) {
-            <section class="alertas" aria-label="Alertas">
+            <section class="alertas ordem-1" aria-label="Alertas">
               <h2>Para ver hoje</h2>
               @for (a of alertas(); track a.titulo) {
                 <div class="j-insight">
@@ -477,13 +453,82 @@ function lerDispensado(): string | null {
                   <div>
                     <div class="j-insight__title">{{ a.titulo }}</div>
                     <div class="j-insight__text">{{ a.texto }}</div>
+                    @if (a.acao; as ac) {
+                      <a
+                        class="acao"
+                        [routerLink]="ac.rota"
+                        [queryParams]="ac.queryParams"
+                        >{{ ac.rotulo }} ›</a
+                      >
+                    }
                   </div>
                 </div>
               }
             </section>
           }
 
-          <section class="j-card" aria-label="Metas por categoria">
+          <section class="j-card ordem-4" aria-label="Gasto acumulado">
+            <h2>Gasto acumulado no mês</h2>
+            <p class="j-sub" style="margin: 4px 0 0">{{ resumoRitmo() }}</p>
+            <jano-grafico-acumulado
+              [serie]="serie()"
+              [dias]="diasNoMes"
+              [limite]="limiteTotal()"
+              [projecao]="gastoProjetado()"
+            />
+          </section>
+
+          <section class="ordem-5" aria-label="Últimas transações">
+            <div class="titulo-secao">
+              <h2>Últimas transações</h2>
+              <a
+                janoButton
+                variant="ghost"
+                [small]="true"
+                routerLink="/transacoes"
+                >Ver todas ›</a
+              >
+            </div>
+            <div class="lista">
+              @for (t of recentes(); track t.id) {
+                <div class="j-tx" style="grid-template-columns: auto 1fr auto">
+                  <jano-category-badge
+                    [icon]="cat(t.categoryId)?.icon ?? 'etiqueta'"
+                    [colorToken]="cat(t.categoryId)?.color ?? 'cat-1'"
+                    [size]="32"
+                  />
+                  <div>
+                    <div class="j-tx__name" [title]="t.description">
+                      {{ nomeTx(t.description) }}
+                    </div>
+                    <div class="j-tx__sub">
+                      {{ dia(t.date) }} ·
+                      {{
+                        t.isTransfer
+                          ? 'Transferência'
+                          : nomeCategoria(t.categoryId)
+                      }}
+                    </div>
+                  </div>
+                  <div [class]="classeValor(t)">
+                    {{ t.amountCents > 0 ? '+' : '' }}{{ money(t.amountCents) }}
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        </div>
+
+        <div class="lateral">
+          @if (faturaCartao(); as fc) {
+            <jano-fatura-cartao
+              class="ordem-2"
+              [fatura]="fc"
+              [categorias]="categorias()"
+            />
+          }
+
+          <section class="j-card ordem-3" aria-label="Metas por categoria">
             <div class="titulo-secao">
               <h2>Orçamento</h2>
               <a
@@ -505,6 +550,7 @@ function lerDispensado(): string | null {
                     [pace]="pace"
                     [daysLeft]="diasRestantes"
                     [conta]="contas().get(m.categoryId)"
+                    [ritmoNoTexto]="false"
                   />
                 }
               </div>

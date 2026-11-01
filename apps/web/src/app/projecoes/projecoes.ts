@@ -1,8 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
-  afterNextRender,
   computed,
   effect,
   inject,
@@ -20,12 +18,9 @@ import {
   type TransactionDoc,
 } from '@jano/data-access';
 import {
-  detectRecurrences,
   formatBRL,
   previousMonths,
   projetar,
-  proximaCobranca,
-  valoresOcultos,
   type Cenario,
 } from '@jano/engine';
 import { parseAmountToCents } from '@jano/import-file';
@@ -46,20 +41,6 @@ import { planoDoMes } from './plano';
 import { PlanoMes } from './plano-mes';
 import { ObjetivosCard } from './objetivos-card';
 
-const MESES = [
-  'Jan',
-  'Fev',
-  'Mar',
-  'Abr',
-  'Mai',
-  'Jun',
-  'Jul',
-  'Ago',
-  'Set',
-  'Out',
-  'Nov',
-  'Dez',
-];
 const MESES_LONGOS = [
   'janeiro',
   'fevereiro',
@@ -74,22 +55,11 @@ const MESES_LONGOS = [
   'novembro',
   'dezembro',
 ];
-const nomeMes = (m: string) => MESES[Number(m.slice(5, 7)) - 1];
 const nomeMesLongo = (m: string) => MESES_LONGOS[Number(m.slice(5, 7)) - 1];
-
-function rotuloSaldo(cents: number): string {
-  if (valoresOcultos()) return 'R$ ••';
-  const reais = cents / 100;
-  const sinal = reais < 0 ? '−' : '';
-  const abs = Math.abs(reais);
-  return abs >= 1000
-    ? `${sinal}R$ ${(abs / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`
-    : `${sinal}R$ ${Math.round(abs)}`;
-}
 
 const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
 
-/** Projeções: saldo previsto, faixa de incerteza e cenários "e se". */
+/** Projeções: plano do mês, objetivos e cenários "e se" sobre o saldo dos próximos meses. */
 @Component({
   selector: 'jano-projecoes',
   imports: [
@@ -133,17 +103,12 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
     .objetivos {
       margin-top: 16px;
     }
-    .longo {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin: 32px 0 16px;
+    .cenarios {
+      margin-top: 24px;
+      max-width: 720px;
     }
-    .longo h2 {
-      margin: 0;
-      font: 600 20px/28px var(--font-sans);
+    .cenarios .chips {
+      margin: 4px 0 8px;
     }
     .colunas {
       display: grid;
@@ -369,21 +334,6 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
     } @else {
       <jano-plano-mes [plano]="plano()" />
       <jano-objetivos class="objetivos" [base]="baseObjetivos()" />
-      <div class="longo">
-        <h2>Longo prazo</h2>
-        <div class="chips" role="group" aria-label="Horizonte">
-          @for (h of horizontes; track h) {
-            <button
-              class="j-chip"
-              type="button"
-              [attr.aria-pressed]="horizonte() === h"
-              (click)="horizonte.set(h)"
-            >
-              {{ h }} meses
-            </button>
-          }
-        </div>
-      </div>
       @if (!proj()) {
         <div class="j-card j-empty">
           <div class="j-empty__title">Ainda falta histórico para projetar</div>
@@ -394,163 +344,26 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
           <a janoButton variant="primary" routerLink="/transacoes">Importar</a>
         </div>
       } @else {
-        <div class="colunas">
-          <div class="coluna">
-            <section class="j-card" aria-label="Saldo projetado">
-              <h2>Saldo projetado</h2>
-              <p class="resumo">{{ frase() }}</p>
-              <div class="legenda">
-                <span><i style="border-color: var(--text)"></i>Realizado</span>
-                <span
-                  ><i
-                    style="border-color: var(--info); border-top-style: dashed"
-                  ></i
-                  >Projeção base</span
-                >
-                <span><i class="faixa"></i>Faixa otimista e pessimista</span>
-                @if (cenariosAtivos().length) {
-                  <span
-                    ><i style="border-color: var(--primary)"></i>Com
-                    cenários</span
-                  >
-                }
-              </div>
-              <svg
-                [attr.width]="w()"
-                [attr.height]="altura"
-                role="img"
-                [attr.aria-label]="frase()"
-              >
-                @for (t of yTicks(); track t.y) {
-                  <line
-                    [attr.x1]="x0"
-                    [attr.x2]="w() - 8"
-                    [attr.y1]="t.y"
-                    [attr.y2]="t.y"
-                    style="stroke: var(--border)"
-                  />
-                  <text [attr.x]="x0 - 6" [attr.y]="t.y + 4" text-anchor="end">
-                    {{ t.rotulo }}
-                  </text>
-                }
-                <polygon
-                  [attr.points]="faixa()"
-                  style="fill: var(--info); opacity: 0.16"
-                />
-                <polyline
-                  [attr.points]="linhaRealizado()"
-                  fill="none"
-                  style="stroke: var(--text)"
-                  stroke-width="2.5"
-                  stroke-linejoin="round"
-                  stroke-linecap="round"
-                />
-                <polyline
-                  [attr.points]="linhaBase()"
-                  fill="none"
-                  style="stroke: var(--info)"
-                  stroke-width="2.5"
-                  stroke-dasharray="6 5"
-                  stroke-linecap="round"
-                />
-                @if (cenariosAtivos().length) {
-                  <polyline
-                    [attr.points]="linhaCenario()"
-                    fill="none"
-                    style="stroke: var(--primary)"
-                    stroke-width="2.5"
-                    stroke-linejoin="round"
-                    stroke-linecap="round"
-                  />
-                }
-                <line
-                  [attr.x1]="hojeXY().x"
-                  [attr.x2]="hojeXY().x"
-                  [attr.y1]="topo"
-                  [attr.y2]="base"
-                  style="stroke: var(--border-strong)"
-                  stroke-dasharray="2 3"
-                />
-                <circle
-                  [attr.cx]="hojeXY().x"
-                  [attr.cy]="hojeXY().y"
-                  r="5"
-                  style="fill: var(--text)"
-                />
-                <text [attr.x]="hojeXY().x + 6" [attr.y]="topo + 10">hoje</text>
-                @for (m of xTicks(); track m.x) {
-                  <text
-                    [attr.x]="m.x"
-                    [attr.y]="base + 20"
-                    text-anchor="middle"
-                  >
-                    {{ m.t }}
-                  </text>
-                }
-              </svg>
-
-              @if (saldoBanco(); as s) {
-                <div class="saldo">
-                  <span
-                    >Saldo de hoje:
-                    <b class="j-num">{{ money(s.cents) }}</b></span
-                  >
-                  <span class="sub"
-                    >{{ s.legenda }}, do banco, atualizado
-                    {{ quando(s.atualizadoEm) }}.</span
-                  >
-                </div>
-              } @else {
-                <div class="saldo">
-                  <label for="saldo">Saldo de hoje (opcional):</label>
-                  <span class="j-input">
-                    <span class="j-input__prefix">R$</span>
-                    <input
-                      id="saldo"
-                      inputmode="decimal"
-                      placeholder="0,00"
-                      [value]="saldoTexto()"
-                      (change)="definirSaldo($any($event.target).value)"
-                    />
-                  </span>
-                  <span class="sub"
-                    >Sem ele, o gráfico parte de R$ 0 e mostra só a variação.
-                    Guardado apenas neste aparelho.</span
-                  >
-                </div>
-              }
-
-              <details style="margin-top: 12px">
-                <summary>Ver os valores do gráfico</summary>
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Fim de</th>
-                      <th scope="col">Base</th>
-                      <th scope="col">Com cenários</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (p of proj()!.pontos; track p.k) {
-                      <tr>
-                        <td>{{ rotuloMes(p.mes) }}</td>
-                        <td>{{ money(p.base) }}</td>
-                        <td>{{ money(p.cenario) }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </details>
-            </section>
-          </div>
-
+        <div class="cenarios">
           <div class="coluna">
             <section class="j-card" aria-label="Cenários">
               <h2>E se…</h2>
               <p class="sub" style="margin: -4px 0 4px">
-                Ligue um cenário e veja o efeito no gráfico. Fica salvo como
-                você deixar.
+                Ligue um cenário e veja quanto muda o seu saldo daqui a
+                {{ horizonte() }} meses. Fica salvo como você deixar.
               </p>
+              <div class="chips" role="group" aria-label="Horizonte">
+                @for (h of horizontes; track h) {
+                  <button
+                    class="j-chip"
+                    type="button"
+                    [attr.aria-pressed]="horizonte() === h"
+                    (click)="horizonte.set(h)"
+                  >
+                    {{ h }} meses
+                  </button>
+                }
+              </div>
 
               <div class="cenario">
                 <button
@@ -656,6 +469,26 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
                 </div>
               </div>
 
+              @if (!saldoBanco()) {
+                <div class="saldo">
+                  <label for="saldo">Saldo de hoje (opcional):</label>
+                  <span class="j-input">
+                    <span class="j-input__prefix">R$</span>
+                    <input
+                      id="saldo"
+                      inputmode="decimal"
+                      placeholder="0,00"
+                      [value]="saldoTexto()"
+                      (change)="definirSaldo($any($event.target).value)"
+                    />
+                  </span>
+                  <span class="sub"
+                    >Sem ele, o saldo parte de R$ 0 e mostra só a variação.
+                    Guardado apenas neste aparelho.</span
+                  >
+                </div>
+              }
+
               <div class="comparar">
                 <div>
                   <span>Saldo base em {{ mesFinal() }}</span>
@@ -687,16 +520,15 @@ const dinheiro = (cents: number) => (cents / 100).toFixed(2).replace('.', ',');
               <details>
                 <summary>Como calculamos</summary>
                 <p>
-                  A projeção parte do seu saldo de hoje e soma, a cada mês, a
+                  O saldo base parte do seu saldo de hoje e soma, a cada mês, a
                   sobra média dos últimos {{ proj()!.mesesBase }} meses fechados
                   (receitas {{ money(proj()!.receitaMedia) }}, gastos
                   {{ money(proj()!.gastoMedio) }}), dando mais peso aos meses
                   recentes. O resto do mês atual completa a média.
                 </p>
                 <p>
-                  A faixa mostra uma variação possível para mais e para menos,
-                  calculada pela oscilação das sobras passadas, e cresce com o
-                  tempo. Cenários são ajustes sobre essa base, nunca previsões.
+                  Cenários são ajustes sobre essa base, nunca previsões. Para os
+                  próximos 30 dias, o plano do mês acima é mais preciso.
                 </p>
               </details>
             </section>
@@ -719,16 +551,10 @@ export class Projecoes {
   /** Último estado gravado (ou restaurado): só grava quando muda de verdade. */
   private ultimoSalvo = '';
   private gravarEm: ReturnType<typeof setTimeout> | undefined;
-  private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly money = formatBRL;
   protected readonly horizontes = [3, 6, 12];
   protected readonly horizonte = signal(6);
-  protected readonly x0 = 74;
-  protected readonly topo = 16;
-  protected readonly w = signal(640);
-  protected readonly altura = 300;
-  protected readonly base = this.altura - 36;
 
   protected readonly hoje = new Date();
   private readonly month = mesAtual(this.hoje);
@@ -806,8 +632,6 @@ export class Projecoes {
       return { lista, origem };
     },
   );
-  protected readonly cenariosAtivos = computed(() => this.cenarios().lista);
-
   protected readonly proj = computed(() =>
     projetar({
       txs: this.historico(),
@@ -832,112 +656,8 @@ export class Projecoes {
     () => this.final().cenario - this.final().base,
   );
   protected readonly mesFinal = computed(() => nomeMesLongo(this.final().mes));
-  protected readonly frase = computed(() => {
-    const f = this.final();
-    return `Em ${this.mesFinal()} o saldo base é de ${formatBRL(f.base)}, com faixa de ${formatBRL(f.pessimista)} a ${formatBRL(f.otimista)}.`;
-  });
-
-  // Gráfico: eixo x em meses; x = 0, 1, 2 são os fins dos 3 meses anteriores, "hoje" fica entre 2 e 3 e o fim do mês atual é 3.
-  private readonly colunas = computed(() => 4 + this.horizonte());
-  private px(i: number): number {
-    return this.x0 + (i / (this.colunas() - 1)) * (this.w() - this.x0 - 12);
-  }
-  private readonly escala = computed(() => {
-    const p = this.proj()!;
-    const valores = [
-      ...p.realizado.map((r) => r.valor),
-      p.hoje,
-      ...p.pontos.flatMap((q) => [q.base, q.cenario, q.otimista, q.pessimista]),
-    ];
-    const mn = Math.min(...valores);
-    const mx = Math.max(...valores);
-    const folga = Math.max((mx - mn) * 0.08, 1000);
-    return { a0: mn - folga, a1: mx + folga };
-  });
-  private py(v: number): number {
-    const { a0, a1 } = this.escala();
-    return this.base - ((v - a0) / (a1 - a0)) * (this.base - this.topo);
-  }
-  private pt(x: number, v: number): string {
-    return `${this.px(x).toFixed(1)},${this.py(v).toFixed(1)}`;
-  }
-  private readonly xHoje = computed(() => 2 + this.proj()!.fracaoMes);
-
-  protected readonly hojeXY = computed(() => ({
-    x: this.px(this.xHoje()),
-    y: this.py(this.proj()!.hoje),
-  }));
-  protected readonly linhaRealizado = computed(() => {
-    const p = this.proj()!;
-    return [
-      ...p.realizado.map((r, i) => this.pt(i, r.valor)),
-      this.pt(this.xHoje(), p.hoje),
-    ].join(' ');
-  });
-  protected readonly linhaBase = computed(() => {
-    const p = this.proj()!;
-    return [
-      this.pt(this.xHoje(), p.hoje),
-      ...p.pontos.map((q) => this.pt(3 + q.k, q.base)),
-    ].join(' ');
-  });
-  protected readonly linhaCenario = computed(() => {
-    const p = this.proj()!;
-    return [
-      this.pt(this.xHoje(), p.hoje),
-      ...p.pontos.map((q) => this.pt(3 + q.k, q.cenario)),
-    ].join(' ');
-  });
-  protected readonly faixa = computed(() => {
-    const p = this.proj()!;
-    const ini = this.pt(this.xHoje(), p.hoje);
-    return [
-      ini,
-      ...p.pontos.map((q) => this.pt(3 + q.k, q.otimista)),
-      ...[...p.pontos].reverse().map((q) => this.pt(3 + q.k, q.pessimista)),
-    ].join(' ');
-  });
-  protected readonly yTicks = computed(() => {
-    const { a0, a1 } = this.escala();
-    return [0, 1, 2, 3].map((q) => {
-      const v = a0 + ((a1 - a0) * q) / 3;
-      return { y: this.py(v), rotulo: rotuloSaldo(v) };
-    });
-  });
-  protected readonly xTicks = computed(() => {
-    const p = this.proj()!;
-    const meses = [
-      ...p.realizado.map((r, i) => ({ mes: r.mes, i })),
-      ...p.pontos.map((q) => ({ mes: q.mes, i: 3 + q.k })),
-    ];
-    const passo = meses.length > 10 ? 2 : 1;
-    return meses
-      .map((m) => ({ t: nomeMes(m.mes), x: this.px(m.i) }))
-      .filter((_, i) => i % passo === 0);
-  });
-
   constructor() {
     void this.carregar();
-    afterNextRender(() => {
-      const medir = () =>
-        this.w.set(
-          Math.max(
-            Math.round(
-              this.el.nativeElement
-                .querySelector('section[aria-label="Saldo projetado"]')
-                ?.getBoundingClientRect().width ?? 640,
-            ) - 40,
-            280,
-          ),
-        );
-      medir();
-      if (typeof ResizeObserver !== 'undefined')
-        new ResizeObserver(medir).observe(this.el.nativeElement);
-    });
-  }
-
-  protected rotuloMes(m: string): string {
-    return `${nomeMesLongo(m)} ${m.slice(0, 4)}`;
   }
 
   protected nomeCategoria(id: string | null): string {

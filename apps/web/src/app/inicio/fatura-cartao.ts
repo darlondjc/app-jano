@@ -173,6 +173,41 @@ const MESES = [
       border-radius: var(--radius-sm);
       padding: 10px 12px;
     }
+    .detalhes {
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .detalhes summary {
+      cursor: pointer;
+      font: 600 14px/20px var(--font-sans);
+      color: var(--primary-text);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 32px;
+    }
+    .detalhes summary::-webkit-details-marker {
+      display: none;
+    }
+    .detalhes summary::after {
+      content: '▾';
+      font-size: 12px;
+      transition: transform 150ms;
+    }
+    .detalhes[open] summary::after {
+      transform: rotate(180deg);
+    }
+    .detalhes summary:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+    .detalhes-corpo {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      margin-top: 12px;
+    }
     a.ver {
       align-self: flex-start;
       color: var(--primary-text);
@@ -260,45 +295,54 @@ const MESES = [
         </div>
       }
 
-      @if (f.maiores.length) {
-        <div class="bloco">
-          <h3>Maiores compras</h3>
-          <ul>
-            @for (m of f.maiores; track m.nome + m.date) {
-              <li>
-                <span class="n"
-                  >{{ m.nome }}
-                  <span class="sub">· {{ diaMes(m.date) }}</span></span
-                >
-                <span class="v">{{ money(m.cents) }}</span>
-              </li>
+      @if (f.maiores.length || f.seguinte || f.todoMes.itens.length) {
+        <details class="detalhes">
+          <summary>{{ resumoDetalhes() }}</summary>
+          <div class="detalhes-corpo">
+            @if (f.maiores.length) {
+              <div class="bloco">
+                <h3>Maiores compras</h3>
+                <ul>
+                  @for (m of f.maiores; track m.nome + m.date) {
+                    <li>
+                      <span class="n"
+                        >{{ m.nome }}
+                        <span class="sub">· {{ diaMes(m.date) }}</span></span
+                      >
+                      <span class="v">{{ money(m.cents) }}</span>
+                    </li>
+                  }
+                </ul>
+              </div>
             }
-          </ul>
-        </div>
-      }
 
-      @if (f.seguinte; as s) {
-        <div class="seguinte">
-          Já na próxima fatura: {{ money(s.totalCents) }} em {{ s.compras }}
-          {{ s.compras === 1 ? 'compra' : 'compras' }} desde
-          {{ diaMes(s.desde) }}, contando as que ainda estão pendentes.
-        </div>
-      }
-
-      @if (f.todoMes.itens.length) {
-        <div class="bloco">
-          <h3>Todo mês no cartão · {{ money(f.todoMes.totalCents) }}</h3>
-          <ul>
-            @for (i of f.todoMes.itens.slice(0, 4); track i.nome) {
-              <li>
-                <span class="n"
-                  >{{ i.nome }} <span class="sub">· {{ i.detalhe }}</span></span
-                >
-                <span class="v">{{ money(i.cents) }}</span>
-              </li>
+            @if (f.seguinte; as s) {
+              <div class="seguinte">
+                Já na próxima fatura: {{ money(s.totalCents) }} em
+                {{ s.compras }}
+                {{ s.compras === 1 ? 'compra' : 'compras' }} desde
+                {{ diaMes(s.desde) }}, contando as que ainda estão pendentes.
+              </div>
             }
-          </ul>
-        </div>
+
+            @if (f.todoMes.itens.length) {
+              <div class="bloco">
+                <h3>Todo mês no cartão · {{ money(f.todoMes.totalCents) }}</h3>
+                <ul>
+                  @for (i of f.todoMes.itens.slice(0, 4); track i.nome) {
+                    <li>
+                      <span class="n"
+                        >{{ i.nome }}
+                        <span class="sub">· {{ i.detalhe }}</span></span
+                      >
+                      <span class="v">{{ money(i.cents) }}</span>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+        </details>
       }
 
       @if (f.accountId) {
@@ -339,6 +383,17 @@ export class FaturaCartaoCard {
     if (f.vence) partes.push(`vence ${this.diaMes(f.vence)}`);
     if (f.minimoCents) partes.push(`mínimo ${formatBRL(f.minimoCents)}`);
     return partes.join(' · ') || 'Datas a confirmar na próxima sincronização';
+  });
+  /** O que está recolhido, para a pessoa saber o que vai abrir. */
+  protected readonly resumoDetalhes = computed(() => {
+    const f = this.fatura();
+    const partes: string[] = [];
+    if (f.maiores.length) partes.push('maiores compras');
+    if (f.seguinte) partes.push('próxima fatura');
+    if (f.todoMes.itens.length)
+      partes.push(`todo mês ${formatBRL(f.todoMes.totalCents)}`);
+    const texto = partes.join(', ').replace(/, ([^,]*)$/, ' e $1');
+    return `Ver ${texto}`;
   });
   protected readonly resumoPartes = computed(() =>
     this.fatura()

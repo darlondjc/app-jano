@@ -17,6 +17,7 @@ import {
   budgetRows,
   contasDoMes,
   daysLeftInMonth,
+  estadoDaMeta,
   type ContaDoMes,
   limitesComSobra,
   formatBRL,
@@ -28,7 +29,6 @@ import {
   JanoBanner,
   JanoButton,
   JanoGoalBar,
-  JanoKpiCard,
   JanoMonthNav,
   JanoSkeletonGoals,
   JanoSkeletonGroup,
@@ -42,7 +42,6 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
     JanoButton,
     JanoBanner,
     JanoGoalBar,
-    JanoKpiCard,
     JanoMonthNav,
     JanoSkeletonGoals,
     JanoSkeletonGroup,
@@ -68,55 +67,107 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
         max-width: none;
       }
     }
+    .resumo {
+      margin-bottom: 20px;
+    }
+    .resumo .atencao {
+      font: 500 14px/20px var(--font-sans);
+      color: var(--on-brand);
+    }
     .metas {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 12px;
-      margin-top: 16px;
     }
-    .linha {
+    .meta {
+      all: unset;
+      box-sizing: border-box;
+      display: block;
+      cursor: pointer;
+      border-radius: var(--radius-lg);
+    }
+    .meta:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+    .meta .sobrou {
+      display: block;
+      margin: -4px 4px 0;
+      padding: 0 16px 12px;
+    }
+    .dica {
+      margin: 12px 0 0;
+    }
+    .rodape {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .escurece {
+      border: 0;
+      padding: 0;
+      cursor: default;
+      position: fixed;
+      inset: 0;
+      background: var(--overlay);
+      z-index: 55;
+    }
+    .folha {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 60;
+      max-height: 85dvh;
+      overflow: auto;
+      overscroll-behavior: contain;
+      padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 16px;
     }
-    .edicao {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: flex-end;
+    @media (min-width: 720px) {
+      .folha {
+        left: 50%;
+        right: auto;
+        bottom: auto;
+        top: 50%;
+        width: 440px;
+        transform: translate(-50%, -50%);
+        border-radius: var(--radius-lg);
+      }
+      .folha .j-sheet__handle {
+        display: none;
+      }
     }
-    .edicao .j-input {
-      width: 140px;
+    .folha h2 {
+      margin: 0;
+    }
+    .folha .contexto {
+      margin: -8px 0 0;
     }
     .sobra {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-    .sobra label {
       display: flex;
       align-items: flex-start;
       gap: 10px;
       min-height: 44px;
       cursor: pointer;
     }
-    .sobra input[type='checkbox'] {
+    .sobra input {
       accent-color: var(--primary);
       width: 18px;
       height: 18px;
       margin-top: 3px;
     }
-    .nova {
-      margin-top: 24px;
+    .botoes {
       display: flex;
       gap: 8px;
-      align-items: end;
+      justify-content: space-between;
       flex-wrap: wrap;
     }
     select {
       height: 44px;
+      width: 100%;
       border: 1px solid var(--border-strong);
       border-radius: var(--radius-sm);
       background: var(--surface);
@@ -148,122 +199,183 @@ import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
         </div>
       </jano-skeleton-group>
     } @else {
-      <jano-kpi-card
-        label="Gasto do mês"
-        [valueCents]="totais().spent"
-        tone="out"
-      >
-        <div class="j-sub">
-          de {{ money(limiteTotal()) }} em metas · receitas
-          {{ money(totais().income) }}
-        </div>
-      </jano-kpi-card>
+      @if (linhas().length) {
+        <section class="j-hero resumo" aria-label="Resumo das metas">
+          <div class="j-hero__label">{{ resumo().rotulo }}</div>
+          <div class="j-hero__valor">{{ money(resumo().cabeCents) }}</div>
+          @if (pace() !== undefined) {
+            <div
+              class="j-hero__mes"
+              role="img"
+              [attr.aria-label]="ritmo() + '% do mês passou'"
+            >
+              <span [style.width.%]="ritmo()"></span>
+            </div>
+          }
+          <div class="j-hero__linha">
+            <span
+              >Gasto {{ money(resumo().gastoCents) }} de
+              {{ money(limiteTotal()) }}</span
+            >
+            @if (pace() !== undefined) {
+              <span>{{ ritmo() }}% do mês</span>
+            }
+          </div>
+          @if (resumo().atencao.length) {
+            <div class="atencao">
+              Pedem atenção: {{ juntar(resumo().atencao) }}.
+            </div>
+          }
+        </section>
 
-      @if (!linhas().length && !carregando()) {
-        <p class="j-sub" style="margin-top:24px">
-          Você ainda não criou metas. Escolha uma categoria abaixo e defina um
-          limite mensal.
-        </p>
+        <div class="metas">
+          @for (l of linhas(); track l.categoryId) {
+            <button
+              type="button"
+              class="meta"
+              [attr.aria-label]="'Editar meta de ' + nome(l.categoryId)"
+              (click)="editar(l.categoryId)"
+            >
+              <jano-goal-bar
+                [name]="nome(l.categoryId)"
+                [spentCents]="l.spentCents"
+                [limitCents]="l.limitCents"
+                [pace]="pace()"
+                [daysLeft]="daysLeft()"
+                [conta]="contas().get(l.categoryId)"
+                [ritmoNoTexto]="false"
+              />
+            </button>
+          }
+        </div>
+        <p class="j-cap dica">Toque numa meta para mudar o limite.</p>
+      } @else {
+        <div class="j-empty">
+          <div class="j-empty__title">Nenhuma meta ainda</div>
+          <div class="j-empty__text">
+            Defina quanto quer gastar por mês em cada categoria. O Jano mostra o
+            ritmo e avisa antes de passar.
+          </div>
+        </div>
       }
 
-      <div class="metas">
-        @for (l of linhas(); track l.categoryId) {
-          <div class="linha">
-            <jano-goal-bar
-              [name]="nome(l.categoryId)"
-              [spentCents]="l.spentCents"
-              [limitCents]="l.limitCents"
-              [pace]="pace()"
-              [daysLeft]="daysLeft()"
-              [conta]="contas().get(l.categoryId)"
-            />
-            <div class="sobra">
-              <label>
-                <input
-                  type="checkbox"
-                  [checked]="meta(l.categoryId)?.rollover"
-                  (change)="
-                    mudarSobra(l.categoryId, $any($event.target).checked)
-                  "
-                />
-                <span>
-                  <span class="j-field__label"
-                    >Levar a sobra para o mês seguinte</span
-                  >
-                  <span class="j-field__hint" style="display: block"
-                    >O que não for gasto soma ao limite de
-                    {{ proximoMes() }}.</span
-                  >
-                </span>
-              </label>
-              @if (sobraDe(l.categoryId); as sobra) {
-                <span class="j-cap"
-                  >Inclui {{ money(sobra) }} que sobraram em
-                  {{ mesPassado() }}.</span
-                >
-              }
-            </div>
-            <div class="edicao">
-              <label class="j-sr" [for]="'lim-' + l.categoryId"
-                >Limite de {{ nome(l.categoryId) }}</label
-              >
-              <span class="j-input">
-                <span class="j-input__prefix">R$</span>
-                <input
-                  [id]="'lim-' + l.categoryId"
-                  [value]="paraTexto(meta(l.categoryId)?.limitCents ?? 0)"
-                  #campo
-                  inputmode="decimal"
-                />
-              </span>
-              <button
-                janoButton
-                variant="secondary"
-                type="button"
-                (click)="salvar(l.categoryId, campo.value)"
-              >
-                Salvar
-              </button>
-              <button
-                janoButton
-                variant="ghost"
-                type="button"
-                (click)="remover(l.categoryId)"
-              >
-                Remover
-              </button>
-            </div>
-          </div>
-        }
-      </div>
+      @if (semMeta().length) {
+        <div class="rodape">
+          <button
+            janoButton
+            [variant]="linhas().length ? 'secondary' : 'primary'"
+            type="button"
+            (click)="editar(null)"
+          >
+            Nova meta
+          </button>
+        </div>
+      }
     }
 
-    @if (!carregando() && semMeta().length) {
-      <div class="nova">
-        <label class="j-field">
-          <span class="j-field__label">Nova meta</span>
-          <select #cat aria-label="Categoria da nova meta">
-            @for (c of semMeta(); track c.id) {
-              <option [value]="c.id">{{ c.name }}</option>
-            }
-          </select>
-        </label>
+    @if (editando(); as ed) {
+      <button
+        type="button"
+        class="escurece"
+        aria-label="Fechar"
+        (click)="fechar()"
+      ></button>
+      <section
+        class="j-sheet folha"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="
+          ed.categoryId ? 'Meta de ' + nome(ed.categoryId) : 'Nova meta'
+        "
+        (keydown.escape)="fechar()"
+      >
+        <div class="j-sheet__handle" aria-hidden="true"></div>
+        <h2 class="j-sheet__title">
+          {{ ed.categoryId ? nome(ed.categoryId) : 'Nova meta' }}
+        </h2>
+        @if (ed.categoryId; as id) {
+          @if (contextoMeta(id); as c) {
+            <p class="j-sub contexto">{{ c }}</p>
+          }
+        } @else {
+          <label class="j-field">
+            <span class="j-field__label">Categoria</span>
+            <select
+              id="nova-cat"
+              [value]="novaCategoria()"
+              (change)="novaCategoria.set($any($event.target).value)"
+            >
+              @for (c of semMeta(); track c.id) {
+                <option [value]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </label>
+        }
         <label class="j-field">
           <span class="j-field__label">Limite mensal</span>
-          <span class="j-input" style="width:140px">
+          <span class="j-input">
             <span class="j-input__prefix">R$</span>
-            <input #lim inputmode="decimal" placeholder="0,00" />
+            <input
+              #lim
+              [id]="'lim-' + (ed.categoryId ?? 'nova')"
+              [value]="
+                ed.categoryId
+                  ? paraTexto(meta(ed.categoryId)?.limitCents ?? 0)
+                  : ''
+              "
+              inputmode="decimal"
+              placeholder="0,00"
+              (keydown.enter)="
+                salvar(
+                  ed.categoryId ?? novaCategoria(),
+                  lim.value,
+                  sobra.checked
+                )
+              "
+            />
           </span>
         </label>
-        <button
-          janoButton
-          variant="primary"
-          type="button"
-          (click)="salvar(cat.value, lim.value)"
-        >
-          Criar meta
-        </button>
-      </div>
+        <label class="sobra">
+          <input
+            #sobra
+            id="sobra-meta"
+            type="checkbox"
+            [checked]="ed.categoryId ? meta(ed.categoryId)?.rollover : false"
+          />
+          <span>
+            <span class="j-field__label"
+              >Levar a sobra para o mês seguinte</span
+            >
+            <span class="j-field__hint" style="display: block"
+              >O que não for gasto soma ao limite de {{ proximoMes() }}.</span
+            >
+          </span>
+        </label>
+        <div class="botoes">
+          @if (ed.categoryId) {
+            <button
+              janoButton
+              variant="ghost"
+              type="button"
+              (click)="remover(ed.categoryId)"
+            >
+              Remover meta
+            </button>
+          } @else {
+            <span></span>
+          }
+          <button
+            janoButton
+            variant="primary"
+            type="button"
+            (click)="
+              salvar(ed.categoryId ?? novaCategoria(), lim.value, sobra.checked)
+            "
+          >
+            Salvar
+          </button>
+        </div>
+      </section>
     }
   `,
 })
@@ -291,12 +403,67 @@ export class Orcamento {
   protected readonly erro = signal('');
 
   protected readonly rotulo = computed(() => rotuloMes(this.month()));
-  protected readonly linhas = computed(() =>
-    budgetRows(this.efetivas(), this.totais().spentByCategory).sort(
-      (a, b) =>
-        b.spentCents / (b.limitCents || 1) - a.spentCents / (a.limitCents || 1),
-    ),
+  /** Meta em edição na folha; `categoryId: null` = nova meta. */
+  protected readonly editando = signal<{ categoryId: string | null } | null>(
+    null,
   );
+  protected readonly novaCategoria = signal('');
+  /** Do que pede mais atenção ao que pede menos: estado da meta primeiro, depois a proporção. */
+  protected readonly linhas = computed(() => {
+    const contas = this.contas();
+    const peso = { over: 0, warning: 1, ok: 2 };
+    const chave = (b: {
+      categoryId: string;
+      spentCents: number;
+      limitCents: number;
+    }) => {
+      const conta = contas.get(b.categoryId);
+      const { status } = estadoDaMeta({ ...b, pace: this.pace(), conta });
+      const proporcao =
+        (b.spentCents + (conta?.faltaCents ?? 0)) / (b.limitCents || 1);
+      return { peso: peso[status], proporcao };
+    };
+    return budgetRows(this.efetivas(), this.totais().spentByCategory)
+      .map((b) => ({ b, k: chave(b) }))
+      .sort((x, y) => x.k.peso - y.k.peso || y.k.proporcao - x.k.proporcao)
+      .map(({ b }) => b);
+  });
+  protected readonly ritmo = computed(() =>
+    Math.round((this.pace() ?? 1) * 100),
+  );
+  /** O que ainda cabe nas metas (descontando as contas do mês por pagar) e quais pedem atenção. */
+  protected readonly resumo = computed(() => {
+    const contas = this.contas();
+    let cabeCents = 0;
+    let gastoCents = 0;
+    const atencao: string[] = [];
+    for (const l of this.linhas()) {
+      const conta = contas.get(l.categoryId);
+      gastoCents += l.spentCents;
+      cabeCents += Math.max(
+        0,
+        l.limitCents - l.spentCents - (conta?.faltaCents ?? 0),
+      );
+      const { status } = estadoDaMeta({
+        spentCents: l.spentCents,
+        limitCents: l.limitCents,
+        pace: this.pace(),
+        conta,
+      });
+      if (status !== 'ok') atencao.push(this.nome(l.categoryId));
+    }
+    const fim = this.month() === this.mesAtual;
+    const [ano, mes] = this.month().split('-').map(Number);
+    const ultimo = new Date(ano, mes, 0).getDate();
+    return {
+      rotulo: fim
+        ? `Ainda cabe nas metas até ${ultimo}/${String(mes).padStart(2, '0')}`
+        : 'Sobrou nas metas',
+      cabeCents,
+      gastoCents,
+      atencao,
+    };
+  });
   protected readonly limiteTotal = computed(() =>
     this.efetivas().reduce((s, b) => s + b.limitCents, 0),
   );
@@ -393,6 +560,39 @@ export class Orcamento {
     void this.carregarMes();
   }
 
+  protected editar(categoryId: string | null): void {
+    this.erro.set('');
+    if (categoryId === null)
+      this.novaCategoria.set(this.semMeta()[0]?.id ?? '');
+    this.editando.set({ categoryId });
+  }
+
+  protected fechar(): void {
+    this.editando.set(null);
+  }
+
+  /** "Mercado e Assinaturas", "A, B e C". */
+  protected juntar(nomes: string[]): string {
+    return nomes.length < 2
+      ? (nomes[0] ?? '')
+      : `${nomes.slice(0, -1).join(', ')} e ${nomes.at(-1)}`;
+  }
+
+  /** Na folha: quanto já foi neste mês e a sobra que entrou no limite. */
+  protected contextoMeta(id: string): string {
+    const l = this.linhas().find((x) => x.categoryId === id);
+    if (!l) return '';
+    const partes = [
+      `${formatBRL(l.spentCents)} gastos em ${rotuloMes(this.month()).split(' ')[0].toLowerCase()}.`,
+    ];
+    const sobra = this.sobraDe(id);
+    if (sobra)
+      partes.push(
+        `O limite inclui ${formatBRL(sobra)} que sobraram em ${this.mesPassado()}.`,
+      );
+    return partes.join(' ');
+  }
+
   /** A meta como gravada (limite sem a sobra). */
   protected meta(id: string): BudgetDoc | undefined {
     return this.budgets().find((b) => b.categoryId === id);
@@ -400,24 +600,6 @@ export class Orcamento {
 
   protected sobraDe(id: string): number {
     return this.efetivas().find((b) => b.categoryId === id)?.sobraCents ?? 0;
-  }
-
-  protected async mudarSobra(
-    categoryId: string,
-    ligar: boolean,
-  ): Promise<void> {
-    const m = this.meta(categoryId);
-    if (!m) return;
-    try {
-      await this.budgetRepo.save(this.uid, categoryId, m.limitCents, ligar);
-      this.budgets.update((list) =>
-        list.map((b) =>
-          b.categoryId === categoryId ? { ...b, rollover: ligar } : b,
-        ),
-      );
-    } catch (e) {
-      this.falha(e);
-    }
   }
 
   protected nome(id: string): string {
@@ -428,20 +610,25 @@ export class Orcamento {
     return (cents / 100).toFixed(2).replace('.', ',');
   }
 
-  protected async salvar(categoryId: string, texto: string): Promise<void> {
+  protected async salvar(
+    categoryId: string,
+    texto: string,
+    rollover: boolean,
+  ): Promise<void> {
     this.erro.set('');
+    if (!categoryId) return;
     const cents = parseAmountToCents(texto);
     if (cents === null || cents <= 0) {
       this.erro.set('Informe um limite maior que zero, por exemplo 900,00.');
       return;
     }
-    const rollover = this.meta(categoryId)?.rollover ?? false;
     try {
       await this.budgetRepo.save(this.uid, categoryId, cents, rollover);
       this.budgets.update((list) => [
         ...list.filter((b) => b.categoryId !== categoryId),
         { categoryId, limitCents: cents, rollover },
       ]);
+      this.fechar();
     } catch (e) {
       this.falha(e);
     }
@@ -453,6 +640,7 @@ export class Orcamento {
       this.budgets.update((list) =>
         list.filter((b) => b.categoryId !== categoryId),
       );
+      this.fechar();
     } catch (e) {
       this.falha(e);
     }

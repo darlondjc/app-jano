@@ -136,7 +136,7 @@ describe('JanoGoalBar: ritmo e contas do mês', () => {
     });
     expect(el.querySelector('.j-goal--over')).toBeTruthy();
     expect(norm(el.querySelector('.j-goal__state')?.textContent)).toBe(
-      'Falta pagar cerca de R$ 2.400,00; com isso passa R$ 200,00 da meta.',
+      'Ainda deve sair cerca de R$ 2.400,00; com isso passa R$ 200,00 da meta.',
     );
   });
 });

@@ -2,7 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import {
   AuthService,
+  BudgetsRepository,
   CatalogRepository,
+  RulesRepository,
+  TransactionsRepository,
   type CategoryDoc,
 } from '@jano/data-access';
 import { Categorias } from './categorias';
@@ -20,9 +23,13 @@ const cat = (
   position: 0,
 });
 
-function montar(lista: CategoryDoc[]) {
+function montar(
+  lista: CategoryDoc[],
+  contexto: { txs?: unknown[]; budgets?: unknown[]; regras?: unknown[] } = {},
+) {
   const repo = {
     categories: vi.fn().mockResolvedValue(lista),
+    accounts: vi.fn().mockResolvedValue([]),
     saveCategory: vi.fn().mockResolvedValue('x'),
     deleteCategory: vi.fn().mockResolvedValue(undefined),
     addMissingDefaults: vi.fn().mockResolvedValue(3),
@@ -32,6 +39,18 @@ function montar(lista: CategoryDoc[]) {
       provideRouter([]),
       { provide: AuthService, useValue: { user: () => ({ uid: 'u1' }) } },
       { provide: CatalogRepository, useValue: repo },
+      {
+        provide: TransactionsRepository,
+        useValue: { listMonth: vi.fn().mockResolvedValue(contexto.txs ?? []) },
+      },
+      {
+        provide: BudgetsRepository,
+        useValue: { list: vi.fn().mockResolvedValue(contexto.budgets ?? []) },
+      },
+      {
+        provide: RulesRepository,
+        useValue: { list: vi.fn().mockResolvedValue(contexto.regras ?? []) },
+      },
     ],
   });
   const f = TestBed.createComponent(Categorias);
@@ -39,6 +58,11 @@ function montar(lista: CategoryDoc[]) {
 }
 const pronto = async (f: ReturnType<typeof montar>['f']) => {
   await f.whenStable();
+  await vi.waitFor(() => {
+    f.detectChanges();
+    expect(f.nativeElement.querySelector('jano-skeleton-group')).toBeNull();
+  });
+  await new Promise((r) => setTimeout(r));
   f.detectChanges();
 };
 const btn = (el: HTMLElement, texto: string) =>
@@ -94,6 +118,12 @@ describe('Categorias', () => {
     const { f, repo, el } = montar([cat('mercado', 'Mercado')]);
     f.detectChanges();
     await pronto(f);
+    // Apagar fica dentro da edição, longe de um toque por engano.
+    expect(el.querySelector('[aria-label="Apagar Mercado"]')).toBeNull();
+    (
+      el.querySelector('[aria-label="Editar Mercado"]') as HTMLButtonElement
+    ).click();
+    f.detectChanges();
     (
       el.querySelector('[aria-label="Apagar Mercado"]') as HTMLButtonElement
     ).click();
@@ -124,6 +154,38 @@ describe('Categorias', () => {
     await pronto(f);
     expect(el.querySelector('[role=alert]')?.textContent).toContain(
       'Já existe uma categoria',
+    );
+  });
+
+  it('cada linha mostra o gasto do mês, a meta e as regras', async () => {
+    const mes = new Date().toISOString().slice(0, 7);
+    const { f, el } = montar([cat('mercado', 'Mercado')], {
+      txs: [
+        {
+          id: 't1',
+          accountId: 'cc',
+          date: `${mes}-02`,
+          amountCents: -134860,
+          description: 'MERCADO',
+          descriptionNorm: 'MERCADO',
+          dedupeKey: 't1',
+          categoryId: 'mercado',
+          categoryIsManual: false,
+          isTransfer: false,
+          importId: null,
+        },
+      ],
+      budgets: [{ categoryId: 'mercado', limitCents: 140000, rollover: false }],
+      regras: [
+        { id: 'r1', pattern: 'MATEUS', categoryId: 'mercado', createdAt: '' },
+        { id: 'r2', pattern: 'ATACADAO', categoryId: 'mercado', createdAt: '' },
+      ],
+    });
+    f.detectChanges();
+    await pronto(f);
+    const uso = el.querySelector('.item .uso')?.textContent ?? '';
+    expect(uso.replace(/\s/g, ' ')).toMatch(
+      /R\$ 1\.348,60 em .+ · meta R\$ 1\.400,00 · 2 regras/,
     );
   });
 });
