@@ -35,6 +35,8 @@ import {
   JanoSkeletonGoals,
   JanoSkeletonGroup,
   JanoSkeletonKpi,
+  JanoMoeda,
+  textoDeMoeda,
 } from '@jano/ui';
 import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
 import { PeriodoService } from '../periodo/periodo.service';
@@ -49,6 +51,7 @@ import {
 @Component({
   selector: 'jano-orcamento',
   imports: [
+    JanoMoeda,
     JanoButton,
     JanoBanner,
     JanoGoalBar,
@@ -336,7 +339,7 @@ import {
                   ? paraTexto(meta(ed.categoryId)?.limitCents ?? 0)
                   : sugestao(novaCategoria())
               "
-              inputmode="decimal"
+              janoMoeda
               placeholder="0,00"
               (keydown.enter)="
                 salvar(
@@ -781,7 +784,7 @@ export class Orcamento {
   }
 
   protected paraTexto(cents: number): string {
-    return (cents / 100).toFixed(2).replace('.', ',');
+    return textoDeMoeda(cents);
   }
 
   protected async salvar(

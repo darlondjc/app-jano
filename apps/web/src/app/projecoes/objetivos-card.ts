@@ -10,7 +10,13 @@ import { AuthService, GoalsRepository, type GoalDoc } from '@jano/data-access';
 import { formatBRL } from '@jano/engine';
 import { parseAmountToCents } from '@jano/import-file';
 import { NgTemplateOutlet } from '@angular/common';
-import { JanoButton, JanoSkeletonCard, JanoSkeletonGroup } from '@jano/ui';
+import {
+  JanoButton,
+  JanoSkeletonCard,
+  JanoSkeletonGroup,
+  JanoMoeda,
+  textoDeMoeda,
+} from '@jano/ui';
 import { Progresso } from '../shell/progresso';
 import { avaliarObjetivo, type BaseObjetivos } from './objetivos';
 
@@ -48,7 +54,13 @@ interface Rascunho {
 /** Objetivos de economia: quanto guardar por mês até o prazo e se a sobra média dá conta. */
 @Component({
   selector: 'jano-objetivos',
-  imports: [JanoButton, JanoSkeletonCard, JanoSkeletonGroup, NgTemplateOutlet],
+  imports: [
+    JanoMoeda,
+    JanoButton,
+    JanoSkeletonCard,
+    JanoSkeletonGroup,
+    NgTemplateOutlet,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -300,7 +312,7 @@ interface Rascunho {
             <span class="j-input"
               ><span class="j-input__prefix">R$</span
               ><input
-                inputmode="decimal"
+                janoMoeda
                 [value]="r.alvo"
                 (input)="mudar({ alvo: $any($event.target).value })"
                 placeholder="30.000,00"
@@ -350,7 +362,7 @@ interface Rascunho {
             <span class="j-input"
               ><span class="j-input__prefix">R$</span
               ><input
-                inputmode="decimal"
+                janoMoeda
                 [value]="r.guardado"
                 (input)="mudar({ guardado: $any($event.target).value })"
                 placeholder="0,00"
@@ -507,7 +519,7 @@ export class ObjetivosCard {
   }
 
   protected editar(g: GoalDoc): void {
-    const reais = (c: number) => (c / 100).toFixed(2).replace('.', ',');
+    const reais = textoDeMoeda;
     this.erro.set('');
     this.rascunho.set({
       id: g.id,
