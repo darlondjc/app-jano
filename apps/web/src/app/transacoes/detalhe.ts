@@ -162,16 +162,40 @@ const emReais = (cents: number): string => textoDeMoeda(Math.abs(cents));
       display: flex;
       flex-direction: column;
       gap: 8px;
-      padding: 12px;
-      background: var(--surface-2);
-      border-radius: var(--radius-md);
       font: 400 14px/20px var(--font-sans);
     }
-    .regra label.chk {
+    .regra-linha {
       display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      min-height: 32px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .regra .grupo {
+      display: flex;
+      gap: 6px;
+    }
+    .regra .j-chip {
+      height: 30px;
+      padding: 0 12px;
+    }
+    /* Trecho do nome numa linha: o campo só aparece ao tocar em Alterar. */
+    .trecho {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .trecho .j-cap {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+    .trecho b {
+      font-weight: 600;
+      color: var(--text);
+    }
+    .trecho .link {
+      flex: none;
     }
     .icone {
       display: inline-flex;
@@ -210,12 +234,6 @@ const emReais = (cents: number): string => textoDeMoeda(Math.abs(cents));
     }
     .aviso-trecho {
       color: var(--danger);
-    }
-    .regra input[type='checkbox'] {
-      accent-color: var(--primary);
-      width: 18px;
-      height: 18px;
-      margin-top: 1px;
     }
     .dividir-topo {
       display: flex;
@@ -269,9 +287,6 @@ const emReais = (cents: number): string => textoDeMoeda(Math.abs(cents));
       display: flex;
       flex-direction: column;
       gap: 8px;
-      padding: 12px;
-      border-radius: var(--radius-md);
-      background: var(--surface-2);
     }
     .explica {
       margin: 8px 0 0;
@@ -355,18 +370,33 @@ const emReais = (cents: number): string => textoDeMoeda(Math.abs(cents));
           </span>
         </label>
         @if (apelido().trim()) {
-          <label class="j-field">
-            <span class="j-field__label"
-              >Vale para todas as transações com o nome contendo</span
-            >
-            <span class="j-input" [class.j-input--error]="apelidoGenerico()">
-              <input
-                id="apelido-trecho"
-                [value]="apelidoTrecho()"
-                (input)="apelidoTrecho.set($any($event.target).value)"
-              />
-            </span>
-          </label>
+          @if (editandoTrechoApelido() || apelidoGenerico()) {
+            <label class="j-field">
+              <span class="j-field__label">Para nomes com</span>
+              <span class="j-input" [class.j-input--error]="apelidoGenerico()">
+                <input
+                  id="apelido-trecho"
+                  [value]="apelidoTrecho()"
+                  (input)="apelidoTrecho.set($any($event.target).value)"
+                />
+              </span>
+            </label>
+          } @else {
+            <div class="trecho">
+              <span class="j-cap"
+                >Para nomes com “<b>{{ apelidoTrecho() }}</b
+                >”</span
+              >
+              <button
+                class="link"
+                type="button"
+                aria-label="Alterar trecho do apelido"
+                (click)="editandoTrechoApelido.set(true)"
+              >
+                Alterar
+              </button>
+            </div>
+          }
           @if (apelidoGenerico()) {
             <span class="j-cap aviso-trecho" role="alert">
               Inclua o nome da loja ou da pessoa: esse trecho pegaria quase
@@ -521,25 +551,51 @@ const emReais = (cents: number): string => textoDeMoeda(Math.abs(cents));
 
     @if (podeRegra() && !dividindo()) {
       <div class="regra">
-        <label class="chk">
-          <input
-            type="checkbox"
-            [checked]="passadas()"
-            (change)="passadas.set($any($event.target).checked)"
-          />
-          <span>Alterar também as transações passadas</span>
-        </label>
-        <label class="chk">
-          <input
-            type="checkbox"
-            [checked]="futuras()"
-            (change)="futuras.set($any($event.target).checked)"
-          />
-          <span>Alterar também as transações futuras</span>
-        </label>
-        @if (passadas() || futuras()) {
+        <div class="regra-linha">
+          <span class="j-field__label">Mesma categoria nas</span>
+          <div
+            class="grupo"
+            role="group"
+            aria-label="Aplicar a outras transações"
+          >
+            <button
+              class="j-chip"
+              type="button"
+              [attr.aria-pressed]="passadas()"
+              (click)="passadas.set(!passadas())"
+            >
+              Passadas
+            </button>
+            <button
+              class="j-chip"
+              type="button"
+              [attr.aria-pressed]="futuras()"
+              (click)="futuras.set(!futuras())"
+            >
+              Futuras
+            </button>
+          </div>
+        </div>
+        @if (
+          (passadas() || futuras()) && !editandoTrecho() && !trechoGenerico()
+        ) {
+          <div class="trecho">
+            <span class="j-cap"
+              >Para nomes com “<b>{{ padrao() }}</b
+              >”</span
+            >
+            <button
+              class="link"
+              type="button"
+              aria-label="Alterar trecho da regra"
+              (click)="editandoTrecho.set(true)"
+            >
+              Alterar
+            </button>
+          </div>
+        } @else if (passadas() || futuras()) {
           <label class="j-field">
-            <span class="j-field__label">Transações com o nome contendo</span>
+            <span class="j-field__label">Para nomes com</span>
             <span
               class="j-input campo-trecho"
               [class.j-input--error]="trechoGenerico()"
@@ -644,6 +700,15 @@ export class DetalheTransacao {
     return this.apelidos.doLancamento(this.tx().description);
   });
   protected readonly editandoApelido = linkedSignal<boolean>(() => {
+    this.tx();
+    return false;
+  });
+  /** Campo do trecho aberto (por padrão o trecho aparece só como texto). */
+  protected readonly editandoTrechoApelido = linkedSignal<boolean>(() => {
+    this.tx();
+    return false;
+  });
+  protected readonly editandoTrecho = linkedSignal<boolean>(() => {
     this.tx();
     return false;
   });

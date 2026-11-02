@@ -51,6 +51,15 @@ const botao = (el: HTMLElement, texto: string) =>
     b.textContent?.trim().startsWith(texto),
   ) as HTMLButtonElement;
 
+const alterar = (
+  f: { detectChanges(): void },
+  el: HTMLElement,
+  rotulo: string,
+) => {
+  (el.querySelector(`[aria-label="${rotulo}"]`) as HTMLButtonElement).click();
+  f.detectChanges();
+};
+
 describe('DetalheTransacao', () => {
   it('só habilita Salvar depois de escolher algo', () => {
     const { f, el } = montar();
@@ -71,11 +80,7 @@ describe('DetalheTransacao', () => {
   });
 
   const marcar = (f: { detectChanges(): void }, el: HTMLElement, n: number) => {
-    const chk = el.querySelectorAll('input[type="checkbox"]')[
-      n
-    ] as HTMLInputElement;
-    chk.checked = true;
-    chk.dispatchEvent(new Event('change'));
+    botao(el, n === 0 ? 'Passadas' : 'Futuras').click();
     f.detectChanges();
   };
   const trecho = (el: HTMLElement) =>
@@ -88,7 +93,11 @@ describe('DetalheTransacao', () => {
     expect(trecho(el)).toBeNull();
     marcar(f, el, 0);
     marcar(f, el, 1);
-    expect(trecho(el).value).toBe('PIX MERCADINHO SOUZA');
+    // O trecho aparece como texto; o campo só abre em "Alterar".
+    expect(trecho(el)).toBeNull();
+    expect(el.querySelector('.regra .trecho')?.textContent).toContain(
+      'PIX MERCADINHO SOUZA',
+    );
     botao(el, 'Salvar').click();
     expect(saidas).toEqual([
       {
@@ -109,6 +118,7 @@ describe('DetalheTransacao', () => {
     botao(el, 'Mercado').click();
     f.detectChanges();
     marcar(f, el, 0);
+    alterar(f, el, 'Alterar trecho da regra');
     (
       el.querySelector('[aria-label="Limpar trecho"]') as HTMLButtonElement
     ).click();
@@ -142,6 +152,7 @@ describe('DetalheTransacao', () => {
     botao(el, 'Mercado').click();
     f.detectChanges();
     marcar(f, el, 1);
+    alterar(f, el, 'Alterar trecho da regra');
     expect(trecho(el).value).toBe('MATEUS SUPERM SAO LUIS');
     trecho(el).value = 'COMPRA C/CARTAO';
     trecho(el).dispatchEvent(new Event('input'));
@@ -182,7 +193,7 @@ describe('DetalheTransacao', () => {
     const { f, el, saidas } = montar();
     botao(el, 'Transferência').click();
     f.detectChanges();
-    expect(el.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(el.querySelector('.regra')).toBeNull();
     botao(el, 'Salvar').click();
     expect(saidas).toEqual([
       { escolha: TRANSFERENCIA, regra: null, mudouCategoria: true },
@@ -308,6 +319,8 @@ describe('DetalheTransacao: apelido', () => {
     campo.value = 'Academia';
     campo.dispatchEvent(new Event('input'));
     f.detectChanges();
+    expect(el.querySelector('#apelido-trecho')).toBeNull();
+    alterar(f, el, 'Alterar trecho do apelido');
     const trecho = el.querySelector('#apelido-trecho') as HTMLInputElement;
     trecho.value = 'jim davi';
     trecho.dispatchEvent(new Event('input'));
@@ -333,6 +346,7 @@ describe('DetalheTransacao: apelido', () => {
     campo.value = 'Academia';
     campo.dispatchEvent(new Event('input'));
     f.detectChanges();
+    alterar(f, el, 'Alterar trecho do apelido');
     const trecho = el.querySelector('#apelido-trecho') as HTMLInputElement;
     trecho.value = 'PIX';
     trecho.dispatchEvent(new Event('input'));
