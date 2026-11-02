@@ -135,7 +135,7 @@ import {
       max-height: 85dvh;
       overflow: auto;
       overscroll-behavior: contain;
-      padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+      padding-bottom: 0;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -177,10 +177,7 @@ import {
       margin-top: 3px;
     }
     .botoes {
-      display: flex;
-      gap: 8px;
       justify-content: space-between;
-      flex-wrap: wrap;
     }
     select {
       height: 44px;
@@ -371,11 +368,11 @@ import {
               >Levar a sobra para o mês seguinte</span
             >
             <span class="j-field__hint" style="display: block"
-              >O que não for gasto soma ao limite de {{ proximoMes() }}.</span
+              >O que não for gasto soma ao limite {{ proximoMes() }}.</span
             >
           </span>
         </label>
-        <div class="botoes">
+        <div class="j-sheet__acoes botoes">
           @if (ed.categoryId) {
             <button
               janoButton
@@ -530,8 +527,9 @@ export class Orcamento {
   /** "novembro" ou, pelo salário, "o próximo período". */
   protected readonly proximoMes = computed(() =>
     this.periodo.peloSalario()
-      ? 'o próximo período'
-      : rotuloMes(mesSeguinte(this.month())).split(' ')[0].toLowerCase(),
+      ? 'do próximo período'
+      : 'de ' +
+        rotuloMes(mesSeguinte(this.month())).split(' ')[0].toLowerCase(),
   );
   protected readonly mesPassado = computed(() =>
     this.periodo.peloSalario()

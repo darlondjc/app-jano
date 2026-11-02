@@ -613,6 +613,21 @@ jano-kpi-card .j-kpi {
   background: var(--border-strong);
   margin: 0 auto var(--space-4);
 }
+/* Ações do sheet sempre à vista: presas ao pé enquanto o conteúdo rola. O sheet não tem
+   respiro embaixo (o rodapé já traz a área segura); --j-sheet-px = recuo lateral do sheet. */
+.j-sheet__acoes {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: 0 calc(-1 * var(--j-sheet-px, var(--space-5)));
+  padding: var(--space-3) var(--j-sheet-px, var(--space-5))
+    calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
 .j-sheet__title {
   font: 600 20px/28px var(--font-sans);
   margin: 0 0 var(--space-4);

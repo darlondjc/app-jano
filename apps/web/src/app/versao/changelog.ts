@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.22.3',
+    date: '2026-11-02',
+    items: [
+      {
+        tipo: 'correcao',
+        texto:
+          'Painéis que sobem da base (filtros de Transações, meta do Orçamento e categoria) mantêm os botões de ação sempre à vista, presos ao pé; só o conteúdo rola.',
+      },
+    ],
+  },
+  {
     version: '0.22.2',
     date: '2026-11-01',
     items: [
