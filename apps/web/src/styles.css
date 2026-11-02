@@ -5,6 +5,8 @@ html {
   color-scheme: light dark;
   /* Sem zoom por toque duplo (e sem a espera de 300 ms que ele causa nos toques). */
   touch-action: manipulation;
+  /* Rolar até um item deixa espaço para o topo fixo e a barra do título. */
+  scroll-padding-top: calc(var(--jano-topo, 0px) + 64px);
 }
 :root[data-theme='light'] {
   color-scheme: light;

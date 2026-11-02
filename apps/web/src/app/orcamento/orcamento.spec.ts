@@ -146,9 +146,9 @@ describe('Orcamento: nova meta', () => {
     );
     await vi.waitFor(() => {
       f.detectChanges();
-      expect(el.querySelector('.topo button')).not.toBeNull();
+      expect(el.querySelector('jano-page-head button')).not.toBeNull();
     });
-    (el.querySelector('.topo button') as HTMLButtonElement).click();
+    (el.querySelector('jano-page-head button') as HTMLButtonElement).click();
     f.detectChanges();
     expect((el.querySelector('#lim-nova') as HTMLInputElement).value).toBe(
       '801,00',

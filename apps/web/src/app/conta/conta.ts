@@ -7,7 +7,12 @@ import {
 import { RouterLink } from '@angular/router';
 import { AuthService, ContaRepository } from '@jano/data-access';
 import type { RegistroImportacao } from '@jano/data-access';
-import { JanoButton, JanoSkeleton, JanoSkeletonGroup } from '@jano/ui';
+import {
+  JanoButton,
+  JanoSkeleton,
+  JanoSkeletonGroup,
+  JanoPageHead,
+} from '@jano/ui';
 import { BUILD_ID } from '../../environments/build-info';
 import { AtualizacaoService } from '../versao/atualizacao.service';
 import { VERSAO_ATUAL } from '../versao/changelog';
@@ -19,7 +24,13 @@ import { haQuantoTempo } from './tempo';
 /** Conta e dados: importação, atualização do app, privacidade e dados pessoais. */
 @Component({
   selector: 'jano-conta',
-  imports: [RouterLink, JanoButton, JanoSkeleton, JanoSkeletonGroup],
+  imports: [
+    JanoPageHead,
+    RouterLink,
+    JanoButton,
+    JanoSkeleton,
+    JanoSkeletonGroup,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -27,10 +38,6 @@ import { haQuantoTempo } from './tempo';
       max-width: 720px;
       margin: 0 auto;
       padding: 8px 16px 48px;
-    }
-    h1 {
-      margin: 0 0 4px;
-      font: 600 28px/36px var(--font-sans);
     }
     h2 {
       margin: 0 0 4px;
@@ -103,7 +110,7 @@ import { haQuantoTempo } from './tempo';
     }
   `,
   template: `
-    <h1>Conta e dados</h1>
+    <jano-page-head titulo="Conta e dados" />
     <div class="j-sub">{{ email() }}</div>
 
     <section class="j-card">

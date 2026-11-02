@@ -7,3 +7,4 @@ A navegação leva às áreas do produto: barra inferior no celular e barra late
 - O seletor de mês fica fixo no topo do conteúdo, não na navegação.
 - Navegue com `<nav aria-label="Principal">` e links reais (`<a href>`), nunca `div` clicável.
 - O consumidor fornece a lista de destinos, o destino atual e a atribuição dos ícones de contorno.
+- **Topo fixo e título da tela:** no celular o topo (logo e avatar) fica preso no alto. O título de cada tela usa `jano-page-head` (título + botões da tela): gruda logo abaixo do topo e, ao rolar, vira barra compacta com fundo `surface` e borda inferior, sem mudar de altura. Subtítulo fica fora dele e rola com a página.

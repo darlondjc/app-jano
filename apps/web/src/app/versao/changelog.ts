@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.23.1',
+    date: '2026-11-02',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Topo fixo com o Jano e o avatar. Ao rolar, o título da tela e os botões dela (Nova meta, Importar, Nova categoria) ficam numa barra logo abaixo, sempre à mão.',
+      },
+    ],
+  },
+  {
     version: '0.23.0',
     date: '2026-11-02',
     items: [

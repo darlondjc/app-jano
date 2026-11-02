@@ -2,6 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
+  ElementRef,
+  afterNextRender,
   inject,
   signal,
 } from '@angular/core';
@@ -128,6 +131,8 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
     .lado {
       position: sticky;
       top: 0;
+      /* Acima da barra de título das páginas, que se estende de ponta a ponta. */
+      z-index: 25;
       align-self: flex-start;
       height: 100vh;
       flex: 0 0 240px;
@@ -201,7 +206,11 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
       .lado {
         display: none;
       }
+      /* Topo fixo: nome do app e avatar sempre à vista. A altura vai para --jano-topo. */
       .topo {
+        position: sticky;
+        top: 0;
+        z-index: 30;
         display: grid;
         grid-template-columns: 1fr auto 1fr;
         align-items: center;
@@ -489,6 +498,20 @@ export class Shell {
   protected readonly novidades = signal(haNovidades());
 
   constructor() {
+    // Altura do topo fixo (0 no desktop, onde ele não aparece): os títulos das páginas grudam
+    // logo abaixo dele, e as rolagens até um item descontam essa altura.
+    const host = inject(ElementRef<HTMLElement>).nativeElement as HTMLElement;
+    const destroy = inject(DestroyRef);
+    afterNextRender(() => {
+      const topo = host.querySelector('header.topo') as HTMLElement | null;
+      if (!topo || typeof ResizeObserver === 'undefined') return;
+      const raiz = document.documentElement;
+      const ro = new ResizeObserver(() =>
+        raiz.style.setProperty('--jano-topo', `${topo.offsetHeight}px`),
+      );
+      ro.observe(topo);
+      destroy.onDestroy(() => ro.disconnect());
+    });
     this.router.events.pipe(takeUntilDestroyed()).subscribe((e) => {
       if (e instanceof NavigationStart) this.progresso.iniciar();
       else if (

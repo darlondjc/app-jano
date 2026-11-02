@@ -39,3 +39,24 @@ describe('regraQueCasa', () => {
     ).toBeUndefined();
   });
 });
+
+describe('apelido e regras de categoria', () => {
+  it('a regra casa pela descrição do banco, mesmo com apelido definido', async () => {
+    const { definirApelidos } = await import('./normalize');
+    definirApelidos([{ pattern: 'MERCADINHO SOUZA', apelido: 'Academia' }]);
+    try {
+      const regras = [{ pattern: 'MERCADINHO SOUZA', categoryId: 'mercado' }];
+      expect(regraQueCasa('PIX MERCADINHO SOUZA', regras)?.categoryId).toBe(
+        'mercado',
+      );
+      // O apelido não vira texto pesquisável pelas regras.
+      expect(
+        regraQueCasa('PIX MERCADINHO SOUZA', [
+          { pattern: 'ACADEMIA', categoryId: 'lazer' },
+        ]),
+      ).toBeUndefined();
+    } finally {
+      definirApelidos([]);
+    }
+  });
+});

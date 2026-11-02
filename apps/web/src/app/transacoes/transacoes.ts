@@ -50,6 +50,7 @@ import {
   JanoSkeleton,
   JanoSkeletonGroup,
   JanoSkeletonRows,
+  JanoPageHead,
 } from '@jano/ui';
 import {
   agruparPorDia,
@@ -91,6 +92,7 @@ interface Previa {
 @Component({
   selector: 'jano-transacoes',
   imports: [
+    JanoPageHead,
     JanoButton,
     JanoBanner,
     JanoCategoryBadge,
@@ -108,18 +110,8 @@ interface Previa {
       margin: 0 auto;
       padding: 24px 16px 48px;
     }
-    header.topo {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-    header label.imp {
+    jano-page-head label.imp {
       flex: none;
-    }
-    h1 {
-      margin: 0;
-      font: 600 28px/36px var(--font-sans);
     }
     input[type='file'] {
       display: none;
@@ -557,8 +549,7 @@ interface Previa {
     }
   `,
   template: `
-    <header class="topo">
-      <h1>Transações</h1>
+    <jano-page-head titulo="Transações">
       <button
         class="selecionar"
         type="button"
@@ -589,7 +580,7 @@ interface Previa {
           >Importar</span
         >
       </label>
-    </header>
+    </jano-page-head>
 
     <div class="barra">
       <label class="j-input busca">

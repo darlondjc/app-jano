@@ -360,3 +360,28 @@ describe('DetalheTransacao: apelido', () => {
     expect(botao(el, 'Salvar').disabled).toBe(true);
   });
 });
+
+describe('DetalheTransacao: apelido não mexe na regra de categoria', () => {
+  it('a regra usa o trecho da descrição do banco, nunca o apelido', () => {
+    const { f, el, saidas } = montar();
+    botao(el, 'Dar um apelido').click();
+    f.detectChanges();
+    const campo = el.querySelector('#apelido') as HTMLInputElement;
+    campo.value = 'Feira do Souza';
+    campo.dispatchEvent(new Event('input'));
+    f.detectChanges();
+    botao(el, 'Mercado').click();
+    f.detectChanges();
+    botao(el, 'Futuras').click();
+    f.detectChanges();
+    botao(el, 'Salvar').click();
+    expect(saidas).toEqual([
+      expect.objectContaining({
+        escolha: 'mercado',
+        mudouCategoria: true,
+        regra: expect.objectContaining({ pattern: 'PIX MERCADINHO SOUZA' }),
+        apelido: expect.objectContaining({ apelido: 'Feira do Souza' }),
+      }),
+    ]);
+  });
+});

@@ -34,6 +34,7 @@ import {
   JanoSkeletonKpi,
   JanoMoeda,
   textoDeMoeda,
+  JanoPageHead,
 } from '@jano/ui';
 import { Preferencias } from '../conta/preferencias';
 import { haQuantoTempo } from '../conta/tempo';
@@ -69,6 +70,7 @@ const dinheiro = textoDeMoeda;
 @Component({
   selector: 'jano-projecoes',
   imports: [
+    JanoPageHead,
     JanoMoeda,
     RouterLink,
     JanoButton,
@@ -87,20 +89,11 @@ const dinheiro = textoDeMoeda;
       margin: 0 auto;
       padding: 8px 16px 48px;
     }
-    h1 {
-      margin: 0;
-      font: 600 28px/36px var(--font-sans);
-    }
     h2 {
       margin: 0 0 12px;
       font: 600 18px/24px var(--font-sans);
     }
-    .topo {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 16px;
-      flex-wrap: wrap;
+    .sub-topo {
       margin-bottom: 16px;
     }
     .chips {
@@ -309,14 +302,10 @@ const dinheiro = textoDeMoeda;
     }
   `,
   template: `
-    <div class="topo">
-      <div>
-        <h1>Projeções</h1>
-        <div class="j-sub">
-          O que vem até o salário e nos próximos meses, a partir de hoje,
-          {{ hoje.getDate() }} de {{ mesLongo }}
-        </div>
-      </div>
+    <jano-page-head titulo="Projeções" />
+    <div class="j-sub sub-topo">
+      O que vem até o salário e nos próximos meses, a partir de hoje,
+      {{ hoje.getDate() }} de {{ mesLongo }}
     </div>
 
     @if (erro()) {

@@ -1,3 +1,4 @@
+import { JanoPageHead } from '@jano/ui';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CHANGELOG, VERSAO_ATUAL, type TipoMudanca } from './changelog';
 
@@ -19,6 +20,7 @@ const ROTULO: Record<TipoMudanca, string> = {
 
 @Component({
   selector: 'jano-novidades',
+  imports: [JanoPageHead],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -26,10 +28,6 @@ const ROTULO: Record<TipoMudanca, string> = {
       max-width: 960px;
       margin: 0 auto;
       padding: 24px 16px 48px;
-    }
-    h1 {
-      margin: 0 0 4px;
-      font: 600 28px/36px var(--font-sans);
     }
     section {
       margin-top: 24px;
@@ -69,7 +67,7 @@ const ROTULO: Record<TipoMudanca, string> = {
     }
   `,
   template: `
-    <h1>Novidades</h1>
+    <jano-page-head titulo="Novidades" />
     <div class="j-sub">Você está na versão {{ atual }}.</div>
     @for (v of versoes; track v.version) {
       <section>

@@ -24,6 +24,7 @@ import {
   JanoSkeletonGroup,
   JanoSkeletonKpi,
   JanoSkeletonRows,
+  JanoPageHead,
 } from '@jano/ui';
 import { Progresso } from '../shell/progresso';
 import { mesAtual } from '../transacoes/agrupar';
@@ -67,6 +68,7 @@ function lerFechados(): ReadonlySet<Grupo> {
 @Component({
   selector: 'jano-recorrencias',
   imports: [
+    JanoPageHead,
     NgTemplateOutlet,
     RouterLink,
     JanoButton,
@@ -85,10 +87,6 @@ function lerFechados(): ReadonlySet<Grupo> {
       max-width: 1280px;
       margin: 0 auto;
       padding: 8px 16px 48px;
-    }
-    h1 {
-      margin: 0;
-      font: 600 28px/36px var(--font-sans);
     }
     h2 {
       margin: 0 0 12px;
@@ -238,7 +236,7 @@ function lerFechados(): ReadonlySet<Grupo> {
     }
   `,
   template: `
-    <h1>Recorrências</h1>
+    <jano-page-head titulo="Recorrências" />
     <div class="j-sub">
       Assinaturas, contas fixas, parcelamentos e entradas que se repetem todo
       mês.
