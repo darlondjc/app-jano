@@ -214,6 +214,7 @@ interface Previa {
       display: none;
       flex-direction: column;
       gap: 20px;
+      --j-sheet-px: 16px;
     }
     .filtros h2,
     .filtros-titulo {
@@ -254,8 +255,6 @@ interface Previa {
       display: flex;
       flex-direction: column;
       gap: 2px;
-      max-height: 300px;
-      overflow: auto;
     }
     .cats label {
       display: flex;
@@ -505,6 +504,18 @@ interface Previa {
       .ocultar-largo,
       .fechar-filtros {
         display: none;
+      }
+      /* Na coluna lateral a lista rola sozinha e o rodapé não precisa ficar preso. */
+      .cats {
+        max-height: 300px;
+        overflow: auto;
+      }
+      .filtros .j-sheet__acoes {
+        position: static;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
       }
     }
     @media (max-width: 899px) {
@@ -818,7 +829,7 @@ interface Previa {
             }
           </div>
         </div>
-        <div style="display: flex; gap: 8px">
+        <div class="j-sheet__acoes">
           <button janoButton variant="ghost" type="button" (click)="limpar()">
             Limpar filtros
           </button>

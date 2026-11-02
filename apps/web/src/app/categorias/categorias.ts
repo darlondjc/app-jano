@@ -135,7 +135,7 @@ const NOVA: Form = {
       max-height: 85dvh;
       overflow: auto;
       overscroll-behavior: contain;
-      padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+      padding-bottom: 0;
     }
     @media (min-width: 720px) {
       .folha {
@@ -218,10 +218,8 @@ const NOVA: Form = {
       gap: 12px;
     }
     .rodape {
-      display: flex;
-      gap: 8px;
       justify-content: flex-end;
-      flex-wrap: wrap;
+      margin-top: var(--space-4);
     }
     .rodape .apagar {
       margin-right: auto;
@@ -402,7 +400,7 @@ const NOVA: Form = {
           </div>
         }
 
-        <div class="rodape">
+        <div class="j-sheet__acoes rodape">
           @if (f.id && apagando()?.id !== f.id) {
             <button
               janoButton
