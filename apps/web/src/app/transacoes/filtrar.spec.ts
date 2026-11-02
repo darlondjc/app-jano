@@ -1,4 +1,10 @@
-import { filtrar, SEM_FILTROS, totalDeFiltros, type Filtros } from './filtrar';
+import {
+  filtrar,
+  SEM_FILTROS,
+  totalDeFiltros,
+  totalizar,
+  type Filtros,
+} from './filtrar';
 
 const base = {
   accountId: 'conta',
@@ -105,5 +111,37 @@ describe('filtrar com estorno de cartão', () => {
         (t) => t.description,
       ),
     ).toEqual(['Salário']);
+  });
+});
+
+describe('totalizar', () => {
+  it('soma gastos e entradas, sem transferências', () => {
+    expect(totalizar(txs, SEM_FILTROS)).toEqual({
+      n: 4,
+      gastosCents: 18642 + 2370,
+      entradasCents: 635000,
+      transferidoCents: 100000,
+    });
+  });
+  it('estorno no cartão abate do gasto', () => {
+    const estorno = { ...txs[1], amountCents: 500 };
+    expect(
+      totalizar([txs[1], estorno], SEM_FILTROS, new Set(['cartao']))
+        .gastosCents,
+    ).toBe(1870);
+  });
+  it('com filtro de categoria, conta só as partes dela', () => {
+    const dividida = {
+      ...base,
+      description: 'Atacadão',
+      amountCents: -10000,
+      categoryId: 'mercado',
+      splits: [
+        { categoryId: 'mercado', amountCents: -7000 },
+        { categoryId: 'casa', amountCents: -3000 },
+      ],
+    };
+    const f = { ...SEM_FILTROS, categorias: ['mercado'] };
+    expect(totalizar([txs[0], dividida], f).gastosCents).toBe(18642 + 7000);
   });
 });

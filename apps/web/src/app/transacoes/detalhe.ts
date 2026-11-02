@@ -53,21 +53,21 @@ export interface SalvarDetalhe {
 }
 
 /** Mensagem depois de salvar, contando as outras transações alteradas. */
+/**
+ * Confirmação do salvar, dizendo o que mudou: "Agora em Mercado.", "Mercado nesta e em mais
+ * 3 transações; as próximas também." `categoria` é o nome, ou null para transferência.
+ */
 export function avisoDoSalvar(
   regra: SalvarDetalhe['regra'],
   passadas: number,
+  categoria: string | null,
 ): string {
-  if (!regra) return 'Salvo.';
-  const partes: string[] = [];
-  if (regra.passadas)
-    partes.push(
-      passadas === 1
-        ? '1 transação passada alterada'
-        : `${passadas} transações passadas alteradas`,
-    );
-  if (regra.futuras) partes.push('as próximas com esse nome já chegam assim');
-  const texto = partes.join('; ');
-  return `Salvo: ${texto}.`;
+  if (categoria === null) return 'Marcada como transferência, fora dos totais.';
+  const outras = regra?.passadas ? passadas : 0;
+  const base = outras
+    ? `${categoria} nesta e em mais ${outras === 1 ? '1 transação' : `${outras} transações`}`
+    : `Agora em ${categoria}`;
+  return regra?.futuras ? `${base}; as próximas também.` : `${base}.`;
 }
 
 interface LinhaDivisao {

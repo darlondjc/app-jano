@@ -98,3 +98,44 @@ export function filtrar<T extends Linha>(
     return casaBusca(t, f.busca, nomeCategoria);
   });
 }
+
+export interface Totais {
+  n: number;
+  /** Gasto líquido (compras menos estornos), em centavos positivos. */
+  gastosCents: number;
+  entradasCents: number;
+  /** Só no filtro de transferências: quanto passou entre contas. */
+  transferidoCents: number;
+}
+
+/**
+ * Totais do que a lista mostra. Transferência fica fora de gastos e entradas (como no resto do
+ * app); com filtro de categoria, um lançamento dividido conta só as partes daquelas categorias.
+ */
+export function totalizar<T extends Linha>(
+  txs: T[],
+  f: Filtros,
+  cartoes?: ReadonlySet<string>,
+): Totais {
+  const r: Totais = {
+    n: txs.length,
+    gastosCents: 0,
+    entradasCents: 0,
+    transferidoCents: 0,
+  };
+  for (const t of txs) {
+    if (t.isTransfer) {
+      r.transferidoCents += Math.abs(t.amountCents);
+      continue;
+    }
+    const valor = f.categorias.length
+      ? partes(t)
+          .filter((p) => f.categorias.includes(p.categoryId ?? ''))
+          .reduce((s, p) => s + p.amountCents, 0)
+      : t.amountCents;
+    if (valor < 0) r.gastosCents += -valor;
+    else if (ehEstorno(t, cartoes)) r.gastosCents -= valor;
+    else r.entradasCents += valor;
+  }
+  return r;
+}
