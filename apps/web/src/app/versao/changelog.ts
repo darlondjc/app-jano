@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.23.2',
+    date: '2026-11-02',
+    items: [
+      {
+        tipo: 'correcao',
+        texto:
+          'Orçamento: salvar a meta "Fatura do cartão" dava erro ("Resource id … is reserved"). Agora salva.',
+      },
+    ],
+  },
+  {
     version: '0.23.1',
     date: '2026-11-02',
     items: [

@@ -421,7 +421,8 @@ export function cartaoDaFatura(e: EntradaFatura): CartaoFatura | null {
 }
 
 /** Id reservado da meta de orçamento da fatura do cartão (não é uma categoria). */
-export const META_FATURA = '__fatura__';
+// Vira id de documento no Firestore: não pode ter a forma __nome__, que é reservada.
+export const META_FATURA = 'meta-fatura-cartao';
 
 export interface CicloDaFatura {
   /** Compras do cartão no ciclo aberto, menos estornos. */
