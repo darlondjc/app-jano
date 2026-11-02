@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.22.4',
+    date: '2026-11-02',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Detalhe da transação mais enxuto: o apelido tem um campo só e o trecho do nome aparece numa linha, com "Alterar" para mudar. Levar a categoria às outras transações virou dois botões, Passadas e Futuras.',
+      },
+    ],
+  },
+  {
     version: '0.22.3',
     date: '2026-11-02',
     items: [
