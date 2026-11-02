@@ -24,6 +24,7 @@ import { haNovidades } from '../versao/novidades';
 import { AvatarMenu } from './avatar-menu';
 import { AvisoConexaoBanner } from './aviso-conexao-banner';
 import { Progresso } from './progresso';
+import { ToastHost } from '../toast/toast';
 
 interface Item {
   rota: string;
@@ -90,6 +91,7 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
     AvisoConexaoBanner,
     JanoProgressBar,
     JanoBackToTop,
+    ToastHost,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
@@ -372,6 +374,7 @@ const EM_BREVE: Omit<Item, 'rota'>[] = [];
       }
       <router-outlet />
     </main>
+    <jano-toast-host />
 
     <nav class="j-nav j-nav--bottom abas" aria-label="Principal">
       @for (i of principais; track i.rota) {

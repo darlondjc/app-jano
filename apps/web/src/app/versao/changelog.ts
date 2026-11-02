@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.23.0',
+    date: '2026-11-02',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Transações: total no topo da lista (quantas, gastos e entradas) que acompanha a busca e os filtros. Filtre uma categoria para ver quanto foi nela no período.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Ao salvar, a confirmação aparece flutuando por alguns segundos e diz o que mudou: "Agora em Mercado.", "Mercado nesta e em mais 3 transações; as próximas também."',
+      },
+    ],
+  },
+  {
     version: '0.22.4',
     date: '2026-11-02',
     items: [

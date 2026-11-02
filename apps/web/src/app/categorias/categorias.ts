@@ -17,6 +17,7 @@ import {
 } from '@jano/data-access';
 import { formatBRL, mesesDoPeriodo, monthOf, monthTotals } from '@jano/engine';
 import { PeriodoService } from '../periodo/periodo.service';
+import { Toast } from '../toast/toast';
 import {
   ICON_NAMES,
   ICONS,
@@ -249,9 +250,6 @@ const NOVA: Form = {
       <jano-banner tone="danger" title="Algo deu errado.">{{
         erro()
       }}</jano-banner>
-    }
-    @if (aviso()) {
-      <jano-banner tone="good">{{ aviso() }}</jano-banner>
     }
 
     @if (faltam() > 0 && !form()) {
@@ -486,7 +484,7 @@ export class Categorias {
   );
   protected readonly carregando = signal(true);
   protected readonly erro = signal('');
-  protected readonly aviso = signal('');
+  private readonly toast = inject(Toast);
 
   /** Gasto do mês atual por categoria, metas e regras: o que a lista mostra em cada linha. */
   private readonly gastoMes = signal<Record<string, number>>({});
@@ -636,7 +634,9 @@ export class Categorias {
         this.categorias(),
       );
       this.form.set(null);
-      this.aviso.set(f.id ? 'Categoria atualizada.' : 'Categoria criada.');
+      this.toast.mostrar(
+        f.id ? `Categoria “${f.name}” salva.` : `Categoria “${f.name}” criada.`,
+      );
       await this.carregar();
     } catch (e) {
       this.falha(e);
@@ -660,7 +660,7 @@ export class Categorias {
       await this.catalog.deleteCategory(this.uid, c.id);
       this.apagando.set(null);
       this.form.set(null);
-      this.aviso.set(`Categoria “${c.name}” apagada.`);
+      this.toast.mostrar(`Categoria “${c.name}” apagada.`);
       await this.carregar();
     } catch (e) {
       this.falha(e);
@@ -678,7 +678,7 @@ export class Categorias {
         this.uid,
         this.categorias(),
       );
-      this.aviso.set(`${n} categorias adicionadas.`);
+      this.toast.mostrar(`${n} categorias adicionadas.`);
       await this.carregar();
     } catch (e) {
       this.falha(e);
@@ -689,7 +689,6 @@ export class Categorias {
 
   private limpar(): void {
     this.erro.set('');
-    this.aviso.set('');
     this.apagando.set(null);
   }
 

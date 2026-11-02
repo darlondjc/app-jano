@@ -178,15 +178,21 @@ describe('DetalheTransacao', () => {
     expect(writeText).toHaveBeenCalledWith('Pix · Mercadinho Souza');
   });
 
-  it('aviso conta as passadas alteradas', () => {
+  it('aviso diz a categoria e quantas outras mudaram', () => {
     const r = { pattern: 'X', categoryId: 'c', passadas: true, futuras: true };
-    expect(avisoDoSalvar(r, 3)).toBe(
-      'Salvo: 3 transações passadas alteradas; as próximas com esse nome já chegam assim.',
+    expect(avisoDoSalvar(r, 3, 'Mercado')).toBe(
+      'Mercado nesta e em mais 3 transações; as próximas também.',
     );
-    expect(avisoDoSalvar({ ...r, futuras: false }, 1)).toBe(
-      'Salvo: 1 transação passada alterada.',
+    expect(avisoDoSalvar({ ...r, futuras: false }, 1, 'Mercado')).toBe(
+      'Mercado nesta e em mais 1 transação.',
     );
-    expect(avisoDoSalvar(null, 0)).toBe('Salvo.');
+    expect(avisoDoSalvar({ ...r, passadas: false }, 0, 'Mercado')).toBe(
+      'Agora em Mercado; as próximas também.',
+    );
+    expect(avisoDoSalvar(null, 0, 'Lazer')).toBe('Agora em Lazer.');
+    expect(avisoDoSalvar(null, 0, null)).toBe(
+      'Marcada como transferência, fora dos totais.',
+    );
   });
 
   it('transferência não oferece regra', () => {

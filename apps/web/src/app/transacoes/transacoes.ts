@@ -22,6 +22,7 @@ import {
   type TransactionDoc,
 } from '@jano/data-access';
 import { calendario, formatBRL, mesesDoPeriodo, monthOf } from '@jano/engine';
+import { Toast } from '../toast/toast';
 import { PeriodoService } from '../periodo/periodo.service';
 import { ApelidosService } from '../apelidos/apelidos.service';
 import {
@@ -70,6 +71,7 @@ import {
   filtrar,
   SEM_FILTROS,
   totalDeFiltros,
+  totalizar,
   type Filtros,
   type TipoFiltro,
 } from './filtrar';
@@ -271,6 +273,36 @@ interface Previa {
       height: 10px;
       border-radius: 50%;
       flex: none;
+    }
+    /* Total do que a lista mostra: muda com a busca e os filtros. */
+    .totais {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin: 0 0 12px;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font: 400 13px/18px var(--font-sans);
+      color: var(--text-2);
+    }
+    .totais .somas {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .totais .somas > span {
+      display: flex;
+      flex-direction: column;
+    }
+    .totais b {
+      font: 600 18px/24px var(--font-sans);
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .totais b.positivo {
+      color: var(--positive);
     }
     .tabela-wrap {
       display: none;
@@ -653,7 +685,7 @@ interface Previa {
       }}</jano-banner>
     }
     @if (aviso()) {
-      <jano-banner tone="good">{{ aviso() }}</jano-banner>
+      <jano-banner tone="info">{{ aviso() }}</jano-banner>
     }
 
     @if (previa(); as p) {
@@ -900,6 +932,33 @@ interface Previa {
             </button>
           </div>
         } @else {
+          @let tot = totais();
+          <div class="totais" aria-live="polite">
+            <span class="somas">
+              @if (filtros().tipo === 'transferencias') {
+                <span
+                  >Transferido <b>{{ money(tot.transferidoCents) }}</b></span
+                >
+              } @else {
+                @if (tot.gastosCents || !tot.entradasCents) {
+                  <span
+                    >Gastos <b>{{ money(tot.gastosCents) }}</b></span
+                  >
+                }
+                @if (tot.entradasCents) {
+                  <span
+                    >Entradas
+                    <b class="positivo"
+                      >+{{ money(tot.entradasCents) }}</b
+                    ></span
+                  >
+                }
+              }
+            </span>
+            <span class="j-cap"
+              >{{ tot.n }} {{ tot.n === 1 ? 'transação' : 'transações' }}</span
+            >
+          </div>
           <div class="tabela-wrap">
             <table>
               <thead>
@@ -1145,6 +1204,7 @@ export class Transacoes {
   protected readonly transferenciaId = TRANSFERENCIA;
   private readonly fin = inject(PeriodoService);
   private readonly apelidos = inject(ApelidosService);
+  private readonly toast = inject(Toast);
   /** Períodos ('AAAA-MM') de hoje e o anterior; do salário quando ele é conhecido. */
   protected readonly mesAtualStr = signal(mesAtual());
   protected readonly mesPassado = computed(() =>
@@ -1250,6 +1310,9 @@ export class Transacoes {
       (id) => this.nomeCategoria2(id),
       this.cartoes(),
     ),
+  );
+  protected readonly totais = computed(() =>
+    totalizar(this.filtradas(), this.filtros(), this.cartoes()),
   );
   protected readonly visiveis = computed(() =>
     this.filtradas().slice(0, this.limite()),
@@ -1522,7 +1585,15 @@ export class Transacoes {
             : t,
         ),
       );
-      this.aviso.set(`${ids.length} lançamentos atualizados.`);
+      this.toast.mostrar(
+        `${ids.length} transações ${
+          transferencia
+            ? 'marcadas como transferência'
+            : categoryId
+              ? `agora em ${this.nomeCategoria2(categoryId)}`
+              : 'sem categoria'
+        }.`,
+      );
       this.selecionadas.set(new Set());
     } catch (e) {
       this.falha(e);
@@ -1543,9 +1614,9 @@ export class Transacoes {
         // Os nomes da lista vêm do apelido: redesenha com o novo.
         this.txs.update((l) => [...l]);
         if (!ev.mudouCategoria) {
-          this.aviso.set(
+          this.toast.mostrar(
             'apelido' in a
-              ? `Apelido “${a.apelido}” salvo para as transações com “${a.pattern}”.`
+              ? `Agora aparece como “${a.apelido}”.`
               : 'Apelido removido.',
           );
           this.detalheId.set(null);
@@ -1577,7 +1648,7 @@ export class Transacoes {
               : x,
           ),
         );
-        this.aviso.set(`Dividido em ${splits.length} categorias.`);
+        this.toast.mostrar(`Dividida em ${splits.length} categorias.`);
         this.detalheId.set(null);
       } catch (e) {
         this.falha(e);
@@ -1629,7 +1700,13 @@ export class Transacoes {
               : x,
         ),
       );
-      this.aviso.set(avisoDoSalvar(ev.regra, outras.length));
+      this.toast.mostrar(
+        avisoDoSalvar(
+          ev.regra,
+          outras.length,
+          transferencia ? null : this.nomeCategoria2(categoryId),
+        ),
+      );
       this.detalheId.set(null);
     } catch (e) {
       this.falha(e);
@@ -1780,7 +1857,7 @@ export class Transacoes {
         createdAt: new Date().toISOString(),
       });
       this.previa.set(null);
-      this.aviso.set(`${rows.length} transações importadas.`);
+      this.toast.mostrar(`${rows.length} transações importadas.`);
       if (p.plan.from)
         this.periodo.set({ tipo: 'mes', mes: monthOf(p.plan.from) });
       await this.carregar();

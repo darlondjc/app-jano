@@ -1,3 +1,4 @@
+import { Toast } from '../toast/toast';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import {
@@ -114,7 +115,7 @@ describe('Categorias', () => {
       }),
       expect.any(Array),
     );
-    expect(el.textContent).toContain('Categoria criada.');
+    expect(TestBed.inject(Toast).texto()).toBe('Categoria “Cafeteria” criada.');
   });
 
   it('pede confirmação antes de apagar', async () => {
