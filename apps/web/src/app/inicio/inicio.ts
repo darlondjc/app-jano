@@ -49,6 +49,7 @@ import {
   JanoSkeletonGroup,
   JanoSkeletonKpi,
   JanoSkeletonRows,
+  JanoPageHead,
 } from '@jano/ui';
 import {
   classeValor,
@@ -90,6 +91,7 @@ function lerDispensado(): string | null {
 @Component({
   selector: 'jano-inicio',
   imports: [
+    JanoPageHead,
     RouterLink,
     JanoButton,
     JanoBanner,
@@ -111,20 +113,9 @@ function lerDispensado(): string | null {
       margin: 0 auto;
       padding: 24px 16px 48px;
     }
-    h1 {
-      margin: 0;
-      font: 600 28px/36px var(--font-sans);
-    }
     h2 {
       margin: 0;
       font: 600 18px/24px var(--font-sans);
-    }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px 16px;
     }
     .titulo-secao {
       display: flex;
@@ -234,15 +225,11 @@ function lerDispensado(): string | null {
     }
   `,
   template: `
-    <header>
-      <div>
-        <h1>Como está seu mês</h1>
-        <div class="j-sub">
-          Olá, {{ nome() }} · dia {{ diaAtual() }} de {{ diasNoMes() }} ·
-          {{ mes() }}
-        </div>
-      </div>
-    </header>
+    <jano-page-head titulo="Como está seu mês" />
+    <div class="j-sub">
+      Olá, {{ nome() }} · dia {{ diaAtual() }} de {{ diasNoMes() }} ·
+      {{ mes() }}
+    </div>
 
     @if (erro()) {
       <jano-banner tone="danger" title="Não consegui carregar seus dados.">{{

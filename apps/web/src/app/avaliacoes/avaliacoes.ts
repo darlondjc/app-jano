@@ -33,6 +33,7 @@ import {
   JanoSkeletonCard,
   JanoSkeletonGroup,
   JanoSkeletonRows,
+  JanoPageHead,
 } from '@jano/ui';
 import { montarAlertas, type Alerta } from '../inicio/alertas';
 import { Progresso } from '../shell/progresso';
@@ -76,6 +77,7 @@ const CIRC = 2 * Math.PI * RAIO;
 @Component({
   selector: 'jano-avaliacoes',
   imports: [
+    JanoPageHead,
     RouterLink,
     JanoButton,
     JanoBanner,
@@ -91,10 +93,6 @@ const CIRC = 2 * Math.PI * RAIO;
       max-width: 1280px;
       margin: 0 auto;
       padding: 8px 16px 48px;
-    }
-    h1 {
-      margin: 0;
-      font: 600 28px/36px var(--font-sans);
     }
     h2 {
       margin: 0 0 12px;
@@ -277,7 +275,7 @@ const CIRC = 2 * Math.PI * RAIO;
     }
   `,
   template: `
-    <h1>Avaliações</h1>
+    <jano-page-head titulo="Avaliações" />
     <div class="j-sub">{{ mes() }}</div>
 
     @if (erro()) {

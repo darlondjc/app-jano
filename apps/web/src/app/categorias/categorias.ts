@@ -27,6 +27,7 @@ import {
   JanoIcon,
   JanoSkeletonGroup,
   JanoSkeletonRows,
+  JanoPageHead,
 } from '@jano/ui';
 
 interface Form {
@@ -47,6 +48,7 @@ const NOVA: Form = {
 @Component({
   selector: 'jano-categorias',
   imports: [
+    JanoPageHead,
     JanoButton,
     JanoBanner,
     JanoCategoryBadge,
@@ -61,17 +63,6 @@ const NOVA: Form = {
       max-width: 1280px;
       margin: 0 auto;
       padding: 24px 16px 48px;
-    }
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: end;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    h1 {
-      margin: 0;
-      font: 600 28px/36px var(--font-sans);
     }
     h2 {
       margin: 28px 0 8px;
@@ -234,17 +225,14 @@ const NOVA: Form = {
     }
   `,
   template: `
-    <header>
-      <div>
-        <h1>Categorias</h1>
-        <div class="j-sub">{{ categorias().length }} categorias</div>
-      </div>
+    <jano-page-head titulo="Categorias">
       @if (!form()) {
         <button janoButton variant="primary" type="button" (click)="nova()">
           Nova categoria
         </button>
       }
-    </header>
+    </jano-page-head>
+    <div class="j-sub">{{ categorias().length }} categorias</div>
 
     @if (erro()) {
       <jano-banner tone="danger" title="Algo deu errado.">{{

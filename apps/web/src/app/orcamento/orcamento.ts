@@ -37,6 +37,7 @@ import {
   JanoSkeletonKpi,
   JanoMoeda,
   textoDeMoeda,
+  JanoPageHead,
 } from '@jano/ui';
 import { mesAnterior, mesSeguinte, rotuloMes } from '../transacoes/agrupar';
 import { PeriodoService } from '../periodo/periodo.service';
@@ -51,6 +52,7 @@ import {
 @Component({
   selector: 'jano-orcamento',
   imports: [
+    JanoPageHead,
     JanoMoeda,
     JanoButton,
     JanoBanner,
@@ -67,10 +69,6 @@ import {
       max-width: 1280px;
       margin: 0 auto;
       padding: 24px 16px 48px;
-    }
-    h1 {
-      margin: 0;
-      font: 600 28px/36px var(--font-sans);
     }
     .mes {
       margin: 16px 0;
@@ -110,12 +108,6 @@ import {
     }
     .dica {
       margin: 12px 0 0;
-    }
-    .topo {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
     }
     .escurece {
       border: 0;
@@ -191,8 +183,7 @@ import {
     }
   `,
   template: `
-    <div class="topo">
-      <h1>Orçamento</h1>
+    <jano-page-head titulo="Orçamento">
       @if (!carregando() && opcoesNova().length) {
         <button
           janoButton
@@ -203,7 +194,7 @@ import {
           Nova meta
         </button>
       }
-    </div>
+    </jano-page-head>
     <jano-month-nav
       class="mes"
       [rotulo]="rotulo()"
