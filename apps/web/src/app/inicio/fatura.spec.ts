@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { gerarDadosDemo } from '@jano/data-access';
-import { cartaoDaFatura, cicloDaFatura } from './fatura';
+import { cartaoDaFatura, cicloDaFatura, META_FATURA } from './fatura';
 
 const dados = gerarDadosDemo(new Date(2026, 9, 31, 10));
 const cartoes = new Set(['cartao-de-credito']);
@@ -313,5 +313,12 @@ describe('cicloDaFatura (meta da fatura)', () => {
     });
     expect(c.gastoCents).toBe(45000);
     expect(c.fecha).toBeNull();
+  });
+});
+
+describe('META_FATURA', () => {
+  it('é um id de documento válido no Firestore (sem a forma reservada __x__)', () => {
+    expect(META_FATURA).not.toMatch(/^__.*__$/);
+    expect(META_FATURA).not.toContain('/');
   });
 });
