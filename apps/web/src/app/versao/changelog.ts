@@ -22,6 +22,11 @@ export const CHANGELOG: Versao[] = [
         texto:
           "Logo da loja nos lançamentos de marcas conhecidas (Netflix, Spotify, Apple, Google, YouTube, iFood, Uber, Shopee, Mercado Pago, Nubank, McDonald's e outras), em Transações, Início, Recorrências e Avaliações. A categoria continua escrita ao lado.",
       },
+      {
+        tipo: 'melhoria',
+        texto:
+          'O avatar do banco no destaque do Início agora usa o símbolo do Banco do Brasil.',
+      },
     ],
   },
   {
