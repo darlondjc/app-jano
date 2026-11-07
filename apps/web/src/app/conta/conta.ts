@@ -1,12 +1,17 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AuthService, ContaRepository } from '@jano/data-access';
-import type { RegistroImportacao } from '@jano/data-access';
+import {
+  AuthService,
+  ConnectionsRepository,
+  ContaRepository,
+} from '@jano/data-access';
+import type { ConnectionDoc, RegistroImportacao } from '@jano/data-access';
 import {
   JanoButton,
   JanoSkeleton,
@@ -19,7 +24,7 @@ import { VERSAO_ATUAL } from '../versao/changelog';
 import { baixar, transacoesCsv } from './exportar';
 import { Preferencias } from './preferencias';
 import { PeriodoService } from '../periodo/periodo.service';
-import { haQuantoTempo } from './tempo';
+import { diaEHora, haQuantoTempo } from './tempo';
 
 /** Conta e dados: importação, atualização do app, privacidade e dados pessoais. */
 @Component({
@@ -98,6 +103,22 @@ import { haQuantoTempo } from './tempo';
     .perigo {
       border-color: var(--danger-border, var(--border-strong));
     }
+    .sinc {
+      display: grid;
+      grid-template-columns: auto auto;
+      justify-content: start;
+      gap: 4px 16px;
+      margin: 0 0 8px;
+      font: 400 14px/20px var(--font-sans);
+    }
+    .sinc dt {
+      color: var(--text-2);
+    }
+    .sinc dd {
+      margin: 0;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
     .confirma {
       margin-top: 12px;
       display: flex;
@@ -132,6 +153,40 @@ import { haQuantoTempo } from './tempo';
       <div class="acoes">
         <a janoButton routerLink="/transacoes">Importar novo extrato</a>
       </div>
+    </section>
+
+    <section class="j-card" aria-label="Sincronização">
+      <h2>Sincronização</h2>
+      @if (carregandoCon()) {
+        <jano-skeleton-group label="Verificando a sincronização">
+          <jano-skeleton w="60%" h="14px" />
+          <jano-skeleton w="70%" h="14px" />
+        </jano-skeleton-group>
+      } @else if (conexoes().length) {
+        <dl class="sinc">
+          <dt>Última sincronização</dt>
+          <dd>{{ diaEHora(ultimaSinc()) }}</dd>
+          @for (c of conexoes(); track c.id) {
+            <dt>
+              Banco consultado pelo Meu Pluggy{{
+                conexoes().length > 1 && c.name ? ' (' + c.name + ')' : ''
+              }}
+            </dt>
+            <dd>
+              {{ c.bankUpdatedAt ? diaEHora(c.bankUpdatedAt) : 'ainda não' }}
+            </dd>
+          }
+        </dl>
+        <p class="j-sub">
+          Lançamento que caiu no banco depois dessa consulta chega na próxima
+          atualização do Meu Pluggy.
+        </p>
+      } @else {
+        <p>
+          Nenhuma conexão Open Finance: os dados vêm das importações de extrato
+          e fatura.
+        </p>
+      }
     </section>
 
     <section class="j-card" aria-label="Período financeiro">
@@ -304,6 +359,18 @@ import { haQuantoTempo } from './tempo';
 export class Conta {
   private readonly auth = inject(AuthService);
   private readonly repo = inject(ContaRepository);
+  private readonly conexoesRepo = inject(ConnectionsRepository);
+  protected readonly conexoes = signal<ConnectionDoc[]>([]);
+  protected readonly carregandoCon = signal(true);
+  /** A sincronização grava todas as conexões juntas: a mais recente é a última execução. */
+  protected readonly ultimaSinc = computed(
+    () =>
+      this.conexoes()
+        .map((c) => c.syncedAt)
+        .sort()
+        .at(-1) ?? '',
+  );
+  protected readonly diaEHora = (iso: string) => diaEHora(iso);
   protected readonly atualizacao = inject(AtualizacaoService);
   protected readonly prefs = inject(Preferencias);
   protected readonly periodo = inject(PeriodoService);
@@ -334,8 +401,19 @@ export class Conta {
     return haQuantoTempo(iso);
   }
 
+  private async carregarConexoes(uid: string | undefined): Promise<void> {
+    try {
+      if (uid) this.conexoes.set(await this.conexoesRepo.list(uid));
+    } catch {
+      this.conexoes.set([]);
+    } finally {
+      this.carregandoCon.set(false);
+    }
+  }
+
   private async carregar(): Promise<void> {
     const uid = this.auth.user()?.uid;
+    void this.carregarConexoes(uid);
     try {
       if (uid) this.ultima.set(await this.repo.ultimaImportacao(uid));
     } catch {
