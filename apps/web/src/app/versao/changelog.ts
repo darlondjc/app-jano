@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.24.1',
+    date: '2026-11-07',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Mais logos nos lançamentos: Amazon, Grupo Mateus, Drogasil, Vivo, Smart Fit, Havan, Premiere, Centauro, Hering, O Boticário, Vivara, Renner, Mercado Livre e Hyundai (também nas compras da Pateo).',
+      },
+    ],
+  },
+  {
     version: '0.24.0',
     date: '2026-11-07',
     items: [

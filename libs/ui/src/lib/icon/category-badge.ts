@@ -27,8 +27,32 @@ import { corDoDesenho, logoDaLoja } from './logo-loja';
       border-radius: 28%;
       flex: none;
     }
+    /* Logo colorido em arquivo: fundo branco, como as marcas são desenhadas. */
+    .arquivo {
+      background: #fff;
+      box-shadow: inset 0 0 0 1px var(--border);
+      overflow: hidden;
+    }
+    .arquivo img {
+      object-fit: contain;
+    }
   `,
-  template: `@if (logo(); as l) {
+  template: `@if (logo()?.arquivo; as arquivo) {
+      <span
+        class="b arquivo"
+        [style.width.px]="size()"
+        [style.height.px]="size()"
+      >
+        <img
+          [src]="arquivo"
+          [alt]="logo()!.nome"
+          [title]="logo()!.nome"
+          [width]="size() * 0.8"
+          [height]="size() * 0.8"
+          loading="lazy"
+        />
+      </span>
+    } @else if (logo(); as l) {
       <span
         class="b"
         role="img"
@@ -44,7 +68,7 @@ import { corDoDesenho, logoDaLoja } from './logo-loja';
           [attr.height]="size() * 0.55"
           aria-hidden="true"
         >
-          <path [attr.d]="l.d" [attr.fill]="desenho()" />
+          <path [attr.d]="l.d ?? ''" [attr.fill]="desenho()" />
         </svg>
       </span>
     } @else {
