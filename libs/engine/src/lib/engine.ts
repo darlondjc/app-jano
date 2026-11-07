@@ -228,6 +228,24 @@ export function cumulativeSpend(
   upToDay: number,
   cartoes?: ReadonlySet<string>,
 ): Cents[] {
+  let acc = 0;
+  return gastoPorDia(txs, upToDay, cartoes).map((v) => (acc += v));
+}
+
+/**
+ * Gasto de cada dia do período, do dia 1 até `upToDay` (centavos; estorno do cartão abate).
+ * Transferências ficam de fora, como em todos os totais.
+ */
+export function gastoPorDia(
+  txs: {
+    date: string;
+    amountCents: Cents;
+    isTransfer: boolean;
+    accountId?: string;
+  }[],
+  upToDay: number,
+  cartoes?: ReadonlySet<string>,
+): Cents[] {
   const perDay = new Array<Cents>(Math.max(upToDay, 0)).fill(0);
   for (const t of txs) {
     if (t.isTransfer) continue;
@@ -236,6 +254,5 @@ export function cumulativeSpend(
     const day = diaNoPeriodo(t.date);
     if (day >= 1 && day <= upToDay) perDay[day - 1] -= t.amountCents;
   }
-  let acc = 0;
-  return perDay.map((v) => (acc += v));
+  return perDay;
 }
