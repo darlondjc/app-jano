@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.25.2',
+    date: '2026-11-07',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Gastos por dia com zoom nos dias comuns: a escala fica perto do "pode gastar" e do gasto habitual, não no dia mais caro. Dia muito acima aparece cortado, com o valor escrito em cima.',
+      },
+    ],
+  },
+  {
     version: '0.25.1',
     date: '2026-11-07',
     items: [
