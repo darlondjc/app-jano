@@ -23,3 +23,11 @@ describe('corDoDesenho', () => {
     expect(corDoDesenho('#FBC817')).toBe('#111');
   });
 });
+
+describe('Amazon', () => {
+  it('Prime Video antes da loja', () => {
+    expect(logoDaLoja('AMAZON PRIME CANAIS')?.nome).toBe('Amazon Prime');
+    expect(logoDaLoja('AMAZON.COM.BR MARKETPLACE')?.nome).toBe('Amazon');
+    expect(logoDaLoja('AMZN Mktp BR')?.nome).toBe('Amazon');
+  });
+});
