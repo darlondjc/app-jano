@@ -9,7 +9,12 @@ import {
 import { RouterLink } from '@angular/router';
 import type { CategoryDoc } from '@jano/data-access';
 import { formatBRL } from '@jano/engine';
-import { JanoButton } from '@jano/ui';
+import {
+  JanoBandeiraCartao,
+  JanoButton,
+  bandeiraDe,
+  semBandeira,
+} from '@jano/ui';
 import type { CartaoFatura, DiasDaFatura } from './fatura';
 
 const MESES = [
@@ -30,7 +35,7 @@ const MESES = [
 /** Fatura do cartão no Início: quanto, quando, limite, para onde foi e o que vem todo mês. */
 @Component({
   selector: 'jano-fatura-cartao',
-  imports: [RouterLink, JanoButton],
+  imports: [RouterLink, JanoButton, JanoBandeiraCartao],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
     :host {
@@ -43,26 +48,15 @@ const MESES = [
     }
     .topo {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-columns: auto minmax(0, 1fr);
       gap: 12px;
       align-items: center;
     }
-    .plastico {
-      width: 44px;
-      height: 30px;
-      border-radius: 6px;
-      background: var(--brand-deep);
-      position: relative;
-    }
-    .plastico::after {
-      content: '';
-      position: absolute;
-      left: 7px;
-      top: 9px;
-      width: 9px;
-      height: 7px;
-      border-radius: 2px;
-      background: color-mix(in srgb, var(--on-brand) 55%, transparent);
+    .rotulo-linha {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
     }
     .nome {
       font: 600 16px/22px var(--font-sans);
@@ -257,21 +251,18 @@ const MESES = [
     @let f = fatura();
     <section class="j-card" aria-label="Fatura do cartão">
       <div class="topo">
-        <span class="plastico" aria-hidden="true"></span>
+        <jano-bandeira-cartao [texto]="(f.bandeira ?? '') + ' ' + f.nome" />
         <div>
-          <div class="nome">{{ f.nome }}</div>
-          <div class="sub">
-            {{ f.bandeira ?? 'Cartão de crédito' }}
-            @if (f.final) {
-              · final {{ f.final }}
-            }
-          </div>
+          <div class="nome">{{ nomeCurto() }}</div>
+          <div class="sub">{{ detalhe() }}</div>
         </div>
-        <span [class]="'chip ' + tomSituacao()">{{ f.situacao }}</span>
       </div>
 
       <div class="bloco">
-        <div class="rotulo">{{ rotuloValor() }}</div>
+        <div class="rotulo-linha">
+          <span class="rotulo">{{ rotuloValor() }}</span>
+          <span [class]="'chip ' + tomSituacao()">{{ f.situacao }}</span>
+        </div>
         <div class="valor">{{ money(f.valorCents) }}</div>
         <div class="sub">{{ datas() }}</div>
         @if (!f.valorDoBanco && f.diasInformados && f.fase === 'fechada') {
@@ -511,6 +502,25 @@ export class FaturaCartaoCard {
     const s = this.fatura().situacao;
     if (s === 'vencida') return 'perigo';
     return /vence (hoje|amanhã|em [1-3] dias)/.test(s) ? 'atencao' : '';
+  });
+  /** O logo já mostra a bandeira: ela sai do fim do nome ("… Estilo Visa"). */
+  protected readonly nomeCurto = computed(() => {
+    const f = this.fatura();
+    return bandeiraDe(f.bandeira, f.nome) ? semBandeira(f.nome) : f.nome;
+  });
+  /** "Platinum · final 0992": o nível do cartão, sem repetir a bandeira do logo. */
+  protected readonly detalhe = computed(() => {
+    const f = this.fatura();
+    const nivel = f.bandeira
+      ? f.bandeira
+          .replace(/\b(visa|mastercard|master|amex|american express)\b/gi, '')
+          .trim()
+      : '';
+    const partes = [
+      nivel || (bandeiraDe(f.bandeira, f.nome) ? '' : 'Cartão de crédito'),
+      f.final ? `final ${f.final}` : '',
+    ].filter(Boolean);
+    return partes.join(' · ') || 'Cartão de crédito';
   });
   protected readonly rotuloValor = computed(
     () =>

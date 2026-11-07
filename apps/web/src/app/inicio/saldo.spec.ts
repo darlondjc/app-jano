@@ -7,7 +7,7 @@ function b(over: Partial<BalanceDoc>): BalanceDoc {
     name: 'BB',
     kind: 'conta',
     detail: 'corrente',
-    accountId: null,
+    accountId: 'conta-corrente',
     balanceCents: 0,
     bankUpdatedAt: null,
     syncedAt: '2026-10-30T09:00:00.000Z',
@@ -39,6 +39,7 @@ describe('saldoAtual', () => {
       cents: 150017,
       legenda: 'Conta corrente e poupança',
       atualizadoEm: '2026-10-30T09:00:00.000Z',
+      banco: 'BB',
     });
   });
 
@@ -52,5 +53,26 @@ describe('saldoAtual', () => {
 
   it('legenda de uma conta só', () => {
     expect(saldoAtual([b({})])?.legenda).toBe('Conta corrente');
+  });
+
+  it('poupança fora da sincronização e zerada não entra', () => {
+    const s = saldoAtual([
+      b({ id: 'cc', accountId: 'conta-corrente', balanceCents: 50000 }),
+      b({ id: 'pp', detail: 'poupança', accountId: null, balanceCents: 0 }),
+    ]);
+    expect(s?.legenda).toBe('Conta corrente');
+    expect(s?.cents).toBe(50000);
+  });
+
+  it('banco só quando todas as contas são do mesmo', () => {
+    expect(
+      saldoAtual([b({ name: 'BANCO DO BRASIL S/A', balanceCents: 1 })])?.banco,
+    ).toBe('BANCO DO BRASIL S/A');
+    expect(
+      saldoAtual([
+        b({ id: 'a', name: 'BB', balanceCents: 1 }),
+        b({ id: 'c', name: 'Nubank', balanceCents: 1 }),
+      ])?.banco,
+    ).toBeNull();
   });
 });

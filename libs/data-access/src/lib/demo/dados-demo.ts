@@ -234,7 +234,7 @@ export function gerarDadosDemo(hoje = new Date()): DadosDemo {
     balances: [
       {
         id: 'demo-cc',
-        name: 'Conta Corrente',
+        name: 'BANCO DO BRASIL S/A',
         kind: 'conta',
         detail: 'corrente',
         accountId: CONTA,
@@ -244,7 +244,7 @@ export function gerarDadosDemo(hoje = new Date()): DadosDemo {
       },
       {
         id: 'demo-pp',
-        name: 'Poupança',
+        name: 'BANCO DO BRASIL S/A',
         kind: 'conta',
         detail: 'poupança',
         accountId: null,

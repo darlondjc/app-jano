@@ -50,6 +50,7 @@ import {
   JanoSkeletonKpi,
   JanoSkeletonRows,
   JanoPageHead,
+  JanoBancoAvatar,
 } from '@jano/ui';
 import {
   classeValor,
@@ -91,6 +92,7 @@ function lerDispensado(): string | null {
 @Component({
   selector: 'jano-inicio',
   imports: [
+    JanoBancoAvatar,
     JanoPageHead,
     RouterLink,
     JanoButton,
@@ -122,6 +124,11 @@ function lerDispensado(): string | null {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
+    }
+    .com-banco {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .destaque {
       margin-top: 20px;
@@ -295,8 +302,13 @@ function lerDispensado(): string | null {
           class="j-hero destaque"
           aria-label="Saldo e quanto dá para gastar"
         >
-          <div class="j-hero__label">
-            {{ s.legenda }} · atualizado {{ quando(s.atualizadoEm) }}
+          <div class="j-hero__label com-banco">
+            @if (s.banco) {
+              <jano-banco-avatar [nome]="s.banco" [tamanho]="28" />
+            }
+            <span
+              >{{ s.legenda }} · atualizado {{ quando(s.atualizadoEm) }}</span
+            >
           </div>
           <div class="j-hero__valor j-num">
             @if (oculto()) {
