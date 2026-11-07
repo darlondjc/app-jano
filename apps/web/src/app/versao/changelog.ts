@@ -20,7 +20,7 @@ export const CHANGELOG: Versao[] = [
       {
         tipo: 'melhoria',
         texto:
-          'Mais logos nos lançamentos: Amazon, Grupo Mateus, Drogasil, Vivo, Smart Fit, Havan, Premiere, Centauro, Hering, O Boticário, Vivara, Mercado Livre e Hyundai (também nas compras da Pateo).',
+          'Mais logos nos lançamentos: Amazon, Grupo Mateus, Drogasil, Vivo, Smart Fit, Havan, Premiere, Centauro, Hering, O Boticário, Vivara, Renner, Mercado Livre e Hyundai (também nas compras da Pateo).',
       },
     ],
   },

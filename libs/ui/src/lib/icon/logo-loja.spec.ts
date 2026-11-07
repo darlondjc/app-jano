@@ -46,6 +46,7 @@ describe('logos coloridos (arquivo)', () => {
     );
     expect(logoDaLoja('MIX MATEUS SLZ')?.nome).toBe('Grupo Mateus');
     expect(logoDaLoja('DROGASIL 1234')?.nome).toBe('Drogasil');
+    expect(logoDaLoja('LOJAS RENNER SA')?.nome).toBe('Renner');
     expect(logoDaLoja('TELEFONICA BRASIL S A')?.nome).toBe('Vivo');
     expect(logoDaLoja('SMARTFIT ESCOLA')?.nome).toBe('Smart Fit');
     expect(logoDaLoja('GLOBO PREMIERE')?.nome).toBe('Premiere');

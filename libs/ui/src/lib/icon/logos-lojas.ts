@@ -25,6 +25,12 @@ export const LOGOS_LOJAS: LogoLoja[] = [
     arquivo: 'logos/mateus.png',
   },
   {
+    nome: 'Renner',
+    cor: '#fff',
+    padroes: ['RENNER', 'LOJAS RENNER'],
+    arquivo: 'logos/renner.png',
+  },
+  {
     nome: 'Drogasil',
     cor: '#fff',
     padroes: ['DROGASIL'],
