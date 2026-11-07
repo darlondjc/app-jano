@@ -20,7 +20,7 @@ export const CHANGELOG: Versao[] = [
       {
         tipo: 'melhoria',
         texto:
-          'Títulos do gráfico do Início: "Gastos por período" e "Gastos por dia".',
+          'Gráfico do Início: títulos "Gastos por período" e "Gastos por dia", com os botões Período e Dia menores, tudo numa linha só no celular.',
       },
     ],
   },

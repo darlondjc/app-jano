@@ -137,18 +137,25 @@ function lerDispensado(): string | null {
       justify-content: space-between;
       align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
     }
     .titulo-grafico h2 {
       margin: 0;
+      min-width: 0;
+      font-size: 16px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .visoes {
       display: flex;
-      gap: 6px;
+      flex: none;
+      gap: 4px;
     }
+    /* Menores, para título e as duas visões caberem numa linha no celular. */
     .visoes .j-chip {
-      height: 30px;
-      padding: 0 12px;
+      height: 28px;
+      padding: 0 8px;
+      font-size: 12px;
     }
     .com-banco {
       display: flex;
@@ -525,7 +532,7 @@ function lerDispensado(): string | null {
                   [attr.aria-pressed]="visaoGrafico() === 'acumulado'"
                   (click)="mudarVisao('acumulado')"
                 >
-                  Acumulado
+                  {{ periodo.peloSalario() ? 'Período' : 'Mês' }}
                 </button>
                 <button
                   class="j-chip"
@@ -533,7 +540,7 @@ function lerDispensado(): string | null {
                   [attr.aria-pressed]="visaoGrafico() === 'dia'"
                   (click)="mudarVisao('dia')"
                 >
-                  Por dia
+                  Dia
                 </button>
               </div>
             </div>
