@@ -69,4 +69,37 @@ describe('GraficoPorDia', () => {
     );
     expect(rotulos).toContain('7');
   });
+
+  it('zoom nos dias típicos: o dia muito caro aparece cortado, com o valor', () => {
+    const f = TestBed.createComponent(GraficoPorDia);
+    const dia = (n: number, cents: number): DiaDeGasto => ({
+      dia: n,
+      diaDoMes: n,
+      rotulo: `dia ${n}`,
+      cents,
+      maior: null,
+    });
+    f.componentRef.setInput('dias', [
+      dia(1, 15000),
+      dia(2, 9000),
+      dia(3, 20000),
+      dia(4, 350000),
+      dia(5, 12000),
+    ]);
+    f.componentRef.setInput('referencia', {
+      cents: 30300,
+      rotulo: 'R$ 303/dia',
+      legenda: 'Pode gastar R$ 303/dia',
+    });
+    f.detectChanges();
+    const el = f.nativeElement as HTMLElement;
+    // Teto em R$ 1 mil (perto de 2× a referência), não nos R$ 3,5 mil.
+    const eixo = [...el.querySelectorAll('.grafico > svg text')].map((t) =>
+      t.textContent?.trim(),
+    );
+    expect(eixo).toContain('R$ 1 mil');
+    expect(el.querySelector('.valor-corte')?.textContent?.trim()).toBe(
+      '3,5 mil',
+    );
+  });
 });

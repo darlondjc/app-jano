@@ -11,7 +11,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { formatBRL } from '@jano/engine';
+import { formatBRL, valoresOcultos } from '@jano/engine';
 import { rotuloEixo } from './grafico-acumulado';
 
 export interface DiaDeGasto {
@@ -39,7 +39,8 @@ const EIXO = 52;
 /** Coluna mínima por dia: abaixo disso a barra não se lê no celular, e o gráfico rola. */
 const COLUNA_MIN = 26;
 const COLUNA_MAX = 48;
-const Y0 = 10;
+/** Topo da área das barras: espaço para o valor das barras cortadas. */
+const Y0 = 26;
 const PASSOS_REAIS = [
   25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000,
 ];
@@ -108,6 +109,12 @@ const PASSOS_REAIS = [
     .eixo {
       font: 400 11px/1 var(--font-sans);
       fill: var(--text-2);
+    }
+    .valor-corte {
+      font-size: 9.5px;
+      letter-spacing: -0.02em;
+      font-weight: 600;
+      fill: var(--text);
     }
     .eixo.hoje {
       font-weight: 700;
@@ -213,6 +220,33 @@ const PASSOS_REAIS = [
                 [style.fill]="b.acima ? 'var(--warning)' : 'var(--primary)'"
                 [attr.opacity]="b.dia === selecionado() ? 1 : 0.6"
               />
+              @if (b.cortada) {
+                <!-- Corte: a barra passa do teto; o valor fica escrito em cima. -->
+                <rect
+                  [attr.x]="b.x - 1"
+                  [attr.y]="y0 + 7"
+                  [attr.width]="b.w + 2"
+                  height="3"
+                  style="fill: var(--surface)"
+                />
+                <clipPath [attr.id]="'gpd-corte-' + b.dia">
+                  <rect
+                    [attr.x]="b.xAlvo"
+                    y="0"
+                    [attr.width]="b.wAlvo"
+                    [attr.height]="y0"
+                  />
+                </clipPath>
+                <text
+                  class="eixo valor-corte"
+                  [attr.clip-path]="'url(#gpd-corte-' + b.dia + ')'"
+                  [attr.x]="b.xRotulo"
+                  [attr.y]="y0 - 6"
+                  text-anchor="middle"
+                >
+                  {{ b.valorCurto }}
+                </text>
+              }
               @if (b.rotuloX) {
                 <text
                   class="eixo"
@@ -324,14 +358,18 @@ export class GraficoPorDia {
       const r = this.rolagem()?.nativeElement;
       if (!r || chave === ultimaChave) return;
       ultimaChave = chave;
-      r.scrollLeft = r.scrollWidth;
+      // Depois do próximo quadro: a largura nova do SVG já entrou no layout.
+      requestAnimationFrame(() => (r.scrollLeft = r.scrollWidth));
     });
   }
 
   /** Largura de cada dia: preenche a área se der, nunca abaixo do mínimo legível. */
   private readonly coluna = computed(() => {
     const n = Math.max(this.dias().length, 1);
-    return Math.min(Math.max(this.visivel() / n, COLUNA_MIN), COLUNA_MAX);
+    const v = this.visivel();
+    if (v / n >= COLUNA_MIN) return Math.min(v / n, COLUNA_MAX);
+    // Rolando: um número inteiro de dias na tela, para nenhuma barra ficar cortada na borda.
+    return v / Math.floor(v / COLUNA_MIN);
   });
   protected readonly largura = computed(() =>
     Math.max(this.coluna() * this.dias().length, this.visivel()),
@@ -343,15 +381,25 @@ export class GraficoPorDia {
     const maior = Math.max(...this.dias().map((d) => d.cents), 0);
     return r > 0 && (maior === 0 || r <= maior * 1.6);
   });
+  /**
+   * Zoom nos dias típicos: o teto fica perto da referência e do gasto habitual (75% dos dias
+   * com gasto), não no dia mais caro. Dia muito acima do teto aparece cortado, com o valor.
+   */
   private readonly teto = computed(() => {
-    const maior =
-      Math.max(
-        ...this.dias().map((d) => d.cents),
-        this.refNaEscala() ? (this.referencia()?.cents ?? 0) : 0,
-        1,
-      ) * 1.1;
+    const valores = this.dias()
+      .map((d) => d.cents)
+      .filter((c) => c > 0)
+      .sort((a, b) => a - b);
+    const maior = valores.at(-1) ?? 0;
+    const ref = this.refNaEscala() ? (this.referencia()?.cents ?? 0) : 0;
+    const p75 = valores.length
+      ? valores[Math.floor((valores.length - 1) * 0.75)]
+      : 0;
+    const alvo = Math.max(ref * 2, p75 * 1.6, 1);
+    // Se o maior dia cabe com folga, nada é cortado.
+    const base = maior <= alvo * 1.25 ? Math.max(maior, ref, 1) : alvo;
     const passo =
-      PASSOS_REAIS.map((r) => r * 100).find((p) => p * 4 >= maior) ??
+      PASSOS_REAIS.map((r) => r * 100).find((p) => p * 4 >= base * 1.1) ??
       PASSOS_REAIS.at(-1)! * 100;
     return { passo, max: passo * 4 };
   });
@@ -377,7 +425,8 @@ export class GraficoPorDia {
     const n = this.dias().length;
     return this.dias().map((d, i) => {
       const xc = (i + 0.5) * c;
-      const y = this.py(d.cents);
+      const cortada = d.cents > this.teto().max;
+      const y = this.py(Math.min(d.cents, this.teto().max));
       return {
         dia: d.dia,
         xc,
@@ -386,6 +435,10 @@ export class GraficoPorDia {
         y,
         // Dia com gasto tem ao menos um traço visível.
         altura: d.cents > 0 ? Math.max(this.y1 - y, 2) : 0,
+        cortada,
+        valorCurto: cortada ? valorCurto(d.cents) : '',
+        // O valor fica preso à coluna (clipPath): não vaza para a vizinha nem pela borda.
+        xRotulo: xc,
         xAlvo: xc - c / 2,
         wAlvo: c,
         acima: ref !== null && ref > 0 && d.cents > ref,
@@ -408,4 +461,13 @@ export class GraficoPorDia {
       '. Toque numa barra para ver o dia.'
     );
   });
+}
+
+/** "3,5 mil" ou "900": cabe em cima de uma barra estreita. */
+function valorCurto(cents: number): string {
+  if (valoresOcultos()) return '••';
+  const reais = cents / 100;
+  return reais >= 1000
+    ? `${(reais / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`
+    : String(Math.round(reais));
 }
