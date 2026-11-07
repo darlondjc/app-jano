@@ -4,6 +4,16 @@ import { provideModoDemo } from '@jano/data-access';
 import { Inicio } from './inicio';
 
 describe('Início no modo demonstração', () => {
+  // A demonstração monta os dados em volta de hoje: fixa um dia com a fatura fechada
+  // (entre o fechamento, dia 27, e o vencimento, dia 7) para o teste não depender do calendário.
+  beforeEach(() => {
+    vi.useFakeTimers({
+      toFake: ['Date'],
+      now: new Date('2026-11-02T15:00:00Z'),
+    });
+  });
+  afterEach(() => vi.useRealTimers());
+
   it('abre com o destaque, o "pode gastar" e os indicadores, sem Firebase', async () => {
     TestBed.configureTestingModule({
       providers: [provideRouter([]), ...provideModoDemo()],

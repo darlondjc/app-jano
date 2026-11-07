@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.23.3',
+    date: '2026-11-07',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Conta e dados: cartão "Sincronização" com a hora da última sincronização e de quando o Meu Pluggy consultou o banco. Lançamento que caiu depois dessa consulta chega na próxima atualização.',
+      },
+    ],
+  },
+  {
     version: '0.23.2',
     date: '2026-11-02',
     items: [
