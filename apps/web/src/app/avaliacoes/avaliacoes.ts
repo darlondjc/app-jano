@@ -405,6 +405,7 @@ const CIRC = 2 * Math.PI * RAIO;
                     <jano-category-badge
                       [icon]="cat(e.categoryId)?.icon ?? 'etiqueta'"
                       [colorToken]="cat(e.categoryId)?.color ?? 'cat-1'"
+                      [loja]="e.nome"
                       [size]="36"
                     />
                     <span class="pos" [attr.aria-label]="i + 1 + 'º'">{{

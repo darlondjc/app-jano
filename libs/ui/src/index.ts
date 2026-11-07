@@ -16,3 +16,4 @@ export * from './lib/month-nav/month-nav';
 export * from './lib/moeda/moeda';
 export * from './lib/page-head/page-head';
 export * from './lib/icon/marcas';
+export * from './lib/icon/logo-loja';

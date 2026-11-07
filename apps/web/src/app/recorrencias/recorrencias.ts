@@ -340,6 +340,7 @@ function lerFechados(): ReadonlySet<Grupo> {
                       <jano-category-badge
                         [icon]="cat(l.categoryId)?.icon ?? 'etiqueta'"
                         [colorToken]="cat(l.categoryId)?.color ?? 'cat-1'"
+                        [loja]="l.nome"
                         [size]="32"
                       />
                       <div>

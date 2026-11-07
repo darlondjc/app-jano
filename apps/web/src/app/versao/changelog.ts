@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.24.0',
+    date: '2026-11-07',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          "Logo da loja nos lançamentos de marcas conhecidas (Netflix, Spotify, Apple, Google, YouTube, iFood, Uber, Shopee, Mercado Pago, Nubank, McDonald's e outras), em Transações, Início, Recorrências e Avaliações. A categoria continua escrita ao lado.",
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'O avatar do banco no destaque do Início agora usa o símbolo do Banco do Brasil.',
+      },
+    ],
+  },
+  {
     version: '0.23.4',
     date: '2026-11-07',
     items: [
