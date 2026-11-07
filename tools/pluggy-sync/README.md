@@ -73,6 +73,10 @@ conta e contagens, nunca saldos nem lançamentos. Não rode `--seco` no workflow
 desliga agendamentos de repositórios públicos sem commits por 60 dias; ele avisa por
 e-mail e basta reativar em Actions.
 
+A primeira linha de cada conexão diz o estado dela e quando o Meu Pluggy consultou o banco
+("banco consultado em 06/11 05:12 (há 2 h)"). Lançamento que caiu depois dessa hora só chega
+na próxima atualização do Meu Pluggy, sem erro nenhum na sincronização.
+
 ## Saldo
 
 A cada sincronização o saldo de todas as contas do banco (inclusive as sem mapeamento, como a

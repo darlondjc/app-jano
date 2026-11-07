@@ -23,6 +23,7 @@ import {
   categorizar,
   inferirPeloHistorico,
   inicioDaFaturaAberta,
+  linhaDaConexao,
   resumirFatura,
   type FaturaBanco,
   type ResumoFatura,
@@ -31,6 +32,7 @@ import {
   type LancamentoPronto,
   type ConnectedAccount,
   type RegraRef,
+  type PluggyItem,
 } from '@jano/open-finance';
 
 const BATCH_LIMIT = 400; // Firestore aceita 500 operações por lote.
@@ -158,6 +160,11 @@ async function sync(
   console.log(
     `Período: ${janela} a ${ate}${seco ? ' (simulação, nada é gravado)' : ''}`,
   );
+  // Quando o Meu Pluggy falou com o banco: se foi antes de um lançamento cair, ele só chega
+  // na próxima atualização (lançamento "sumido" sem erro nenhum aqui).
+  const conexoes = await connector.listItems();
+  const agora = new Date();
+  for (const item of conexoes) console.log(linhaDaConexao(item, agora));
   const contasPluggy = await connector.listAccounts();
   // Meses com lançamento novo ou alterado: o app relê só esses (ver gravarMesesAlterados).
   const alterados = new Set<string>();
@@ -341,7 +348,7 @@ async function sync(
   }
   if (!seco) {
     await gravarSaldos(db, base, contasPluggy, config, faturas, doBanco);
-    await gravarConexoes(db, base, connector);
+    await gravarConexoes(db, base, conexoes);
   }
 }
 
@@ -438,11 +445,11 @@ function reavaliacoes(
 async function gravarConexoes(
   db: Firestore,
   base: string,
-  connector: PluggyConnector,
+  conexoes: PluggyItem[],
 ): Promise<void> {
   const batch = db.batch();
   const syncedAt = new Date().toISOString();
-  for (const item of await connector.listItems())
+  for (const item of conexoes)
     batch.set(db.doc(`${base}/connections/${item.id}`), {
       provider: 'pluggy',
       name: item.connector?.name ?? null,
