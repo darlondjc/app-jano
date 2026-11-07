@@ -6,6 +6,8 @@ export interface SaldoAtual {
   legenda: string;
   /** Atualização mais recente entre as contas somadas (ISO 8601). */
   atualizadoEm: string;
+  /** Nome do banco das contas, para o avatar ("BANCO DO BRASIL S/A"); null se forem vários. */
+  banco: string | null;
 }
 
 /**
@@ -13,7 +15,11 @@ export interface SaldoAtual {
  * o saldo dele é dívida. `null` quando ainda não há sincronização Open Finance.
  */
 export function saldoAtual(balances: BalanceDoc[]): SaldoAtual | null {
-  const contas = balances.filter((b) => b.kind === 'conta');
+  // Conta fora da sincronização (sem conta do Jano ligada) e zerada não diz nada: a poupança
+  // que ninguém usa não entra na soma nem na legenda.
+  const contas = balances.filter(
+    (b) => b.kind === 'conta' && (b.accountId || b.balanceCents !== 0),
+  );
   if (!contas.length) return null;
   const tipos = new Set(contas.map((b) => b.detail));
   const legenda =
@@ -32,5 +38,7 @@ export function saldoAtual(balances: BalanceDoc[]): SaldoAtual | null {
     cents: contas.reduce((s, b) => s + b.balanceCents, 0),
     legenda,
     atualizadoEm,
+    banco:
+      new Set(contas.map((b) => b.name)).size === 1 ? contas[0].name : null,
   };
 }

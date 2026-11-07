@@ -14,6 +14,22 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.23.4',
+    date: '2026-11-07',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Cartão da fatura com o logo da bandeira (Visa, Mastercard, Amex) e título sem quebra: a bandeira sai do nome e o "fecha em…" vai para a linha do valor. O destaque do Início ganha o avatar do banco.',
+      },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Saldo do Início: conta fora da sincronização e zerada (a poupança sem uso) não entra mais na soma nem na legenda.',
+      },
+    ],
+  },
+  {
     version: '0.23.3',
     date: '2026-11-07',
     items: [
