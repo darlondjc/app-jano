@@ -113,18 +113,28 @@ export class JanoBandeiraCartao {
   });
 }
 
-/** Cores e sigla dos bancos conhecidos; os outros recebem as iniciais em cor neutra. */
-const BANCOS: { teste: RegExp; sigla: string; fundo: string; texto: string }[] =
-  [
-    {
-      teste: /banco do brasil|\bbb\b|ourocard/i,
-      sigla: 'BB',
-      fundo: '#FCEA16',
-      texto: '#2A3A8C',
-    },
-  ];
+// Símbolo do Banco do Brasil: Wikimedia Commons, "Logotipo do Banco do Brasil (símbolo).svg".
+const SIMBOLO_BB =
+  'm500 0-104.16 69.482 52.076 34.705 52.087-34.705zm-250 0-250 166.69 104.17 69.434 125-83.325-52.087-34.717 67.7-45.129 145.83 97.205-239.56 159.69 52.075 34.729 296.88-197.89zm-250 333.33 250 166.67 250-166.67-104.16-69.434-125 83.325 52.075 34.705-67.7 45.142-145.82-97.217 239.56-159.69-52.076-34.718zm0 97.205v69.469l104.17-69.469-52.087-34.717z';
 
-/** Avatar do banco: sigla nas cores dele (BB em amarelo e azul) ou iniciais neutras. */
+/** Bancos conhecidos: símbolo (viewBox 500×500) e cores; os outros recebem as iniciais. */
+const BANCOS: {
+  teste: RegExp;
+  sigla: string;
+  fundo: string;
+  texto: string;
+  simbolo?: string;
+}[] = [
+  {
+    teste: /banco do brasil|\bbb\b|ourocard/i,
+    sigla: 'BB',
+    fundo: '#FCFC30',
+    texto: '#465EFF',
+    simbolo: SIMBOLO_BB,
+  },
+];
+
+/** Avatar do banco: símbolo nas cores dele (BB: azul no amarelo) ou iniciais neutras. */
 @Component({
   selector: 'jano-banco-avatar',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -150,7 +160,13 @@ const BANCOS: { teste: RegExp; sigla: string; fundo: string; texto: string }[] =
       line-height: 1;
     }
   `,
-  template: `<span aria-hidden="true">{{ marca().sigla }}</span>`,
+  template: `@if (marca().simbolo; as d) {
+      <svg viewBox="0 0 500 500" width="58%" height="58%" aria-hidden="true">
+        <path [attr.d]="d" [attr.fill]="marca().texto" />
+      </svg>
+    } @else {
+      <span aria-hidden="true">{{ marca().sigla }}</span>
+    }`,
 })
 export class JanoBancoAvatar {
   readonly nome = input.required<string>();
@@ -168,6 +184,7 @@ export class JanoBancoAvatar {
       .join('');
     return {
       sigla: sigla || '?',
+      simbolo: undefined as string | undefined,
       fundo: 'var(--surface-2)',
       texto: 'var(--text)',
     };
