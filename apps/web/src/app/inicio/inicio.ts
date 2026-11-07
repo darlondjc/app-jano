@@ -29,6 +29,7 @@ import {
   diasNoPeriodo,
   monthOf,
   cumulativeSpend,
+  gastoPorDia,
   daysLeftInMonth,
   formatBRL,
   limitesComSobra,
@@ -61,6 +62,11 @@ import {
 import { marcarTransferencias } from '../transacoes/transferencias';
 import { montarAlertas } from './alertas';
 import { GraficoAcumulado } from './grafico-acumulado';
+import {
+  GraficoPorDia,
+  type DiaDeGasto,
+  type ReferenciaDiaria,
+} from './grafico-por-dia';
 import { Progresso } from '../shell/progresso';
 import { haQuantoTempo } from '../conta/tempo';
 import { deveLembrar } from './lembrete';
@@ -92,6 +98,7 @@ function lerDispensado(): string | null {
 @Component({
   selector: 'jano-inicio',
   imports: [
+    GraficoPorDia,
     JanoBancoAvatar,
     JanoPageHead,
     RouterLink,
@@ -124,6 +131,24 @@ function lerDispensado(): string | null {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
+    }
+    .titulo-grafico {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .titulo-grafico h2 {
+      margin: 0;
+    }
+    .visoes {
+      display: flex;
+      gap: 6px;
+    }
+    .visoes .j-chip {
+      height: 30px;
+      padding: 0 12px;
     }
     .com-banco {
       display: flex;
@@ -482,21 +507,52 @@ function lerDispensado(): string | null {
             </section>
           }
 
-          <section class="j-card ordem-4" aria-label="Gasto acumulado">
-            <h2>
-              {{
-                periodo.peloSalario()
-                  ? 'Gasto acumulado no período'
-                  : 'Gasto acumulado no mês'
-              }}
-            </h2>
-            <p class="j-sub" style="margin: 4px 0 0">{{ resumoRitmo() }}</p>
-            <jano-grafico-acumulado
-              [serie]="serie()"
-              [dias]="diasNoMes()"
-              [limite]="limiteTotal()"
-              [projecao]="gastoProjetado()"
-            />
+          <section class="j-card ordem-4" aria-label="Gasto no período">
+            <div class="titulo-grafico">
+              <h2>
+                {{
+                  visaoGrafico() === 'dia'
+                    ? 'Gasto por dia'
+                    : periodo.peloSalario()
+                      ? 'Gasto acumulado no período'
+                      : 'Gasto acumulado no mês'
+                }}
+              </h2>
+              <div class="visoes" role="group" aria-label="Visão do gráfico">
+                <button
+                  class="j-chip"
+                  type="button"
+                  [attr.aria-pressed]="visaoGrafico() === 'acumulado'"
+                  (click)="mudarVisao('acumulado')"
+                >
+                  Acumulado
+                </button>
+                <button
+                  class="j-chip"
+                  type="button"
+                  [attr.aria-pressed]="visaoGrafico() === 'dia'"
+                  (click)="mudarVisao('dia')"
+                >
+                  Por dia
+                </button>
+              </div>
+            </div>
+            @if (visaoGrafico() === 'dia') {
+              <p class="j-sub" style="margin: 4px 0 0">{{ resumoPorDia() }}</p>
+              <jano-grafico-por-dia
+                [dias]="porDia()"
+                [total]="diasNoMes()"
+                [referencia]="referenciaDiaria()"
+              />
+            } @else {
+              <p class="j-sub" style="margin: 4px 0 0">{{ resumoRitmo() }}</p>
+              <jano-grafico-acumulado
+                [serie]="serie()"
+                [dias]="diasNoMes()"
+                [limite]="limiteTotal()"
+                [projecao]="gastoProjetado()"
+              />
+            }
           </section>
 
           <section class="ordem-5" aria-label="Últimas transações">
@@ -882,6 +938,68 @@ export class Inicio {
   protected readonly serie = computed(() =>
     cumulativeSpend(this.txs(), this.diaAtual(), this.cartoes()),
   );
+  /** Visão do gráfico do período; lembrada neste aparelho. */
+  protected readonly visaoGrafico = signal<'acumulado' | 'dia'>(lerVisao());
+  protected mudarVisao(v: 'acumulado' | 'dia'): void {
+    this.visaoGrafico.set(v);
+    try {
+      localStorage.setItem(CHAVE_VISAO, v);
+    } catch {
+      /* sem armazenamento: vale só nesta visita */
+    }
+  }
+  /** Gasto de cada dia do período até hoje, com o maior gasto do dia. */
+  protected readonly porDia = computed<DiaDeGasto[]>(() => {
+    const dias = gastoPorDia(this.txs(), this.diaAtual(), this.cartoes());
+    const inicio = calendario().inicio(this.month());
+    const maiores = new Map<number, { nome: string; cents: number }>();
+    for (const t of this.txs()) {
+      if (t.isTransfer || t.amountCents >= 0) continue;
+      const dia = diaNoPeriodo(t.date);
+      const atual = maiores.get(dia);
+      if (!atual || -t.amountCents > atual.cents)
+        maiores.set(dia, {
+          nome: nomeDeExibicao(t.description),
+          cents: -t.amountCents,
+        });
+    }
+    return dias.map((cents, i) => ({
+      dia: i + 1,
+      rotulo: rotuloDia(somarDias(inicio, i)),
+      cents,
+      maior: maiores.get(i + 1) ?? null,
+    }));
+  });
+  /** O "pode gastar por dia" do destaque; sem saldo do banco, a meta total dividida pelos dias. */
+  protected readonly referenciaDiaria = computed<ReferenciaDiaria | null>(
+    () => {
+      const g = this.gastar();
+      if (g && g.porDiaCents > 0) {
+        const v = this.reaisInteiros(g.porDiaCents);
+        return {
+          cents: g.porDiaCents,
+          rotulo: `${v}/dia`,
+          legenda: `Pode gastar ${v}/dia`,
+        };
+      }
+      const limite = this.limiteTotal();
+      if (!limite) return null;
+      const cents = Math.round(limite / this.diasNoMes());
+      const v = this.reaisInteiros(cents);
+      return { cents, rotulo: `${v}/dia`, legenda: `Meta ${v}/dia` };
+    },
+  );
+  protected readonly resumoPorDia = computed(() => {
+    const r = this.referenciaDiaria();
+    const dias = this.porDia();
+    if (!r)
+      return 'Defina metas no Orçamento para comparar cada dia com um valor diário.';
+    const acima = dias.filter((d) => d.cents > r.cents).length;
+    if (!acima) return `Nenhum dia acima de ${r.rotulo} até agora.`;
+    return acima === 1
+      ? `1 dia acima de ${r.rotulo}. Toque numa barra para ver o que pesou.`
+      : `${acima} dias acima de ${r.rotulo}. Toque numa barra para ver o que pesou.`;
+  });
   protected readonly statusMeta = computed(() => {
     const limite = this.limiteTotal();
     if (!limite) return null;
@@ -1029,4 +1147,39 @@ export class Inicio {
       this.carregando.set(false);
     }
   }
+}
+
+const CHAVE_VISAO = 'jano.inicio.grafico';
+function lerVisao(): 'acumulado' | 'dia' {
+  try {
+    return localStorage.getItem(CHAVE_VISAO) === 'dia' ? 'dia' : 'acumulado';
+  } catch {
+    return 'acumulado';
+  }
+}
+
+const MESES = [
+  'jan',
+  'fev',
+  'mar',
+  'abr',
+  'mai',
+  'jun',
+  'jul',
+  'ago',
+  'set',
+  'out',
+  'nov',
+  'dez',
+];
+const SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+function somarDias(iso: string, n: number): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+/** "sáb, 7 nov". */
+function rotuloDia(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return `${SEMANA[d.getUTCDay()]}, ${d.getUTCDate()} ${MESES[d.getUTCMonth()]}`;
 }

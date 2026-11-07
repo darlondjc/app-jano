@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.25.0',
+    date: '2026-11-07',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Início: gráfico "Por dia" ao lado do acumulado, com o gasto de cada dia do período contra o "pode gastar por dia" (ou a meta diária). Dias acima ficam em âmbar; tocar numa barra mostra o total do dia e o maior gasto.',
+      },
+    ],
+  },
+  {
     version: '0.24.1',
     date: '2026-11-07',
     items: [

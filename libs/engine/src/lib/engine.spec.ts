@@ -1,4 +1,10 @@
-import { cumulativeSpend, formatBRL, goalStatus, monthPace } from './engine';
+import {
+  cumulativeSpend,
+  formatBRL,
+  gastoPorDia,
+  goalStatus,
+  monthPace,
+} from './engine';
 
 describe('goalStatus', () => {
   it.each([
@@ -187,5 +193,21 @@ describe('cumulativeSpend com estorno', () => {
       new Set(['c']),
     );
     expect(r).toEqual([1000, 700, 700]);
+  });
+});
+
+describe('gastoPorDia', () => {
+  it('total de cada dia, sem acumular', () => {
+    expect(
+      gastoPorDia(
+        [
+          { date: '2026-10-01', amountCents: -1000, isTransfer: false },
+          { date: '2026-10-03', amountCents: -500, isTransfer: false },
+          { date: '2026-10-03', amountCents: -250, isTransfer: false },
+          { date: '2026-10-02', amountCents: -7000, isTransfer: true },
+        ],
+        4,
+      ),
+    ).toEqual([1000, 0, 750, 0]);
   });
 });
