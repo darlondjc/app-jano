@@ -31,3 +31,10 @@ describe('Amazon', () => {
     expect(logoDaLoja('AMZN Mktp BR')?.nome).toBe('Amazon');
   });
 });
+
+describe('Hyundai', () => {
+  it('pelo nome da marca ou da concessionária', () => {
+    expect(logoDaLoja('PATEO HYUNDAI SLZ')?.nome).toBe('Hyundai');
+    expect(logoDaLoja('PATEO VEICULOS')?.nome).toBe('Hyundai');
+  });
+});
