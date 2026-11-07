@@ -22,6 +22,11 @@ export const CHANGELOG: Versao[] = [
         texto:
           'Gráfico do Início: títulos "Gastos por período" e "Gastos por dia", com os botões Período e Dia menores, tudo numa linha só no celular.',
       },
+      {
+        tipo: 'melhoria',
+        texto:
+          'Gastos por dia legível no celular: só os dias que já passaram, barras com largura mínima e rolagem lateral que abre no dia de hoje, dia do mês no eixo e escala que segue os gastos.',
+      },
     ],
   },
   {

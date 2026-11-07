@@ -548,7 +548,6 @@ function lerDispensado(): string | null {
               <p class="j-sub" style="margin: 4px 0 0">{{ resumoPorDia() }}</p>
               <jano-grafico-por-dia
                 [dias]="porDia()"
-                [total]="diasNoMes()"
                 [referencia]="referenciaDiaria()"
               />
             } @else {
@@ -972,6 +971,7 @@ export class Inicio {
     }
     return dias.map((cents, i) => ({
       dia: i + 1,
+      diaDoMes: Number(somarDias(inicio, i).slice(8, 10)),
       rotulo: rotuloDia(somarDias(inicio, i)),
       cents,
       maior: maiores.get(i + 1) ?? null,

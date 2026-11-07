@@ -8,9 +8,10 @@ const dias: DiaDeGasto[] = [
     cents: 9000,
     maior: { nome: 'Padaria', cents: 9000 },
   },
-  { dia: 2, rotulo: 'sex, 6 nov', cents: 0, maior: null },
+  { dia: 2, diaDoMes: 6, rotulo: 'sex, 6 nov', cents: 0, maior: null },
   {
     dia: 3,
+    diaDoMes: 7,
     rotulo: 'sáb, 7 nov',
     cents: 69000,
     maior: { nome: 'Mateus Supermercados', cents: 69000 },
@@ -20,7 +21,6 @@ const dias: DiaDeGasto[] = [
 function montar() {
   const f = TestBed.createComponent(GraficoPorDia);
   f.componentRef.setInput('dias', dias);
-  f.componentRef.setInput('total', 30);
   f.componentRef.setInput('referencia', {
     cents: 41500,
     rotulo: 'R$ 415/dia',
@@ -60,5 +60,13 @@ describe('GraficoPorDia', () => {
       'var(--primary)',
       'var(--warning)',
     ]);
+  });
+
+  it('eixo de baixo com o dia do mês', () => {
+    const { el } = montar();
+    const rotulos = [...el.querySelectorAll('g.alvo text')].map((t) =>
+      t.textContent?.trim(),
+    );
+    expect(rotulos).toContain('7');
   });
 });
