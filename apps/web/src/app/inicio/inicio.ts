@@ -522,6 +522,7 @@ function lerDispensado(): string | null {
                   <jano-category-badge
                     [icon]="cat(t.categoryId)?.icon ?? 'etiqueta'"
                     [colorToken]="cat(t.categoryId)?.color ?? 'cat-1'"
+                    [loja]="t.description"
                     [size]="32"
                   />
                   <div>

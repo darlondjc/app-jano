@@ -1053,6 +1053,7 @@ interface Previa {
                           : (cat(t.categoryId)?.icon ?? 'etiqueta')
                       "
                       [colorToken]="cat(t.categoryId)?.color ?? 'cat-1'"
+                      [loja]="t.isTransfer ? null : t.description"
                       [size]="32"
                     />
                     <span>
