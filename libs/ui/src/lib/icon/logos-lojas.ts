@@ -16,6 +16,74 @@ export interface LogoLoja {
 }
 
 export const LOGOS_LOJAS: LogoLoja[] = [
+  // Logos coloridos: miniaturas do Wikimedia Commons (domínio público; Vivo em CC0),
+  // recortadas no símbolo quando a marca tem um, em apps/web/public/logos.
+  {
+    nome: 'Grupo Mateus',
+    cor: '#fff',
+    padroes: ['MATEUS'],
+    arquivo: 'logos/mateus.png',
+  },
+  {
+    nome: 'Drogasil',
+    cor: '#fff',
+    padroes: ['DROGASIL'],
+    arquivo: 'logos/drogasil.png',
+  },
+  {
+    nome: 'Vivo',
+    cor: '#fff',
+    padroes: ['VIVO', 'TELEFONICA'],
+    arquivo: 'logos/vivo.png',
+  },
+  {
+    nome: 'Smart Fit',
+    cor: '#fff',
+    padroes: ['SMART FIT', 'SMARTFIT'],
+    arquivo: 'logos/smartfit.png',
+  },
+  {
+    nome: 'Havan',
+    cor: '#fff',
+    padroes: ['HAVAN'],
+    arquivo: 'logos/havan.png',
+  },
+  {
+    nome: 'Premiere',
+    cor: '#fff',
+    padroes: ['PREMIERE'],
+    arquivo: 'logos/premiere.png',
+  },
+  {
+    nome: 'Centauro',
+    cor: '#fff',
+    padroes: ['CENTAURO'],
+    arquivo: 'logos/centauro.png',
+  },
+  {
+    nome: 'Hering',
+    cor: '#fff',
+    padroes: ['HERING'],
+    arquivo: 'logos/hering.png',
+  },
+  {
+    nome: 'O Boticário',
+    cor: '#fff',
+    padroes: ['BOTICARIO'],
+    arquivo: 'logos/boticario.png',
+  },
+  {
+    nome: 'Vivara',
+    cor: '#fff',
+    padroes: ['VIVARA'],
+    arquivo: 'logos/vivara.png',
+  },
+  {
+    nome: 'Mercado Livre',
+    cor: '#fff',
+    padroes: ['MERCADO LIVRE', 'MERCADOLIVRE'],
+    arquivo: 'logos/mercadolivre.png',
+  },
   {
     nome: 'Hyundai',
     cor: '#002C5E',
