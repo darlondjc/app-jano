@@ -55,7 +55,7 @@ npm run pluggy -- sync --desde 2026-09-01         # período maior
 
 ## Sincronização diária (GitHub Actions)
 
-O workflow `.github/workflows/pluggy-sync.yml` roda `sync` todo dia às 6h de Brasília. Ele só
+O workflow `.github/workflows/pluggy-sync.yml` roda `sync` duas vezes por dia, às 6h17 e 18h17 de Brasília. Ele só
 dispara depois de estar na branch `main`. Cadastre em Settings → Secrets and variables →
 Actions → New repository secret:
 

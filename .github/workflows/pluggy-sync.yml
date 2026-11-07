@@ -1,10 +1,13 @@
 name: Sincronizar Open Finance
 
-# Todo dia às 6h de Brasília (9h UTC; o Brasil não tem horário de verão desde 2019).
-# O GitHub pode atrasar alguns minutos. Também dá para rodar à mão em Actions → Run workflow.
+# Duas vezes por dia, às 6h17 e 18h17 de Brasília (9h17 e 21h17 UTC; o Brasil não tem horário
+# de verão desde 2019). Fora da hora cheia, quando a fila de agendamentos do GitHub é menor
+# (no minuto 0 as execuções atrasavam até 10 h). A segunda pega o que o Meu Pluggy trouxe do
+# banco depois da primeira; o que já foi gravado é pulado. Também dá para rodar à mão em
+# Actions → Run workflow.
 on:
   schedule:
-    - cron: '0 9 * * *'
+    - cron: '17 9,21 * * *'
   workflow_dispatch:
 
 permissions:
