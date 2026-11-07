@@ -512,10 +512,10 @@ function lerDispensado(): string | null {
               <h2>
                 {{
                   visaoGrafico() === 'dia'
-                    ? 'Gasto por dia'
+                    ? 'Gastos por dia'
                     : periodo.peloSalario()
-                      ? 'Gasto acumulado no período'
-                      : 'Gasto acumulado no mês'
+                      ? 'Gastos por período'
+                      : 'Gastos por mês'
                 }}
               </h2>
               <div class="visoes" role="group" aria-label="Visão do gráfico">

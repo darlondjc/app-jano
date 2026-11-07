@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.25.1',
+    date: '2026-11-07',
+    items: [
+      {
+        tipo: 'melhoria',
+        texto:
+          'Títulos do gráfico do Início: "Gastos por período" e "Gastos por dia".',
+      },
+    ],
+  },
+  {
     version: '0.25.0',
     date: '2026-11-07',
     items: [
