@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import {
   AuthService,
   BudgetsRepository,
@@ -34,6 +35,7 @@ function montar(metas: BudgetDoc[], anterior: TransactionDoc[]) {
   };
   TestBed.configureTestingModule({
     providers: [
+      provideRouter([]),
       { provide: AuthService, useValue: { user: () => ({ uid: 'u1' }) } },
       { provide: BudgetsRepository, useValue: budgets },
       {
@@ -67,7 +69,9 @@ function montar(metas: BudgetDoc[], anterior: TransactionDoc[]) {
 }
 
 function abrirMeta(f: ReturnType<typeof montar>['f']) {
-  (f.nativeElement.querySelector('button.meta') as HTMLButtonElement).click();
+  (
+    f.nativeElement.querySelector('.meta button.editar') as HTMLButtonElement
+  ).click();
   f.detectChanges();
 }
 
@@ -154,5 +158,20 @@ describe('Orcamento: nova meta', () => {
       '801,00',
     );
     expect(el.querySelector('.referencia')?.textContent).toMatch(/R\$\s800,50/);
+  });
+});
+
+describe('Orcamento: ver transações da meta', () => {
+  it('o card leva às transações do período filtradas na categoria', async () => {
+    const { f, el } = montar(
+      [{ categoryId: 'mercado', limitCents: 90000, rollover: false }],
+      [],
+    );
+    await pronto(f);
+    const link = el.querySelector('.meta a.ver') as HTMLAnchorElement;
+    expect(link.textContent).toMatch(/Ver transações/);
+    expect(link.getAttribute('href')).toBe(
+      `/transacoes?categoria=mercado&mes=${mes}`,
+    );
   });
 });

@@ -1187,6 +1187,10 @@ export class Transacoes {
   readonly tx = input<string>();
   /** `?conta=<id>` ("Ver compras do cartão"): abre filtrada nessa conta. */
   readonly conta = input<string>();
+  /** `?categoria=<id>` ("Ver transações" da meta): abre filtrada nessa categoria. */
+  readonly categoria = input<string>();
+  /** `?mes=AAAA-MM`: abre nesse período (a meta vista no Orçamento). */
+  readonly mes = input<string>();
   /** Lançamento piscando depois de chegar por `?tx=`. */
   protected readonly destaque = signal<string | null>(null);
 
@@ -1369,6 +1373,12 @@ export class Transacoes {
       }
       const conta = this.conta();
       if (conta && contas.some((c) => c.id === conta)) this.mudar({ conta });
+      const categoria = this.categoria();
+      if (categoria && categorias.some((c) => c.id === categoria))
+        this.mudar({ categorias: [categoria] });
+      const mes = this.mes();
+      if (!lancamento && mes && /^\d{4}-(0[1-9]|1[0-2])$/.test(mes))
+        this.periodo.set({ tipo: 'mes', mes });
       await this.carregar();
       if (lancamento) this.irParaLancamento(lancamento.id);
     } catch (e) {
