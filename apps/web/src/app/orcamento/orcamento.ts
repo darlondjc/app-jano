@@ -111,6 +111,7 @@ import {
     }
     .meta a.ver {
       align-self: flex-end;
+      margin-top: auto;
       display: inline-flex;
       align-items: center;
       min-height: 44px;
