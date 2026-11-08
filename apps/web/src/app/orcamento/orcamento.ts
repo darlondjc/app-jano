@@ -5,6 +5,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import {
   AuthService,
   BudgetsRepository,
@@ -52,6 +53,7 @@ import {
 @Component({
   selector: 'jano-orcamento',
   imports: [
+    RouterLink,
     JanoPageHead,
     JanoMoeda,
     JanoButton,
@@ -91,15 +93,32 @@ import {
       gap: 12px;
     }
     .meta {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .meta .editar {
       all: unset;
       box-sizing: border-box;
       display: block;
       cursor: pointer;
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-sm);
     }
-    .meta:focus-visible {
+    .meta .editar:focus-visible,
+    .meta a.ver:focus-visible {
       outline: 2px solid var(--focus);
       outline-offset: 2px;
+    }
+    .meta a.ver {
+      align-self: flex-end;
+      margin-top: auto;
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      margin-bottom: -12px;
+      color: var(--primary-text);
+      font: 600 14px/20px var(--font-sans);
+      text-decoration: none;
     }
     .meta .sobrou {
       display: block;
@@ -247,24 +266,36 @@ import {
 
         <div class="metas">
           @for (l of linhas(); track l.categoryId) {
-            <button
-              type="button"
-              class="meta"
-              [attr.aria-label]="'Editar meta de ' + nome(l.categoryId)"
-              (click)="editar(l.categoryId)"
-            >
-              <jano-goal-bar
-                [name]="nome(l.categoryId)"
-                [spentCents]="l.spentCents"
-                [limitCents]="l.limitCents"
-                [pace]="paceDe(l.categoryId)"
-                [daysLeft]="diasDe(l.categoryId)"
-                [conta]="contas().get(l.categoryId)"
-                [ritmoNoTexto]="l.categoryId === metaFatura"
-                [cor]="corDe(l.categoryId)"
-                [icone]="iconeDe(l.categoryId)"
-              />
-            </button>
+            <div class="j-card meta">
+              <button
+                type="button"
+                class="editar"
+                [attr.aria-label]="'Editar meta de ' + nome(l.categoryId)"
+                (click)="editar(l.categoryId)"
+              >
+                <jano-goal-bar
+                  [plain]="true"
+                  [name]="nome(l.categoryId)"
+                  [spentCents]="l.spentCents"
+                  [limitCents]="l.limitCents"
+                  [pace]="paceDe(l.categoryId)"
+                  [daysLeft]="diasDe(l.categoryId)"
+                  [conta]="contas().get(l.categoryId)"
+                  [ritmoNoTexto]="l.categoryId === metaFatura"
+                  [cor]="corDe(l.categoryId)"
+                  [icone]="iconeDe(l.categoryId)"
+                />
+              </button>
+              @if (filtroDe(l.categoryId); as q) {
+                <a
+                  class="ver"
+                  routerLink="/transacoes"
+                  [queryParams]="q"
+                  [attr.aria-label]="'Ver transações de ' + nome(l.categoryId)"
+                  >Ver transações ›</a
+                >
+              }
+            </div>
           }
         </div>
         <p class="j-cap dica">Toque numa meta para mudar o limite.</p>
@@ -777,6 +808,12 @@ export class Orcamento {
   protected iconeDe(id: string): string | null {
     if (id === META_FATURA) return 'banco';
     return this.categorias().find((c) => c.id === id)?.icon ?? null;
+  }
+
+  /** Transações do período em tela nessa categoria; a fatura abre filtrada no cartão (se for um só). */
+  protected filtroDe(id: string): Record<string, string> | null {
+    if (id !== META_FATURA) return { categoria: id, mes: this.month() };
+    return this.cartoes.size === 1 ? { conta: [...this.cartoes][0] } : null;
   }
 
   protected nome(id: string): string {

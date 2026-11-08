@@ -14,6 +14,17 @@ export interface Versao {
  */
 export const CHANGELOG: Versao[] = [
   {
+    version: '0.26.0',
+    date: '2026-11-08',
+    items: [
+      {
+        tipo: 'novo',
+        texto:
+          'Orçamento: cada meta tem "Ver transações", que abre as transações do período já filtradas na categoria. Na meta da fatura, abre as compras do cartão.',
+      },
+    ],
+  },
+  {
     version: '0.25.2',
     date: '2026-11-07',
     items: [
